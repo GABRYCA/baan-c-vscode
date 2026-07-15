@@ -1,27 +1,27 @@
-import typescriptEslint from "typescript-eslint";
+import js from "@eslint/js";
 
-export default [{
-    files: ["**/*.ts"],
-}, {
-    plugins: {
-        "@typescript-eslint": typescriptEslint.plugin,
-    },
-
-    languageOptions: {
-        parser: typescriptEslint.parser,
-        ecmaVersion: 2022,
-        sourceType: "module",
-    },
-
-    rules: {
-        "@typescript-eslint/naming-convention": ["warn", {
-            selector: "import",
-            format: ["camelCase", "PascalCase"],
-        }],
-
-        curly: "warn",
-        eqeqeq: "warn",
-        "no-throw-literal": "warn",
-        semi: "warn",
-    },
-}];
+export default [
+    js.configs.recommended,
+    {
+        files: ["**/*.js"],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: "commonjs",
+            globals: {
+                require: "readonly",
+                module: "readonly",
+                process: "readonly",
+                console: "readonly",
+                setTimeout: "readonly",
+                clearTimeout: "readonly"
+            }
+        },
+        rules: {
+            "curly": "warn",
+            "eqeqeq": "warn",
+            "no-throw-literal": "warn",
+            "semi": "warn",
+            "no-unused-vars": "warn"
+        },
+    }
+];

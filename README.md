@@ -1,71 +1,34 @@
-# baan-c-support README
+# Baan C / Infor LN Support
 
-This is the README for your extension "baan-c-support". After writing up a brief description, we recommend including the following sections.
+Complete language support for Baan C and Infor LN (3GL & 4GL) inside Visual Studio Code.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more.
+- **Code Formatting**: Automatic document formatting (`Shift + Alt + F` or on-save). Perfectly indents conditional blocks, loops, embedded SQL branches (`selectdo`, `selectempty`), and multi-line arguments.
+- **Block Diagnostics**: Real-time linting that catches structural errors like unmatched `endif`, `endwhile`, or `endselect` statements.
+- **Hover Documentation**: Hover over built-in keywords (e.g., `if`, `select`, `function`, `long`, `commit.transaction()`) to see language definitions and usage examples.
+- **Document Symbols (Outline)**: Easily navigate your script using the Outline view. Jump directly to functions, domains, tables, and 4GL sections.
+- **Snippets**: Type shortcuts like `if`, `ife`, `while`, `selectf`, `domain`, etc., to instantly generate complete block structures.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+This extension contributes the following settings that can be tweaked in VS Code settings:
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `baanc.indentSize`: Number of spaces per indent level when formatting (Default: `4`).
+* `baanc.formatOnSave`: Automatically format the document on save (Default: `false`).
+* `baanc.diagnostics.enabled`: Enable block-matching and structural diagnostics (Default: `true`).
+* `baanc.diagnostics.strictComments`: Ignore pipe `|` and block `/* */` comments when analyzing code blocks (Default: `true`).
+* `baanc.completion.includeSql`: Include SQL / embedded-select keywords in autocomplete.
+* `baanc.completion.includePreprocessor`: Include preprocessor directives in autocomplete.
+* `baanc.completion.include4gl`: Include common 4GL section names in autocomplete.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files. 
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
 ### 1.0.1
 
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- Initial release containing Syntax highlighting, Snippets, Formatter, Diagnostic linter, and Symbol definitions.
