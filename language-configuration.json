@@ -12,6 +12,39 @@
     { "open": "{", "close": "}" },
     { "open": "[", "close": "]" },
     { "open": "(", "close": ")" },
-    { "open": "\"", "close": "\"" }
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
+    { "open": "/*", "close": "*/", "notIn": ["string"] }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""]
+  ],
+  "folding": {
+    "markers": {
+      "start": "(?i)^\\s*(if|while|for|repeat|on\\s+case|function|select|declaration:|before\\.program:|after\\.program:|field\\.|form\\.|choice\\.|group\\.|zoom\\.from\\.|main\\.table\\.io:)",
+      "end": "(?i)^\\s*(endif|endwhile|endfor|until|endcase|endselect|\\}|after\\.program:)"
+    }
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
+  "indentationRules": {
+    "increaseIndentPattern": "(?i)^\\s*(if\\b.*\\bthen\\s*$|else\\s*$|elif\\b.*\\bthen\\s*$|while\\b|for\\b|repeat\\s*$|on\\s+case\\b|case\\b|default\\s*:|function\\b.*\\{\\s*$|select\\b|selectdo\\s*$|selectempty\\s*$|selecteos\\s*$|selecterror\\s*$|\\{\\s*$)",
+    "decreaseIndentPattern": "(?i)^\\s*(endif|else|elif|endwhile|endfor|until|endcase|endselect|selectdo|selectempty|selecteos|selecterror|\\})\\b"
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "(?i)^\\s*/\\*.*(?!\\*/).*$",
+      "afterText": "^\\s*\\*/",
+      "action": { "indent": "indentOutdent" }
+    },
+    {
+      "beforeText": "(?i)^\\s*(if\\b.*\\bthen|else|elif\\b.*\\bthen|while\\b.*|for\\b.*|repeat|on\\s+case\\b.*|case\\b.*:|default\\s*:|function\\b.*\\{|selectdo|selectempty|selecteos|selecterror)\\s*$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "(?i)^\\s*(endif|endwhile|endfor|until|endcase|endselect|\\})\\s*$",
+      "action": { "indent": "outdent" }
+    }
   ]
 }

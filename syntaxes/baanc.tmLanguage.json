@@ -1,42 +1,316 @@
 {
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Baan C",
   "scopeName": "source.baanc",
   "patterns": [
     { "include": "#comments" },
-    { "include": "#keywords" },
+    { "include": "#preprocessor" },
     { "include": "#strings" },
-    { "include": "#functions" }
+    { "include": "#numbers" },
+    { "include": "#booleans" },
+    { "include": "#labels" },
+    { "include": "#fourgl-sections" },
+    { "include": "#sql-bind" },
+    { "include": "#function-definition" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#storage-modifiers" },
+    { "include": "#function-call" },
+    { "include": "#table-field" },
+    { "include": "#operators" }
   ],
   "repository": {
     "comments": {
       "patterns": [
-        { "begin": "/\\*", "end": "\\*/", "name": "comment.block.baanc" },
-        { "begin": "^\\|", "end": "$", "name": "comment.line.baanc" }
+        {
+          "name": "comment.block.baanc",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "patterns": [
+            {
+              "name": "keyword.other.documentation.baanc",
+              "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
+            }
+          ]
+        },
+        {
+          "name": "comment.line.baanc",
+          "begin": "\\|",
+          "end": "$",
+          "patterns": [
+            {
+              "name": "keyword.other.documentation.baanc",
+              "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
+            }
+          ]
+        }
       ]
     },
-    "keywords": {
+    "preprocessor": {
       "patterns": [
         {
-          "match": "\\b(if|then|else|endif|select|selectdo|selectempty|endselect|function|extern|domain|string|long|double|return|while|do|endwhile|for|to|by|endfor|case|caseelse|endcase|local|global|constant)\\b",
-          "name": "keyword.control.baanc"
+          "name": "meta.preprocessor.include.baanc",
+          "begin": "^\\s*(#\\s*include)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.directive.include.baanc" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "string.quoted.double.include.baanc",
+              "match": "\"[^\"]*\""
+            },
+            {
+              "name": "string.quoted.other.lt-gt.include.baanc",
+              "match": "<[^>]*>"
+            },
+            { "include": "#comments" }
+          ]
+        },
+        {
+          "name": "meta.preprocessor.define.baanc",
+          "begin": "^\\s*(#\\s*(define|undef))\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.directive.define.baanc" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "entity.name.function.preprocessor.baanc",
+              "match": "\\b[A-Za-z_][\\w.]*\\b"
+            },
+            { "include": "#strings" },
+            { "include": "#numbers" },
+            { "include": "#comments" }
+          ]
+        },
+        {
+          "name": "meta.preprocessor.conditional.baanc",
+          "match": "^\\s*(#\\s*(if|ifdef|ifndef|elif|else|endif))\\b(.*)$",
+          "captures": {
+            "1": { "name": "keyword.control.directive.conditional.baanc" },
+            "3": { "name": "meta.preprocessor.expression.baanc" }
+          }
+        },
+        {
+          "name": "meta.preprocessor.pragma.baanc",
+          "match": "^\\s*(#\\s*pragma)\\b(.*)$",
+          "captures": {
+            "1": { "name": "keyword.control.directive.pragma.baanc" },
+            "2": { "name": "string.unquoted.baanc" }
+          }
+        },
+        {
+          "name": "meta.preprocessor.ident.baanc",
+          "match": "^\\s*(#\\s*ident)\\b(.*)$",
+          "captures": {
+            "1": { "name": "keyword.control.directive.baanc" },
+            "2": { "name": "string.unquoted.baanc" }
+          }
+        },
+        {
+          "name": "constant.language.preprocessor.baanc",
+          "match": "\\b(__FILE__|__LINE__|__FUNCTION__|__FUNCTION_CP__|__OBJECT__)\\b"
+        },
+        {
+          "name": "punctuation.separator.continuation.baanc",
+          "match": "^\\^"
         }
       ]
     },
     "strings": {
       "patterns": [
         {
+          "name": "string.quoted.double.baanc",
           "begin": "\"",
           "end": "\"",
-          "name": "string.quoted.double.baanc"
+          "patterns": [
+            {
+              "name": "constant.character.escape.baanc",
+              "match": "\\\\."
+            },
+            {
+              "name": "constant.other.placeholder.baanc",
+              "match": "%[-+#0 ]*\\d*(?:\\.\\d+)?[sdfegoxX%]"
+            }
+          ]
         }
       ]
     },
-    "functions": {
+    "numbers": {
       "patterns": [
         {
-          "match": "\\bfunction\\s+(\\w+)\\s*\\(",
+          "name": "constant.numeric.hex.baanc",
+          "match": "\\b0[xX][0-9A-Fa-f]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.baanc",
+          "match": "\\b\\d+\\.\\d+(?:[eE][+-]?\\d+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.baanc",
+          "match": "\\b\\d+\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.baanc",
+          "match": "\\b(?i:true|false)(?![.\\w])"
+        },
+        {
+          "name": "constant.language.baanc",
+          "match": "\\b(?i:pi)(?![.\\w])"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.label.baanc",
+          "match": "^\\s*([A-Za-z][\\w.]*)\\s*:(?![=])"
+        }
+      ]
+    },
+    "fourgl-sections": {
+      "patterns": [
+        {
+          "name": "entity.name.section.4gl.baanc",
+          "match": "(?i)^\\s*((?:declaration|before\\.program|after\\.program|on\\.error|after\\.form\\.read|after\\.update\\.db\\.commit|before\\.display\\.object|after\\.display\\.object|on\\.display\\.total\\.line|main\\.table\\.io|functions)\\s*:)"
+        },
+        {
+          "name": "entity.name.section.4gl.baanc",
+          "match": "(?i)^\\s*((?:field|form|group|choice|zoom\\.from)\\.[\\w.*]+\\s*:)"
+        },
+        {
+          "name": "keyword.control.section.4gl.baanc",
+          "match": "(?i)\\b(before\\.input|after\\.input|before\\.display|after\\.display|before\\.checks|after\\.checks|before\\.field|after\\.field|when\\.field\\.changes|before\\.zoom|after\\.zoom|before\\.choice|after\\.choice|on\\.choice|before\\.form|after\\.form|before\\.group|after\\.group|before\\.read|after\\.read|before\\.write|after\\.write|before\\.rewrite|after\\.rewrite|before\\.delete|after\\.delete|before\\.skip|after\\.skip|read\\.view|on\\.main\\.table)(?![.\\w])"
+        }
+      ]
+    },
+    "sql-bind": {
+      "patterns": [
+        {
+          "name": "variable.other.bind.baanc",
+          "match": ":[A-Za-z_][\\w.]*|:\\d+"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.conditional.baanc",
+          "match": "\\b(?i:if|then|else|elif|endif)(?![.\\w])"
+        },
+        {
+          "name": "keyword.control.loop.baanc",
+          "match": "\\b(?i:while|endwhile|for|to|step|endfor|repeat|until|break|continue)(?![.\\w])"
+        },
+        {
+          "name": "keyword.control.case.baanc",
+          "match": "(?i)(\\bon\\s+case\\b|\\bcase\\b|\\bdefault\\b|\\bendcase\\b)(?![.\\w])"
+        },
+        {
+          "name": "keyword.control.transfer.baanc",
+          "match": "\\b(?i:goto|return)(?![.\\w])"
+        },
+        {
+          "comment": "Logical operators — high priority so 'and'/'or'/'not' on continuation lines highlight",
+          "name": "keyword.operator.logical.baanc",
+          "match": "\\b(?i:and|or|not)(?![.\\w])"
+        },
+        {
+          "comment": "Embedded SQL multi-word first",
+          "name": "keyword.control.sql.baanc",
+          "match": "(?i)\\b(group\\s+by|order\\s+by|for\\s+update|with\\s+retry|refers\\s+to|is\\s+null|not\\s+null|inner\\s+join|left\\s+join|right\\s+join|cross\\s+join|as\\s+set\\s+with)(?![.\\w])"
+        },
+        {
+          "comment": "SQL / select branch keywords. (?![.\\w]) prevents 'update' in update.field.x from matching.",
+          "name": "keyword.control.sql.baanc",
+          "match": "\\b(?i:selectdo|selectempty|selecteos|selecterror|endselect|selectbind|wherebind|select|from|where|having|union|distinct|all|as|asc|desc|join|inner|outer|left|right|cross|between|alike|exists|null|fetch|prepared|empty|update|delete|set|into|in|on|like)(?![.\\w])"
+        },
+        {
+          "name": "keyword.other.baanc",
+          "match": "\\b(?i:function|prototype|void|ref|reference|const|based|fixed|mb)(?![.\\w])"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.baanc",
+          "match": "\\b(?i:long|double|boolean|string|table|domain|void)(?![.\\w])"
+        }
+      ]
+    },
+    "storage-modifiers": {
+      "patterns": [
+        {
+          "name": "storage.modifier.baanc",
+          "match": "\\b(?i:extern|static|common|based|fixed|mb|ref|reference|const)(?![.\\w])"
+        }
+      ]
+    },
+    "function-definition": {
+      "patterns": [
+        {
+          "name": "meta.function.baanc",
+          "match": "(?i)\\b(function)\\s+(?:(long|double|string|void|domain\\s+[\\w.]+)\\s+)?([A-Za-z_][\\w.]*)\\s*\\(",
           "captures": {
-            "1": { "name": "entity.name.function.baanc" }
+            "1": { "name": "storage.type.function.baanc" },
+            "2": { "name": "storage.type.baanc" },
+            "3": { "name": "entity.name.function.baanc" }
           }
+        }
+      ]
+    },
+    "function-call": {
+      "patterns": [
+        {
+          "comment": "Dotted or plain calls: update.field.txamg203(  or  db.delete(",
+          "name": "meta.function-call.baanc",
+          "match": "\\b([A-Za-z_][\\w.]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.call.baanc" }
+          }
+        }
+      ]
+    },
+    "table-field": {
+      "patterns": [
+        {
+          "name": "variable.other.table.baanc",
+          "match": "\\b(t[a-z]{2,6}\\d{3})\\b"
+        },
+        {
+          "comment": "table.field but not function calls (no '(' right after)",
+          "name": "variable.other.member.baanc",
+          "match": "\\b([A-Za-z_][\\w]*)\\.([A-Za-z_][\\w]*)\\b(?!\\s*\\()",
+          "captures": {
+            "1": { "name": "variable.other.object.baanc" },
+            "2": { "name": "variable.other.property.baanc" }
+          }
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.baanc",
+          "match": "(:=|=)"
+        },
+        {
+          "name": "keyword.operator.comparison.baanc",
+          "match": "(<>|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.baanc",
+          "match": "(\\+|\\-|\\*|/|%)"
+        },
+        {
+          "name": "keyword.operator.range.baanc",
+          "match": ";"
         }
       ]
     }

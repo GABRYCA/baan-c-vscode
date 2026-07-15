@@ -1,49 +1,276 @@
 {
-  "If block": {
+  "If then endif": {
     "prefix": "if",
     "body": [
       "if ${1:condition} then",
-      "\t${2:// code}",
-      "else",
-      "\t${3:// else code}",
+      "\t$0",
       "endif"
     ],
-    "description": "if‑then‑else‑endif block"
+    "description": "IF ... THEN ... ENDIF"
+  },
+  "If then else endif": {
+    "prefix": "ife",
+    "body": [
+      "if ${1:condition} then",
+      "\t$2",
+      "else",
+      "\t$0",
+      "endif"
+    ],
+    "description": "IF ... THEN ... ELSE ... ENDIF"
+  },
+  "If elif else endif": {
+    "prefix": "ifel",
+    "body": [
+      "if ${1:condition1} then",
+      "\t$2",
+      "elif ${3:condition2} then",
+      "\t$4",
+      "else",
+      "\t$0",
+      "endif"
+    ],
+    "description": "IF ... ELIF ... ELSE ... ENDIF"
+  },
+  "While endwhile": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition}",
+      "\t$0",
+      "endwhile"
+    ],
+    "description": "WHILE ... ENDWHILE"
+  },
+  "For endfor": {
+    "prefix": "for",
+    "body": [
+      "for ${1:i} = ${2:1} to ${3:10}",
+      "\t$0",
+      "endfor"
+    ],
+    "description": "FOR ... TO ... ENDFOR"
+  },
+  "For step endfor": {
+    "prefix": "fors",
+    "body": [
+      "for ${1:i} = ${2:1} to ${3:100} step ${4:2}",
+      "\t$0",
+      "endfor"
+    ],
+    "description": "FOR ... TO ... STEP ... ENDFOR"
+  },
+  "Repeat until": {
+    "prefix": "repeat",
+    "body": [
+      "repeat",
+      "\t$0",
+      "until ${1:condition}"
+    ],
+    "description": "REPEAT ... UNTIL"
+  },
+  "On case": {
+    "prefix": "oncase",
+    "body": [
+      "on case ${1:expression}",
+      "case ${2:value}:",
+      "\t$3",
+      "\tbreak",
+      "default:",
+      "\t$0",
+      "endcase"
+    ],
+    "description": "ON CASE ... CASE ... DEFAULT ... ENDCASE"
+  },
+  "Function void": {
+    "prefix": "func",
+    "body": [
+      "function ${1:name}(${2})",
+      "{",
+      "\t$0",
+      "}"
+    ],
+    "description": "FUNCTION (void) with braces"
+  },
+  "Function typed": {
+    "prefix": "funcl",
+    "body": [
+      "function ${1|long,double,string,void|} ${2:name}(${3})",
+      "{",
+      "\t$0",
+      "\treturn(${4})",
+      "}"
+    ],
+    "description": "Typed FUNCTION with return"
   },
   "Select block": {
     "prefix": "select",
     "body": [
-      "select ${1:table.field}",
-      "\t${2:// do code}",
+      "select ${1:*}",
+      "from ${2:table}",
+      "where ${3:condition}",
       "selectdo",
-      "\t${3:// do code}",
+      "\t$0",
       "selectempty",
-      "\t${4:// empty code}",
+      "\t| no records",
       "endselect"
     ],
-    "description": "select‑selectdo‑selectempty‑endselect block"
+    "description": "Embedded SQL SELECT ... SELECTDO ... ENDSELECT"
   },
-  "Function": {
-    "prefix": "function",
+  "Select full": {
+    "prefix": "selectf",
     "body": [
-      "function ${1:name}(${2:params})",
-      "\t${3:// function body}",
-      "endfunction"
+      "select ${1:*}",
+      "from ${2:table}",
+      "where ${3:condition}",
+      "selectdo",
+      "\t$4",
+      "selecteos",
+      "\t$5",
+      "selectempty",
+      "\t$6",
+      "selecterror",
+      "\tmessage(\"Error %d\", db.error)",
+      "\tbreak",
+      "endselect"
     ],
-    "description": "function definition"
+    "description": "Full embedded SQL with all branches"
   },
-  "Domain": {
+  "Domain declaration": {
     "prefix": "domain",
     "body": [
-      "domain ${1:name} ${2:type} ${3:length}"
+      "domain ${1:domain.name} ${2:varName}"
     ],
-    "description": "domain declaration"
+    "description": "DOMAIN variable declaration"
   },
-  "Extern": {
+  "Table declaration": {
+    "prefix": "table",
+    "body": [
+      "table t${1:tccom001}"
+    ],
+    "description": "TABLE declaration (name starts with t)"
+  },
+  "Long declaration": {
+    "prefix": "long",
+    "body": [
+      "long ${1:varName}"
+    ],
+    "description": "LONG variable"
+  },
+  "String declaration": {
+    "prefix": "string",
+    "body": [
+      "string ${1:varName}(${2:30})"
+    ],
+    "description": "STRING variable with length"
+  },
+  "Boolean declaration": {
+    "prefix": "boolean",
+    "body": [
+      "boolean ${1:varName}"
+    ],
+    "description": "BOOLEAN variable"
+  },
+  "Double declaration": {
+    "prefix": "double",
+    "body": [
+      "double ${1:varName}"
+    ],
+    "description": "DOUBLE variable"
+  },
+  "Extern long": {
     "prefix": "extern",
     "body": [
-      "extern ${1:type} ${2:name}(${3:params})"
+      "extern ${1|long,double,string,boolean|} ${2:varName}"
     ],
-    "description": "extern declaration"
+    "description": "EXTERN variable declaration"
+  },
+  "Define macro": {
+    "prefix": "define",
+    "body": [
+      "#define ${1:NAME} ${2:value}"
+    ],
+    "description": "#define macro"
+  },
+  "Ifdef block": {
+    "prefix": "ifdef",
+    "body": [
+      "#ifdef ${1:MACRO}",
+      "\t$0",
+      "#endif"
+    ],
+    "description": "#ifdef ... #endif"
+  },
+  "Include": {
+    "prefix": "include",
+    "body": [
+      "#include \"${1:filename}\""
+    ],
+    "description": "#include \"file\""
+  },
+  "4GL declaration section": {
+    "prefix": "declaration",
+    "body": [
+      "declaration:",
+      "\ttable t${1:tccom001}",
+      "\tlong ${2:ret}",
+      "\t$0"
+    ],
+    "description": "4GL declaration: section"
+  },
+  "4GL before.program": {
+    "prefix": "before.program",
+    "body": [
+      "before.program:",
+      "\t$0"
+    ],
+    "description": "4GL before.program: section"
+  },
+  "4GL after.program": {
+    "prefix": "after.program",
+    "body": [
+      "after.program:",
+      "\t$0"
+    ],
+    "description": "4GL after.program: section"
+  },
+  "4GL field section": {
+    "prefix": "field.",
+    "body": [
+      "field.${1:table.field}:",
+      "\tbefore.display:",
+      "\t\t$0",
+      "\tafter.input:",
+      "\t\t"
+    ],
+    "description": "4GL field.<name>: section"
+  },
+  "Message": {
+    "prefix": "message",
+    "body": [
+      "message(\"${1:text}\")"
+    ],
+    "description": "message() call"
+  },
+  "Commit transaction": {
+    "prefix": "commit",
+    "body": [
+      "commit.transaction()"
+    ],
+    "description": "commit.transaction()"
+  },
+  "Abort transaction": {
+    "prefix": "abort",
+    "body": [
+      "abort.transaction()"
+    ],
+    "description": "abort.transaction()"
+  },
+  "Db retry point": {
+    "prefix": "retry",
+    "body": [
+      "db.retry.point()",
+      "$0"
+    ],
+    "description": "db.retry.point()"
   }
 }
