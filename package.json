@@ -4,7 +4,7 @@
   "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, hovers, symbols, and more",
   "version": "1.0.1",
   "publisher": "AnonymousGCA",
-  "icon": "icons/baanc-dark.png",
+  "icon": "icons/baanc-dark.webp",
   "repository": {
     "type": "git",
     "url": "https://github.com/GABRYCA/baan-c-vscode"
@@ -49,8 +49,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./icons/baanc-light-icon.png",
-          "dark": "./icons/baanc-dark-icon.png"
+          "light": "./icons/baanc-light-icon.webp",
+          "dark": "./icons/baanc-dark-icon.webp"
         }
       }
     ],
