@@ -2,6 +2,8 @@
 
 Complete language support for Baan C and Infor LN (3GL & 4GL) inside Visual Studio Code.
 
+Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
+
 ## Features
 
 - **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more.
