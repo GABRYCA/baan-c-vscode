@@ -49,8 +49,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./icons/baanc-light.svg",
-          "dark": "./icons/baanc-dark.svg"
+          "light": "./icons/baanc-light-icon.png",
+          "dark": "./icons/baanc-dark-icon.png"
         }
       }
     ],
