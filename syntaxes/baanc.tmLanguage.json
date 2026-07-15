@@ -1,0 +1,44 @@
+{
+  "scopeName": "source.baanc",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    { "include": "#functions" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "begin": "/\\*", "end": "\\*/", "name": "comment.block.baanc" },
+        { "begin": "^\\|", "end": "$", "name": "comment.line.baanc" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(if|then|else|endif|select|selectdo|selectempty|endselect|function|extern|domain|string|long|double|return|while|do|endwhile|for|to|by|endfor|case|caseelse|endcase|local|global|constant)\\b",
+          "name": "keyword.control.baanc"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.baanc"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "\\bfunction\\s+(\\w+)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.function.baanc" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "If block": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition} then",
+      "\t${2:// code}",
+      "else",
+      "\t${3:// else code}",
+      "endif"
+    ],
+    "description": "if‑then‑else‑endif block"
+  },
+  "Select block": {
+    "prefix": "select",
+    "body": [
+      "select ${1:table.field}",
+      "\t${2:// do code}",
+      "selectdo",
+      "\t${3:// do code}",
+      "selectempty",
+      "\t${4:// empty code}",
+      "endselect"
+    ],
+    "description": "select‑selectdo‑selectempty‑endselect block"
+  },
+  "Function": {
+    "prefix": "function",
+    "body": [
+      "function ${1:name}(${2:params})",
+      "\t${3:// function body}",
+      "endfunction"
+    ],
+    "description": "function definition"
+  },
+  "Domain": {
+    "prefix": "domain",
+    "body": [
+      "domain ${1:name} ${2:type} ${3:length}"
+    ],
+    "description": "domain declaration"
+  },
+  "Extern": {
+    "prefix": "extern",
+    "body": [
+      "extern ${1:type} ${2:name}(${3:params})"
+    ],
+    "description": "extern declaration"
+  }
+}
