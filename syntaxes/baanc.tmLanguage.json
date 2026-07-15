@@ -216,17 +216,17 @@
           "match": "\\b(?i:goto|return)(?![.\\w])"
         },
         {
-          "comment": "Logical operators — high priority so 'and'/'or'/'not' on continuation lines highlight",
-          "name": "keyword.operator.logical.baanc",
+          "comment": "and/or/not same scope as select/from/where so they render purple",
+          "name": "keyword.control.sql.baanc",
           "match": "\\b(?i:and|or|not)(?![.\\w])"
         },
         {
-          "comment": "Embedded SQL multi-word first",
+          "comment": "Embedded SQL multi-word phrases first",
           "name": "keyword.control.sql.baanc",
           "match": "(?i)\\b(group\\s+by|order\\s+by|for\\s+update|with\\s+retry|refers\\s+to|is\\s+null|not\\s+null|inner\\s+join|left\\s+join|right\\s+join|cross\\s+join|as\\s+set\\s+with)(?![.\\w])"
         },
         {
-          "comment": "SQL / select branch keywords. (?![.\\w]) prevents 'update' in update.field.x from matching.",
+          "comment": "SQL keywords. (?![.\\w]) avoids matching update.field.x",
           "name": "keyword.control.sql.baanc",
           "match": "\\b(?i:selectdo|selectempty|selecteos|selecterror|endselect|selectbind|wherebind|select|from|where|having|union|distinct|all|as|asc|desc|join|inner|outer|left|right|cross|between|alike|exists|null|fetch|prepared|empty|update|delete|set|into|in|on|like)(?![.\\w])"
         },
@@ -255,12 +255,14 @@
     "function-definition": {
       "patterns": [
         {
+          "comment": "function [extern|static] [return-type] name(",
           "name": "meta.function.baanc",
-          "match": "(?i)\\b(function)\\s+(?:(long|double|string|void|domain\\s+[\\w.]+)\\s+)?([A-Za-z_][\\w.]*)\\s*\\(",
+          "match": "(?i)\\b(function)\\s+(?:(extern|static)\\s+)?(?:(long|double|string|void|domain\\s+[\\w.]+)\\s+)?([A-Za-z_][\\w.]*)\\s*\\(",
           "captures": {
             "1": { "name": "storage.type.function.baanc" },
-            "2": { "name": "storage.type.baanc" },
-            "3": { "name": "entity.name.function.baanc" }
+            "2": { "name": "storage.modifier.baanc" },
+            "3": { "name": "storage.type.baanc" },
+            "4": { "name": "entity.name.function.baanc" }
           }
         }
       ]
@@ -268,7 +270,6 @@
     "function-call": {
       "patterns": [
         {
-          "comment": "Dotted or plain calls: update.field.txamg203(  or  db.delete(",
           "name": "meta.function-call.baanc",
           "match": "\\b([A-Za-z_][\\w.]*)\\s*(?=\\()",
           "captures": {
@@ -284,7 +285,6 @@
           "match": "\\b(t[a-z]{2,6}\\d{3})\\b"
         },
         {
-          "comment": "table.field but not function calls (no '(' right after)",
           "name": "variable.other.member.baanc",
           "match": "\\b([A-Za-z_][\\w]*)\\.([A-Za-z_][\\w]*)\\b(?!\\s*\\()",
           "captures": {

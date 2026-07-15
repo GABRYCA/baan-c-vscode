@@ -34,7 +34,9 @@ const SQL_KEYWORDS = [
   'selectbind', 'wherebind', 'for update', 'with retry',
   'union', 'distinct', 'join', 'inner join', 'left join', 'right join',
   'between', 'in', 'like', 'alike', 'exists', 'is null', 'not null',
-  'refers to', 'order by', 'group by'
+  'refers to', 'order by', 'group by',
+  'and', 'or', 'not',
+  'as set with'
 ];
 
 const PREPROCESSOR = [
@@ -80,7 +82,7 @@ const HOVER_DOCS = {
   continue: 'Continue with the next iteration of the innermost loop.',
   goto: '```baanc\ngoto LABEL_NAME\n...\nLABEL_NAME:\n```\nUnconditional jump. Label and `goto` must be in the same function.',
   return: '```baanc\nreturn\nreturn(value)\n```\nReturn from a function. Void functions must not return a value.',
-  function: '```baanc\nfunction [type] name([REF|CONST] type arg, ...)\n{\n    ...\n    return[(value)]\n}\n```\nTypes: `long`, `double`, `string`, `domain <name>`, `void` (default). Body is brace-delimited.',
+  function: '```baanc\nfunction [extern|static] [type] name([REF|CONST] type arg, ...)\n{\n    ...\n    return[(value)]\n}\n```\nTypes: `long`, `double`, `string`, `domain <name>`, `void` (default). Body is brace-delimited.',
   select: '```baanc\nselect <columns>\nfrom <table>\n[where ...]\n[selectdo ...]\n[selecteos ...]\n[selectempty ...]\n[selecterror ...]\nendselect\n```\nEmbedded SQL loop.',
   selectdo: 'Body executed for each selected record.',
   selectempty: 'Branch when the query returns no rows.',
@@ -95,7 +97,7 @@ const HOVER_DOCS = {
   string: '```baanc\nstring name(length) [MB] [FIXED] [BASED]\n```\nString variable. Max length 1024 characters.',
   table: '```baanc\ntable txxxxxx\n```\nDeclares a database table pointer. Name must start with `t`. Fields are auto-declared.',
   domain: '```baanc\ndomain <domain_name> var[, var2(n)]\n```\nVariable typed from the data dictionary (preferred for table fields / enums / sets).',
-  extern: 'Export variable name to the object symbol table (forms, other programs, `expr.compile`, `get.var` / `put.var`).',
+  extern: 'Export variable / function name to the object symbol table. Used as `function extern name(...)`.',
   static: 'Static local variable inside a function (retains value between calls).',
   const: 'Const function argument (or BASED variable).',
   ref: 'Pass-by-reference function argument (alias of `reference`).',
@@ -106,8 +108,8 @@ const HOVER_DOCS = {
   true: 'Boolean constant TRUE (value 1).',
   false: 'Boolean constant FALSE (value 0).',
   pi: 'Symbolic constant π ≈ 3.141592653589793.',
-  and: 'Logical AND.',
-  or: 'Logical OR.',
+  and: 'Logical AND (3GL) / boolean search condition AND (embedded SQL).',
+  or: 'Logical OR (3GL) / boolean search condition OR (embedded SQL).',
   not: 'Logical NOT (unary).',
   void: 'Function return type meaning “no value”.'
 };
@@ -133,7 +135,6 @@ function activate(context) {
     })
   );
 
-  // ---------- Completion ----------
   const completionProvider = vscode.languages.registerCompletionItemProvider(
     selector,
     {
@@ -181,7 +182,6 @@ function activate(context) {
           );
         }
 
-        // Snippet-like multi-line completions for main blocks
         const blockSnippets = [
           {
             label: 'if-then-endif',
@@ -200,6 +200,10 @@ function activate(context) {
             body: 'function ${1:name}(${2})\n{\n\t$0\n}'
           },
           {
+            label: 'function-extern',
+            body: 'function extern ${1:name}(${2})\n{\n\t$0\n}'
+          },
+          {
             label: 'select-endselect',
             body: 'select ${1:*}\nfrom ${2:table}\nwhere ${3:cond}\nselectdo\n\t$0\nendselect'
           }
@@ -214,9 +218,8 @@ function activate(context) {
           items.push(item);
         });
 
-        // Context: after '#' suggest directives
         if (/^\s*#\w*$/.test(prefix.trimStart() === '#' ? '#' : prefix)) {
-          // still return all; VS Code filters
+          // keep all; VS Code filters
         }
 
         return items;
@@ -225,7 +228,6 @@ function activate(context) {
     '#', '.'
   );
 
-  // ---------- Hover ----------
   const hoverProvider = vscode.languages.registerHoverProvider(selector, {
     provideHover(document, position) {
       const wordRange = document.getWordRangeAtPosition(
@@ -238,7 +240,6 @@ function activate(context) {
       const word = document.getText(wordRange);
       const key = word.toLowerCase();
 
-      // Multi-word: "on case", "group by", ...
       const line = document.lineAt(position.line).text;
       const lower = line.toLowerCase();
       if (/\bon\s+case\b/.test(lower) && (key === 'on' || key === 'case')) {
@@ -247,17 +248,18 @@ function activate(context) {
           wordRange
         );
       }
-      if (key === 'group' || key === 'order') {
-        // leave to docs if combined
-      }
 
       if (Object.prototype.hasOwnProperty.call(HOVER_DOCS, key)) {
         return makeHover(HOVER_DOCS[key], wordRange);
       }
 
-      // function() call hover: show "function call"
       const after = document.getText(
-        new vscode.Range(position.line, wordRange.end.character, position.line, wordRange.end.character + 1)
+        new vscode.Range(
+          position.line,
+          wordRange.end.character,
+          position.line,
+          wordRange.end.character + 1
+        )
       );
       if (after === '(') {
         return makeHover(`Function call: \`${word}(...)\``, wordRange);
@@ -267,13 +269,12 @@ function activate(context) {
     }
   });
 
-  // ---------- Document symbols ----------
   const symbolProvider = vscode.languages.registerDocumentSymbolProvider(selector, {
     provideDocumentSymbols(document) {
       /** @type {vscode.DocumentSymbol[]} */
       const symbols = [];
       const functionRe =
-        /^\s*function(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
+        /^\s*function(?:\s+(?:extern|static))?(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
       const domainRe = /^\s*domain\s+([\w.]+)\s+([A-Za-z_][\w.]*)/i;
       const tableRe = /^\s*table\s+(t[\w.]+)/i;
       const sectionRe =
@@ -292,7 +293,6 @@ function activate(context) {
         let m = functionRe.exec(text);
         if (m) {
           const name = m[1];
-          // find closing brace roughly for full range
           const start = i;
           let end = i;
           let depth = 0;
@@ -404,7 +404,6 @@ function activate(context) {
     }
   });
 
-  // ---------- Definition (goto function in same file) ----------
   const definitionProvider = vscode.languages.registerDefinitionProvider(selector, {
     provideDefinition(document, position) {
       const wordRange = document.getWordRangeAtPosition(
@@ -416,7 +415,7 @@ function activate(context) {
       }
       const word = document.getText(wordRange);
       const functionRe = new RegExp(
-        `^\\s*function(?:\\s+(?:long|double|string|void|domain\\s+[\\w.]+))?\\s+(${escapeRegExp(
+        `^\\s*function(?:\\s+(?:extern|static))?(?:\\s+(?:long|double|string|void|domain\\s+[\\w.]+))?\\s+(${escapeRegExp(
           word
         )})\\s*\\(`,
         'i'
@@ -435,7 +434,6 @@ function activate(context) {
     }
   });
 
-  // ---------- Formatting ----------
   const formattingProvider =
     vscode.languages.registerDocumentFormattingEditProvider(selector, {
       provideDocumentFormattingEdits(document) {
@@ -446,7 +444,6 @@ function activate(context) {
   const rangeFormattingProvider =
     vscode.languages.registerDocumentRangeFormattingEditProvider(selector, {
       provideDocumentRangeFormattingEdits(document, range) {
-        // Format whole doc then restrict — simple & reliable for Baan blocks
         const all = formatDocument(document, cfg.indentSize);
         return all.filter(e => range.intersection(e.range));
       }
@@ -460,7 +457,6 @@ function activate(context) {
     }
   });
 
-  // ---------- Diagnostics ----------
   const schedule = debounce(doc => {
     runDiagnostics(doc, diagnosticCollection, cfg);
   }, 200);
@@ -481,12 +477,10 @@ function activate(context) {
     })
   );
 
-  // Run once for already-open docs
   vscode.workspace.textDocuments
     .filter(d => d.languageId === 'baanc')
     .forEach(d => runDiagnostics(d, diagnosticCollection, cfg));
 
-  // ---------- Commands ----------
   context.subscriptions.push(
     vscode.commands.registerCommand('baanc.formatDocument', async () => {
       const editor = vscode.window.activeTextEditor;
@@ -528,10 +522,6 @@ function activate(context) {
 
 function deactivate() {}
 
-// =============================================================================
-// Config
-// =============================================================================
-
 function loadConfig() {
   const c = vscode.workspace.getConfiguration('baanc');
   return {
@@ -545,12 +535,7 @@ function loadConfig() {
   };
 }
 
-// =============================================================================
-// Comment / line helpers
-// =============================================================================
-
 /**
- * Remove trailing | line comment, respecting double-quoted strings.
  * @param {string} line
  */
 function stripLineComment(line) {
@@ -577,7 +562,6 @@ function isBlockCommentOnly(text) {
 }
 
 /**
- * Very small block-comment stripper for analysis (not nested).
  * @param {string} fullText
  */
 function maskBlockComments(fullText) {
@@ -591,9 +575,82 @@ function codeOf(line) {
   return stripLineComment(line).trim();
 }
 
-// =============================================================================
-// Formatting
-// =============================================================================
+/**
+ * @param {string} line
+ * @returns {{ open: number, close: number, delta: number }}
+ */
+function parenDelta(line) {
+  const code = stripLineComment(line);
+  let inString = false;
+  let open = 0;
+  let close = 0;
+  for (let i = 0; i < code.length; i++) {
+    const ch = code[i];
+    if (ch === '"' && (i === 0 || code[i - 1] !== '\\')) {
+      inString = !inString;
+      continue;
+    }
+    if (inString) {
+      continue;
+    }
+    if (ch === '(') {
+      open++;
+    } else if (ch === ')') {
+      close++;
+    }
+  }
+  return { open, close, delta: open - close };
+}
+
+/**
+ * @param {string} raw
+ * @param {number} fallback
+ */
+function firstParamColumn(raw, fallback) {
+  const openIdx = raw.indexOf('(');
+  if (openIdx < 0) {
+    return fallback;
+  }
+  let align = openIdx + 1;
+  while (align < raw.length && (raw[align] === ' ' || raw[align] === '\t')) {
+    align++;
+  }
+  if (align >= raw.length) {
+    return fallback;
+  }
+  return align;
+}
+
+/**
+ * @param {string} lower
+ */
+function isSqlClauseKeyword(lower) {
+  return (
+    /^(from|where|having|union)\b/.test(lower) ||
+    /^group\s+by\b/.test(lower) ||
+    /^order\s+by\b/.test(lower) ||
+    /^(and|or)\b/.test(lower) ||
+    /^as\s+set\s+with\b/.test(lower) ||
+    /^for\s+update\b/.test(lower) ||
+    /^with\s+retry\b/.test(lower) ||
+    /^(inner|left|right|cross)\s+join\b/.test(lower) ||
+    /^join\b/.test(lower)
+  );
+}
+
+/**
+ * @param {string} lower
+ */
+function isSelectBranch(lower) {
+  return /^(selectdo|selectempty|selecteos|selecterror)\b/.test(lower);
+}
+
+/**
+ * @param {string} lower
+ */
+function isFunctionHeaderStart(lower) {
+  return /^function\b/.test(lower);
+}
 
 /**
  * @param {vscode.TextDocument} document
@@ -605,12 +662,19 @@ function formatDocument(document, indentSize) {
   /** @type {vscode.TextEdit[]} */
   const edits = [];
   let level = 0;
-  /** @type {number[]} stack of indent levels for open blocks */
+  /** @type {number[]} */
   const stack = [];
 
-  /** @type {'none' | 'if' | 'elif'} multi-line condition waiting for "then" */
+  /** @type {'none' | 'if' | 'elif'} */
   let pendingCond = 'none';
   let inBlockComment = false;
+
+  let paramParenDepth = 0;
+  let paramAlignCol = 0;
+  let functionHeaderLevel = 0;
+
+  let inSelectHeader = false;
+  let selectBaseLevel = 0;
 
   for (let i = 0; i < document.lineCount; i++) {
     const line = document.lineAt(i);
@@ -645,7 +709,11 @@ function formatDocument(document, indentSize) {
       continue;
     }
 
-    if (/^#\s*(include|define|undef|if|ifdef|ifndef|else|elif|endif|pragma|ident)\b/i.test(trimmed)) {
+    if (
+      /^#\s*(include|define|undef|if|ifdef|ifndef|else|elif|endif|pragma|ident)\b/i.test(
+        trimmed
+      )
+    ) {
       if (raw !== trimmed) {
         edits.push(vscode.TextEdit.replace(line.range, trimmed));
       }
@@ -664,23 +732,53 @@ function formatDocument(document, indentSize) {
     const lower = code.toLowerCase();
     let current = level;
 
-    // Continuation of multi-line if/elif condition (and / or / (...) before then)
+    // Multi-line function parameter list
+    if (paramParenDepth > 0) {
+      const expected = ' '.repeat(paramAlignCol) + trimmed;
+      if (raw !== expected) {
+        edits.push(vscode.TextEdit.replace(line.range, expected));
+      }
+
+      const pd = parenDelta(raw);
+      paramParenDepth += pd.delta;
+      if (paramParenDepth < 0) {
+        paramParenDepth = 0;
+      }
+
+      if (paramParenDepth === 0 && /\{/.test(code)) {
+        stack.push(functionHeaderLevel);
+        level = functionHeaderLevel + 1;
+      }
+      continue;
+    }
+
+    // Multi-line if/elif condition
     const isCondContinuation =
       pendingCond !== 'none' &&
-      !/^(endif|else|elif|endwhile|endfor|endcase|endselect|until)\b/.test(lower) &&
+      !/^(endif|else|elif|endwhile|endfor|endcase|endselect|until)\b/.test(
+        lower
+      ) &&
       !/^(if|while|for|repeat|on\s+case|function|select)\b/.test(lower);
 
     if (isCondContinuation) {
-      // indent one more than the if/elif line
       current = level;
       const expected = indentStr.repeat(current) + trimmed;
       if (raw !== expected) {
         edits.push(vscode.TextEdit.replace(line.range, expected));
       }
       if (/\bthen\b/.test(lower)) {
-        // condition finished → body is parent+1; stack already has parent level
         pendingCond = 'none';
         level = current + 1;
+      }
+      continue;
+    }
+
+    // SQL header clauses at select indent
+    if (inSelectHeader && isSqlClauseKeyword(lower)) {
+      current = selectBaseLevel;
+      const expected = indentStr.repeat(current) + trimmed;
+      if (raw !== expected) {
+        edits.push(vscode.TextEdit.replace(line.range, expected));
       }
       continue;
     }
@@ -692,11 +790,14 @@ function formatDocument(document, indentSize) {
 
     const isMid =
       /^(else|elif)\b/.test(lower) ||
-      /^(selectdo|selectempty|selecteos|selecterror)\b/.test(lower) ||
+      isSelectBranch(lower) ||
       /^case\b/.test(lower) ||
       /^default\s*:/.test(lower);
 
     if (isCloser) {
+      if (/^endselect\b/.test(lower)) {
+        inSelectHeader = false;
+      }
       if (stack.length > 0) {
         current = stack.pop();
       } else {
@@ -708,11 +809,13 @@ function formatDocument(document, indentSize) {
       if (stack.length > 0) {
         current = stack[stack.length - 1];
       }
+      if (isSelectBranch(lower)) {
+        inSelectHeader = false;
+      }
     } else {
       current = level;
     }
 
-    // Openers
     if (!isCloser) {
       if (/^if\b/.test(lower)) {
         stack.push(current);
@@ -720,12 +823,10 @@ function formatDocument(document, indentSize) {
           level = current + 1;
           pendingCond = 'none';
         } else {
-          // multi-line condition
           pendingCond = 'if';
-          level = current + 1; // continuation lines
+          level = current + 1;
         }
       } else if (/^elif\b/.test(lower)) {
-        // mid: already set current to parent
         if (/\bthen\b/.test(lower)) {
           level = current + 1;
           pendingCond = 'none';
@@ -736,9 +837,7 @@ function formatDocument(document, indentSize) {
       } else if (/^(else)\b/.test(lower)) {
         level = current + 1;
         pendingCond = 'none';
-      } else if (
-        /^(selectdo|selectempty|selecteos|selecterror)\b/.test(lower)
-      ) {
+      } else if (isSelectBranch(lower)) {
         level = current + 1;
       } else if (/^case\b/.test(lower) || /^default\s*:/.test(lower)) {
         level = current + 1;
@@ -746,16 +845,30 @@ function formatDocument(document, indentSize) {
         /^while\b/.test(lower) ||
         /^for\b/.test(lower) ||
         /^repeat\b/.test(lower) ||
-        /^on\s+case\b/.test(lower) ||
-        (/^select\b/.test(lower) &&
-          !/^(selectdo|selectempty|selecteos|selecterror|selectbind)\b/.test(
-            lower
-          ))
+        /^on\s+case\b/.test(lower)
       ) {
         stack.push(current);
         level = current + 1;
-      } else if (/^function\b/.test(lower)) {
-        if (/\{/.test(code)) {
+      } else if (
+        /^select\b/.test(lower) &&
+        !/^(selectdo|selectempty|selecteos|selecterror|selectbind)\b/.test(
+          lower
+        )
+      ) {
+        stack.push(current);
+        selectBaseLevel = current;
+        inSelectHeader = true;
+        level = current;
+      } else if (isFunctionHeaderStart(lower)) {
+        functionHeaderLevel = current;
+        const pd = parenDelta(raw);
+        if (pd.delta > 0) {
+          paramParenDepth = pd.delta;
+          paramAlignCol = firstParamColumn(
+            raw,
+            current * indentSize + indentSize
+          );
+        } else if (/\{/.test(code)) {
           stack.push(current);
           level = current + 1;
         }
@@ -774,10 +887,6 @@ function formatDocument(document, indentSize) {
   return edits;
 }
 
-// =============================================================================
-// Diagnostics
-// =============================================================================
-
 /**
  * @param {vscode.TextDocument} document
  * @param {vscode.DiagnosticCollection} collection
@@ -790,13 +899,7 @@ function runDiagnostics(document, collection, cfg) {
 
   /** @type {vscode.Diagnostic[]} */
   const diagnostics = [];
-  /**
-   * Block frames.
-   * type:
-   *   'if' | 'if-pending' | 'while' | 'for' | 'repeat' | 'case' | 'select' |
-   *   'function' | 'function-pending' | 'brace' | 'pp-if'
-   * @type {BlockFrame[]}
-   */
+  /** @type {BlockFrame[]} */
   const stack = [];
 
   let full = document.getText();
@@ -833,7 +936,6 @@ function runDiagnostics(document, collection, cfg) {
       }
     }
 
-    // Preprocessor
     if (/^\s*#/.test(trimmed)) {
       const pp = trimmed.toLowerCase();
       if (/^#\s*(if|ifdef|ifndef)\b/.test(pp)) {
@@ -859,12 +961,7 @@ function runDiagnostics(document, collection, cfg) {
     const code = trimmed;
     const lower = code.toLowerCase();
 
-    // ------------------------------------------------------------------
-    // Resolve pending IF / ELIF when we finally see THEN
-    // (handles: if cond and\n  (x or y) then)
-    // ------------------------------------------------------------------
     if (/\bthen\b/.test(lower)) {
-      // Close pending if/elif opened earlier
       for (let s = stack.length - 1; s >= 0; s--) {
         if (stack[s].type === 'if-pending') {
           stack[s].type = 'if';
@@ -873,12 +970,7 @@ function runDiagnostics(document, collection, cfg) {
       }
     }
 
-    // ------------------------------------------------------------------
-    // Openers
-    // ------------------------------------------------------------------
     if (/^if\b/.test(lower)) {
-      // Same-line: if ... then  → open immediately
-      // Multi-line: if ...      → pending until then
       if (/\bthen\b/.test(lower)) {
         stack.push({ type: 'if', line: i, text: code });
       } else {
@@ -912,11 +1004,7 @@ function runDiagnostics(document, collection, cfg) {
       }
     }
 
-    // ------------------------------------------------------------------
-    // Mid-level checks
-    // ------------------------------------------------------------------
     if (/^(else|elif)\b/.test(lower)) {
-      // Accept open 'if' OR still-pending 'if-pending' (then on later line already resolved above if present)
       const top = findTop(stack, t => t === 'if' || t === 'if-pending');
       if (!top) {
         diagnostics.push(
@@ -928,7 +1016,6 @@ function runDiagnostics(document, collection, cfg) {
           )
         );
       } else if (top.type === 'if-pending') {
-        // else/elif arrived before then → real syntax problem
         diagnostics.push(
           diag(
             document,
@@ -937,11 +1024,6 @@ function runDiagnostics(document, collection, cfg) {
             vscode.DiagnosticSeverity.Error
           )
         );
-      }
-
-      // elif may itself be multi-line: elif cond and\n  x then
-      if (/^elif\b/.test(lower) && !/\bthen\b/.test(lower)) {
-        // does not nest a new if frame; elif is mid of existing if
       }
     }
 
@@ -973,11 +1055,7 @@ function runDiagnostics(document, collection, cfg) {
       }
     }
 
-    // ------------------------------------------------------------------
-    // Closers
-    // ------------------------------------------------------------------
     if (/^endif\b/.test(lower)) {
-      // Prefer matching 'if'; also allow stale 'if-pending' if then was never seen
       matchClose(stack, diagnostics, document, i, ['if', 'if-pending'], 'endif');
     } else if (/^endwhile\b/.test(lower)) {
       matchClose(stack, diagnostics, document, i, ['while'], 'endwhile');
@@ -1000,7 +1078,6 @@ function runDiagnostics(document, collection, cfg) {
       }
     }
 
-    // Soft warnings
     if (/\bendfunction\b/i.test(lower)) {
       diagnostics.push(
         diag(
@@ -1033,7 +1110,6 @@ function runDiagnostics(document, collection, cfg) {
     }
   }
 
-  // Unclosed
   while (stack.length) {
     const b = stack.pop();
     if (b.type === 'function-pending') {
@@ -1084,7 +1160,6 @@ function runDiagnostics(document, collection, cfg) {
 }
 
 /**
- * Match a closer against one of several acceptable open types.
  * @param {BlockFrame[]} stack
  * @param {vscode.Diagnostic[]} diagnostics
  * @param {vscode.TextDocument} document

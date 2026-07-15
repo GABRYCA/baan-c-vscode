@@ -29,7 +29,7 @@
   },
   "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
   "indentationRules": {
-    "increaseIndentPattern": "(?i)^\\s*(if\\b.*\\bthen\\s*$|else\\s*$|elif\\b.*\\bthen\\s*$|while\\b|for\\b|repeat\\s*$|on\\s+case\\b|case\\b|default\\s*:|function\\b.*\\{\\s*$|select\\b|selectdo\\s*$|selectempty\\s*$|selecteos\\s*$|selecterror\\s*$|\\{\\s*$)",
+    "increaseIndentPattern": "(?i)^\\s*(if\\b.*\\bthen\\s*$|else\\s*$|elif\\b.*\\bthen\\s*$|while\\b|for\\b|repeat\\s*$|on\\s+case\\b|case\\b|default\\s*:|function\\b.*\\{\\s*$|selectdo\\s*$|selectempty\\s*$|selecteos\\s*$|selecterror\\s*$|\\{\\s*$)",
     "decreaseIndentPattern": "(?i)^\\s*(endif|else|elif|endwhile|endfor|until|endcase|endselect|selectdo|selectempty|selecteos|selecterror|\\})\\b"
   },
   "onEnterRules": [
@@ -45,6 +45,10 @@
     {
       "beforeText": "(?i)^\\s*(endif|endwhile|endfor|until|endcase|endselect|\\})\\s*$",
       "action": { "indent": "outdent" }
+    },
+    {
+      "beforeText": "(?i)^\\s*(select|from|where|and|or|having|group\\s+by|order\\s+by|as\\s+set\\s+with|for\\s+update|with\\s+retry|union|join|inner\\s+join|left\\s+join|right\\s+join|cross\\s+join)\\b.*$",
+      "action": { "indent": "none" }
     }
   ]
 }
