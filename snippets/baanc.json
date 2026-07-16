@@ -185,14 +185,21 @@
     "description": "EXTERN variable declaration"
   },
   "Define macro": {
-    "prefix": "define",
+    "prefix": ["#define", "define"],
     "body": [
       "#define ${1:NAME} ${2:value}"
     ],
-    "description": "#define macro"
+    "description": "#define macro (wordPattern treats #NAME as one word so no ##)"
+  },
+  "Undef macro": {
+    "prefix": ["#undef", "undef"],
+    "body": [
+      "#undef ${1:NAME}"
+    ],
+    "description": "#undef macro"
   },
   "Ifdef block": {
-    "prefix": "ifdef",
+    "prefix": ["#ifdef", "ifdef"],
     "body": [
       "#ifdef ${1:MACRO}",
       "\t$0",
@@ -200,12 +207,51 @@
     ],
     "description": "#ifdef ... #endif"
   },
-  "Include": {
-    "prefix": "include",
+  "Ifndef block": {
+    "prefix": ["#ifndef", "ifndef"],
     "body": [
-      "#include \"${1:filename}\""
+      "#ifndef ${1:MACRO}",
+      "\t$0",
+      "#endif"
     ],
-    "description": "#include \"file\""
+    "description": "#ifndef ... #endif"
+  },
+  "If preprocessor": {
+    "prefix": ["#if", "ppif"],
+    "body": [
+      "#if ${1:expression}",
+      "\t$0",
+      "#endif"
+    ],
+    "description": "#if ... #endif"
+  },
+  "Include quotes": {
+    "prefix": ["#include", "include"],
+    "body": [
+      "#include \"${1:itxadv0000}\""
+    ],
+    "description": "#include \"file\" (application / redirected)"
+  },
+  "Include angle": {
+    "prefix": ["#include<", "include<"],
+    "body": [
+      "#include <${1:filename}>"
+    ],
+    "description": "#include <system header>"
+  },
+  "Pragma": {
+    "prefix": ["#pragma", "pragma"],
+    "body": [
+      "#pragma ${1|debug,nowarnings,warnings,notransactions,strict_boolean,sticky,used|} ${2}"
+    ],
+    "description": "#pragma compiler option"
+  },
+  "Ident": {
+    "prefix": ["#ident", "ident"],
+    "body": [
+      "#ident \"@(#)${1:Identification of object}\""
+    ],
+    "description": "#ident object identification"
   },
   "4GL declaration section": {
     "prefix": "declaration",
@@ -218,7 +264,7 @@
     "description": "4GL declaration: section"
   },
   "4GL before.program": {
-    "prefix": "before.program",
+    "prefix": ["before.program", "before."],
     "body": [
       "before.program:",
       "\t$0"
@@ -233,6 +279,22 @@
     ],
     "description": "4GL after.program: section"
   },
+  "4GL before.checks": {
+    "prefix": ["before.checks", "before.ch"],
+    "body": [
+      "before.checks:",
+      "\t$0"
+    ],
+    "description": "4GL before.checks: subsection"
+  },
+  "4GL when.field.changes": {
+    "prefix": "when.field.changes",
+    "body": [
+      "when.field.changes:",
+      "\t$0"
+    ],
+    "description": "4GL when.field.changes: subsection"
+  },
   "4GL field section": {
     "prefix": "field.",
     "body": [
@@ -243,6 +305,17 @@
       "\t\t"
     ],
     "description": "4GL field.<name>: section"
+  },
+  "4GL main.table.io": {
+    "prefix": "main.table.io",
+    "body": [
+      "main.table.io:",
+      "\tbefore.write:",
+      "\t\t$0",
+      "\tafter.read:",
+      "\t\t"
+    ],
+    "description": "4GL main.table.io: section"
   },
   "Message": {
     "prefix": "message",

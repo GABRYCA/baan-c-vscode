@@ -2,7 +2,7 @@
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
   "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, hovers, symbols, and more",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
@@ -11,7 +11,7 @@
   },
   "license": "MIT",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.125.0"
   },
   "categories": [
     "Programming Languages",
@@ -133,12 +133,16 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
         "editor.detectIndentation": false,
-        "editor.wordBasedSuggestions": "matchingDocuments",
+        "editor.wordBasedSuggestions": "allDocuments",
+        "editor.suggest.localityBonus": true,
+        "editor.suggest.showWords": true,
         "editor.quickSuggestions": {
           "other": true,
           "comments": false,
           "strings": false
         },
+        "editor.acceptSuggestionOnEnter": "on",
+        "editor.suggestSelection": "first",
         "files.trimTrailingWhitespace": true
       }
     }
@@ -151,9 +155,9 @@
     "lint": "eslint src"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.125.0",
     "@types/node": "^20.0.0",
-    "esbuild": "^0.25.0",
-    "eslint": "^9.0.0"
+    "esbuild": "^0.28.1",
+    "eslint": "^10.7.0"
   }
 }

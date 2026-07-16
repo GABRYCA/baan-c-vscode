@@ -27,7 +27,7 @@
       "end": "(?i)^\\s*(endif|endwhile|endfor|until|endcase|endselect|\\}|after\\.program:)"
     }
   },
-  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|(#?[A-Za-z_][\\w.]*)",
   "indentationRules": {
     "increaseIndentPattern": "(?i)^\\s*(if\\b.*\\bthen\\s*$|else\\s*$|elif\\b.*\\bthen\\s*$|while\\b|for\\b|repeat\\s*$|on\\s+case\\b|case\\b|default\\s*:|function\\b.*\\{\\s*$|selectdo\\s*$|selectempty\\s*$|selecteos\\s*$|selecterror\\s*$|\\{\\s*$)",
     "decreaseIndentPattern": "(?i)^\\s*(endif|else|elif|endwhile|endfor|until|endcase|endselect|selectdo|selectempty|selecteos|selecterror|\\})\\b"

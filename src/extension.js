@@ -34,29 +34,167 @@ const SQL_KEYWORDS = [
   'selectbind', 'wherebind', 'for update', 'with retry',
   'union', 'distinct', 'join', 'inner join', 'left join', 'right join',
   'between', 'in', 'like', 'alike', 'exists', 'is null', 'not null',
-  'refers to', 'order by', 'group by',
+  'refers to',
   'and', 'or', 'not',
   'as set with'
 ];
 
-const PREPROCESSOR = [
-  '#include', '#define', '#undef', '#if', '#ifdef', '#ifndef',
-  '#else', '#elif', '#endif', '#pragma', '#ident',
-  '__FILE__', '__LINE__', '__FUNCTION__', '__FUNCTION_CP__', '__OBJECT__'
+/**
+ * Preprocessor directives from Baan docs.
+ * Labels include the leading "#". Completions replace any already-typed
+ * "#partial" so you never get "##define".
+ */
+const PREPROCESSOR_DIRECTIVES = [
+  {
+    label: '#include',
+    insertText: new vscode.SnippetString('#include "${1:filename}"'),
+    detail: 'preprocessor · #include "file"',
+    documentation: 'Include a file (quotes use redirection; <file> uses $BSE/include).'
+  },
+  {
+    label: '#include<>',
+    insertText: new vscode.SnippetString('#include <${1:filename}>'),
+    detail: 'preprocessor · #include <system>',
+    documentation: 'Include a system header from $BSE/include.'
+  },
+  {
+    label: '#define',
+    insertText: new vscode.SnippetString('#define ${1:NAME} ${2:value}'),
+    detail: 'preprocessor · #define',
+    documentation: 'Define a macro (optional parameters; continue long bodies with ^).'
+  },
+  {
+    label: '#undef',
+    insertText: new vscode.SnippetString('#undef ${1:NAME}'),
+    detail: 'preprocessor · #undef',
+    documentation: 'Remove a macro definition (argument count must match definition).'
+  },
+  {
+    label: '#if',
+    insertText: new vscode.SnippetString('#if ${1:expression}\n\t$0\n#endif'),
+    detail: 'preprocessor · #if',
+    documentation: 'Compile block if constant expression is true.'
+  },
+  {
+    label: '#ifdef',
+    insertText: new vscode.SnippetString('#ifdef ${1:MACRO}\n\t$0\n#endif'),
+    detail: 'preprocessor · #ifdef',
+    documentation: 'Compile block if MACRO is defined.'
+  },
+  {
+    label: '#ifndef',
+    insertText: new vscode.SnippetString('#ifndef ${1:MACRO}\n\t$0\n#endif'),
+    detail: 'preprocessor · #ifndef',
+    documentation: 'Compile block if MACRO is not defined.'
+  },
+  {
+    label: '#else',
+    insertText: '#else',
+    detail: 'preprocessor · #else'
+  },
+  {
+    label: '#elif',
+    insertText: new vscode.SnippetString('#elif ${1:expression}'),
+    detail: 'preprocessor · #elif'
+  },
+  {
+    label: '#endif',
+    insertText: '#endif',
+    detail: 'preprocessor · #endif'
+  },
+  {
+    label: '#pragma',
+    insertText: new vscode.SnippetString(
+      '#pragma ${1|debug,nowarnings,warnings,notransactions,strict_boolean,sticky,warning,fatal,used|} ${2}'
+    ),
+    detail: 'preprocessor · #pragma',
+    documentation: 'Compiler options / where-used hints (used session|table|dll|...).'
+  },
+  {
+    label: '#ident',
+    insertText: new vscode.SnippetString('#ident "@(#)${1:Identification of object}"'),
+    detail: 'preprocessor · #ident',
+    documentation: 'Custom object identification string for the what(1) utility.'
+  }
 ];
 
+const PREPROCESSOR_BUILTINS = [
+  '__FILE__',
+  '__LINE__',
+  '__FUNCTION__',
+  '__FUNCTION_CP__',
+  '__OBJECT__'
+];
+
+/**
+ * 4GL main sections + subsections from the Infor LN programming guide.
+ * Dotted names are one completion unit so typing "before." keeps matching.
+ */
 const FOURGL_SECTIONS = [
-  'declaration:', 'before.program:', 'after.program:', 'on.error:',
-  'after.form.read:', 'after.update.db.commit:',
-  'before.display.object:', 'after.display.object:',
-  'main.table.io:', 'functions:',
-  'before.input:', 'after.input:', 'before.display:', 'after.display:',
-  'before.checks:', 'after.checks:', 'before.field:', 'after.field:',
-  'when.field.changes:', 'before.zoom:', 'after.zoom:',
-  'before.choice:', 'after.choice:', 'on.choice:',
-  'before.form:', 'after.form:', 'before.group:', 'after.group:',
-  'before.read:', 'after.read:', 'before.write:', 'after.write:',
-  'before.rewrite:', 'after.rewrite:', 'before.delete:', 'after.delete:'
+  'declaration:',
+  'before.program:',
+  'after.form.read:',
+  'on.error:',
+  'after.program:',
+  'after.update.db.commit:',
+  'before.display.object:',
+  'after.display.object:',
+  'before.new.object:',
+  'on.display.total.line:',
+  'functions:',
+  'field.${1:table.field}:',
+  'field.all:',
+  'field.other:',
+  'form.${1:1}:',
+  'form.all:',
+  'form.other:',
+  'group.${1:1}:',
+  'choice.${1:command}:',
+  'zoom.from.${1:name}:',
+  'zoom.from.all:',
+  'zoom.from.other:',
+  'main.table.io:',
+  'init.field:',
+  'before.field:',
+  'after.field:',
+  'before.input:',
+  'after.input:',
+  'before.display:',
+  'after.display:',
+  'selection.filter:',
+  'before.zoom:',
+  'after.zoom:',
+  'before.checks:',
+  'domain.error:',
+  'ref.input:',
+  'ref.display:',
+  'check.input:',
+  'on.input:',
+  'when.field.changes:',
+  'before.choice:',
+  'on.choice:',
+  'after.choice:',
+  'init.form:',
+  'before.form:',
+  'after.form:',
+  'init.group:',
+  'before.group:',
+  'after.group:',
+  'read.view:',
+  'before.read:',
+  'after.read:',
+  'before.write:',
+  'after.write:',
+  'before.rewrite:',
+  'after.rewrite:',
+  'after.skip.write:',
+  'after.skip.rewrite:',
+  'before.delete:',
+  'after.delete:',
+  'after.skip.delete:',
+  'on.main.table:',
+  'on.entry:',
+  'on.exit:'
 ];
 
 const CONSTANTS = ['true', 'false', 'pi', 'TRUE', 'FALSE', 'PI'];
@@ -111,11 +249,15 @@ const HOVER_DOCS = {
   and: 'Logical AND (3GL) / boolean search condition AND (embedded SQL).',
   or: 'Logical OR (3GL) / boolean search condition OR (embedded SQL).',
   not: 'Logical NOT (unary).',
-  void: 'Function return type meaning “no value”.'
+  void: 'Function return type meaning “no value”.',
+  include: '```baanc\n#include "filename"\n#include <filename>\n```\nPreprocessor include. Quotes use file redirection; angle brackets use $BSE/include.',
+  define: '```baanc\n#define NAME value\n```\nDefine a preprocessor macro.',
+  pragma: 'Preprocessor compiler option / where-used hint (`#pragma used table ...`).'
 };
 
 /**
- * @param {vscode.ExtensionContext} context
+ * Activates the extension.
+ * @param {import('vscode').ExtensionContext} context
  */
 function activate(context) {
   const selector = { language: 'baanc', scheme: 'file' };
@@ -138,48 +280,155 @@ function activate(context) {
   const completionProvider = vscode.languages.registerCompletionItemProvider(
     selector,
     {
+      /**
+       * @param {vscode.TextDocument} document
+       * @param {vscode.Position} position
+       */
       provideCompletionItems(document, position) {
         const line = document.lineAt(position).text;
         const prefix = line.slice(0, position.character);
         /** @type {vscode.CompletionItem[]} */
         const items = [];
+        const seen = new Set();
 
-        const add = (label, kind, detail, insertText) => {
+        /**
+         * @param {string} label
+         * @param {vscode.CompletionItemKind} kind
+         * @param {string} detail
+         * @param {{ insertText?: string|vscode.SnippetString, range?: vscode.Range, filterText?: string, sortText?: string, documentation?: string }} [opts]
+         */
+        const add = (label, kind, detail, opts = {}) => {
+          const key = `${label}||${detail}`;
+          if (seen.has(key)) {
+            return;
+          }
+          seen.add(key);
           const item = new vscode.CompletionItem(label, kind);
           item.detail = detail;
-          if (insertText) {
-            item.insertText = insertText;
+          if (opts.insertText !== undefined) {
+            item.insertText = opts.insertText;
+          }
+          if (opts.range) {
+            item.range = opts.range;
+          }
+          if (opts.filterText) {
+            item.filterText = opts.filterText;
+          }
+          if (opts.sortText) {
+            item.sortText = opts.sortText;
+          }
+          if (opts.documentation) {
+            item.documentation = new vscode.MarkdownString(opts.documentation);
           }
           items.push(item);
         };
 
+        // Preprocessor: replace "#partial" as a unit (never "##define")
+        const ppPartial = getPreprocessorPartial(prefix, position);
+        if (ppPartial && cfg.completionIncludePreprocessor) {
+          for (const d of PREPROCESSOR_DIRECTIVES) {
+            add(d.label, vscode.CompletionItemKind.Snippet, d.detail, {
+              insertText: d.insertText,
+              range: ppPartial.range,
+              filterText: d.label,
+              sortText: `0_${d.label}`,
+              documentation: d.documentation
+            });
+          }
+          return items;
+        }
+
+        if (cfg.completionIncludePreprocessor) {
+          PREPROCESSOR_BUILTINS.forEach(k =>
+            add(k, vscode.CompletionItemKind.Constant, 'preprocessor macro', {
+              sortText: `2_${k}`
+            })
+          );
+        }
+
+        // 4GL dotted sections: keep suggesting after "before."
+        if (cfg.completionInclude4gl) {
+          const sectionPartial = getDottedSectionPartial(prefix, position);
+          for (const sec of FOURGL_SECTIONS) {
+            const isSnippet = sec.includes('${');
+            const label = isSnippet
+              ? sec.replace(/\$\{\d+:?([^}]*)\}/g, '$1')
+              : sec;
+            const insert = isSnippet
+              ? new vscode.SnippetString(sec)
+              : sec;
+            /** @type {{ insertText: string|vscode.SnippetString, filterText: string, sortText: string, range?: vscode.Range }} */
+            const opts = {
+              insertText: insert,
+              filterText: label,
+              sortText: `1_${label}`
+            };
+            if (sectionPartial) {
+              opts.range = sectionPartial.range;
+            }
+            add(label, vscode.CompletionItemKind.Module, '4GL section', opts);
+          }
+        }
+
         CONTROL_KEYWORDS.forEach(k =>
-          add(k, vscode.CompletionItemKind.Keyword, 'keyword')
+          add(k, vscode.CompletionItemKind.Keyword, 'keyword', {
+            sortText: `3_${k}`
+          })
         );
         TYPE_KEYWORDS.forEach(k =>
-          add(k, vscode.CompletionItemKind.TypeParameter, 'type')
+          add(k, vscode.CompletionItemKind.TypeParameter, 'type', {
+            sortText: `3_${k}`
+          })
         );
         STORAGE_KEYWORDS.forEach(k =>
-          add(k, vscode.CompletionItemKind.Keyword, 'storage')
+          add(k, vscode.CompletionItemKind.Keyword, 'storage', {
+            sortText: `3_${k}`
+          })
         );
         CONSTANTS.forEach(k =>
-          add(k, vscode.CompletionItemKind.Constant, 'constant')
+          add(k, vscode.CompletionItemKind.Constant, 'constant', {
+            sortText: `3_${k}`
+          })
         );
 
         if (cfg.completionIncludeSql) {
           SQL_KEYWORDS.forEach(k =>
-            add(k, vscode.CompletionItemKind.Keyword, 'SQL')
+            add(k, vscode.CompletionItemKind.Keyword, 'SQL', {
+              sortText: `4_${k}`
+            })
           );
         }
-        if (cfg.completionIncludePreprocessor) {
-          PREPROCESSOR.forEach(k =>
-            add(k, vscode.CompletionItemKind.Snippet, 'preprocessor')
-          );
+
+        // Directives also without having typed '#' yet
+        if (cfg.completionIncludePreprocessor && !ppPartial) {
+          for (const d of PREPROCESSOR_DIRECTIVES) {
+            add(d.label, vscode.CompletionItemKind.Snippet, d.detail, {
+              insertText: d.insertText,
+              filterText: d.label.replace(/^#/, '') + ' ' + d.label,
+              sortText: `5_${d.label}`,
+              documentation: d.documentation
+            });
+          }
         }
-        if (cfg.completionInclude4gl) {
-          FOURGL_SECTIONS.forEach(k =>
-            add(k, vscode.CompletionItemKind.Module, '4GL section')
-          );
+
+        // Document-local symbols (tables, functions, declarations)
+        const locals = collectDocumentCompletions(document);
+        for (const t of locals.tables) {
+          add(t, vscode.CompletionItemKind.Struct, 'table (this file)', {
+            sortText: `0_table_${t}`
+          });
+        }
+        for (const f of locals.functions) {
+          add(f, vscode.CompletionItemKind.Function, 'function (this file)', {
+            insertText: new vscode.SnippetString(`${f}($0)`),
+            sortText: `0_fn_${f}`,
+            filterText: f
+          });
+        }
+        for (const v of locals.variables) {
+          add(v, vscode.CompletionItemKind.Variable, 'declaration (this file)', {
+            sortText: `0_var_${v}`
+          });
         }
 
         const blockSnippets = [
@@ -206,6 +455,10 @@ function activate(context) {
           {
             label: 'select-endselect',
             body: 'select ${1:*}\nfrom ${2:table}\nwhere ${3:cond}\nselectdo\n\t$0\nendselect'
+          },
+          {
+            label: 'include-file',
+            body: '#include "${1:itxadv0000}"'
           }
         ];
         blockSnippets.forEach(s => {
@@ -215,30 +468,28 @@ function activate(context) {
           );
           item.insertText = new vscode.SnippetString(s.body);
           item.detail = 'Baan C block';
+          item.sortText = `6_${s.label}`;
           items.push(item);
         });
-
-        if (/^\s*#\w*$/.test(prefix.trimStart() === '#' ? '#' : prefix)) {
-          // keep all; VS Code filters
-        }
 
         return items;
       }
     },
-    '#', '.'
+    '#',
+    '.'
   );
 
   const hoverProvider = vscode.languages.registerHoverProvider(selector, {
     provideHover(document, position) {
       const wordRange = document.getWordRangeAtPosition(
         position,
-        /[A-Za-z_][\w.]*/
+        /#?[A-Za-z_][\w.]*/
       );
       if (!wordRange) {
         return null;
       }
       const word = document.getText(wordRange);
-      const key = word.toLowerCase();
+      const key = word.replace(/^#/, '').toLowerCase();
 
       const line = document.lineAt(position.line).text;
       const lower = line.toLowerCase();
@@ -536,6 +787,124 @@ function loadConfig() {
 }
 
 /**
+ * If typing a preprocessor directive (optional leading spaces then "#..."),
+ * return the range covering "#partial" so acceptance never produces "##define".
+ * @param {string} prefix
+ * @param {vscode.Position} position
+ * @returns {{ range: vscode.Range, text: string } | null}
+ */
+function getPreprocessorPartial(prefix, position) {
+  const m = /^(\s*)(#\w*)$/.exec(prefix);
+  if (!m) {
+    return null;
+  }
+  const startCol = m[1].length;
+  return {
+    text: m[2],
+    range: new vscode.Range(
+      position.line,
+      startCol,
+      position.line,
+      position.character
+    )
+  };
+}
+
+/**
+ * Dotted identifier for 4GL sections / table.field, e.g. "before." or "before.ch".
+ * @param {string} prefix
+ * @param {vscode.Position} position
+ * @returns {{ range: vscode.Range, text: string } | null}
+ */
+function getDottedSectionPartial(prefix, position) {
+  const m = /([A-Za-z_][\w.]*)\s*$/.exec(prefix);
+  if (!m) {
+    const m2 = /([A-Za-z_][\w.]*\.)\s*$/.exec(prefix);
+    if (!m2) {
+      return null;
+    }
+    const startCol = position.character - m2[1].length;
+    return {
+      text: m2[1],
+      range: new vscode.Range(
+        position.line,
+        startCol,
+        position.line,
+        position.character
+      )
+    };
+  }
+  const startCol = position.character - m[1].length;
+  return {
+    text: m[1],
+    range: new vscode.Range(
+      position.line,
+      startCol,
+      position.line,
+      position.character
+    )
+  };
+}
+
+/**
+ * Scan the current document for tables, functions and named declarations.
+ * @param {vscode.TextDocument} document
+ */
+function collectDocumentCompletions(document) {
+  /** @type {Set<string>} */
+  const tables = new Set();
+  /** @type {Set<string>} */
+  const functions = new Set();
+  /** @type {Set<string>} */
+  const variables = new Set();
+
+  const functionRe =
+    /^\s*function(?:\s+(?:extern|static))?(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
+  const tableRe = /^\s*table\s+(t[\w.]+)/i;
+  const domainRe = /^\s*domain\s+[\w.]+\s+([A-Za-z_][\w.]*)/i;
+  const typedVarRe =
+    /^\s*(?:extern\s+)?(?:long|double|boolean|string)\s+([A-Za-z_][\w.]*)/i;
+  const tableUseRe = /\b(t[a-z]{2,6}\d{3}[a-z0-9]*)\b/gi;
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const raw = document.lineAt(i).text;
+    const text = stripLineComment(raw);
+    if (!text.trim()) {
+      continue;
+    }
+
+    let m = functionRe.exec(text);
+    if (m) {
+      functions.add(m[1]);
+    }
+    m = tableRe.exec(text);
+    if (m) {
+      tables.add(m[1]);
+    }
+    m = domainRe.exec(text);
+    if (m) {
+      variables.add(m[1]);
+    }
+    m = typedVarRe.exec(text);
+    if (m) {
+      variables.add(m[1]);
+    }
+
+    tableUseRe.lastIndex = 0;
+    let um;
+    while ((um = tableUseRe.exec(text)) !== null) {
+      tables.add(um[1]);
+    }
+  }
+
+  return {
+    tables: [...tables],
+    functions: [...functions],
+    variables: [...variables]
+  };
+}
+
+/**
  * @param {string} line
  */
 function stripLineComment(line) {
@@ -732,7 +1101,6 @@ function formatDocument(document, indentSize) {
     const lower = code.toLowerCase();
     let current = level;
 
-    // Multi-line function parameter list
     if (paramParenDepth > 0) {
       const expected = ' '.repeat(paramAlignCol) + trimmed;
       if (raw !== expected) {
@@ -752,7 +1120,6 @@ function formatDocument(document, indentSize) {
       continue;
     }
 
-    // Multi-line if/elif condition
     const isCondContinuation =
       pendingCond !== 'none' &&
       !/^(endif|else|elif|endwhile|endfor|endcase|endselect|until)\b/.test(
@@ -773,7 +1140,6 @@ function formatDocument(document, indentSize) {
       continue;
     }
 
-    // SQL header clauses at select indent
     if (inSelectHeader && isSqlClauseKeyword(lower)) {
       current = selectBaseLevel;
       const expected = indentStr.repeat(current) + trimmed;
