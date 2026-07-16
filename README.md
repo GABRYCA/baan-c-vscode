@@ -29,6 +29,12 @@ This extension contributes the following settings that can be tweaked in VS Code
 
 - Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files. 
 
+## Building:
+
+- Run: `npx @vscode/vsce package`
+- Locate the built extension on the root folder (witht the `.vsix` extension).
+- Open VSCode and do `Ctrl+Shift+P` then `Extensions: Install from vsix`, select the file and click `Install`
+
 ## Release Notes
 
 ### 1.0.1
