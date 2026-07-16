@@ -32,11 +32,26 @@ This extension contributes the following settings that can be tweaked in VS Code
 ## Building:
 
 - Run: `npx @vscode/vsce package`
-- Locate the built extension on the root folder (witht the `.vsix` extension).
+- Locate the built extension on the root folder (with the `.vsix` extension).
 - Open VSCode and do `Ctrl+Shift+P` then `Extensions: Install from vsix`, select the file and click `Install`
 
 ## Release Notes
 
-### 1.0.1
+## [1.0.2] - 16-07-2026
 
-- Initial release containing Syntax highlighting, Snippets, Formatter, Diagnostic linter, and Symbol definitions.
+### Added
+
+- Partially typing the name of a `table` already declared within the file automatically suggests it.
+- Partially typing the name of a `function` already declared within the file automatically suggests it.
+- Upgraded minimum engine version to `1.125.0` as well as `devDepencies: @types/vscode`.
+- Upgraded `esbuild` and `eslint` to the latest version.
+- Minor internal changes.
+
+### Fixed
+
+- Fixed an issue with `#` snippets that were duplicating the `#`.
+- Fixed an issue were adding a dot after snippets like `before.` stopped showing them.
+
+## [1.0.1] - 15-07-2026
+
+- Initial release
