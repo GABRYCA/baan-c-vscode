@@ -28,7 +28,8 @@
           "end": "\\*/",
           "patterns": [
             {
-              "name": "keyword.other.documentation.baanc",
+              "comment": "Soft annotation only — stay comment-colored (not keyword/red)",
+              "name": "comment.todo.baanc",
               "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
             }
           ]
@@ -39,7 +40,8 @@
           "end": "$",
           "patterns": [
             {
-              "name": "keyword.other.documentation.baanc",
+              "comment": "Soft annotation only — stay comment-colored (not keyword/red)",
+              "name": "comment.todo.baanc",
               "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
             }
           ]
@@ -157,11 +159,11 @@
       "patterns": [
         {
           "name": "constant.language.boolean.baanc",
-          "match": "\\b(?i:true|false)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:true|false)(?![.\\w])"
         },
         {
           "name": "constant.language.baanc",
-          "match": "\\b(?i:pi)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:pi)(?![.\\w])"
         }
       ]
     },
@@ -200,47 +202,49 @@
     "keywords": {
       "patterns": [
         {
+          "comment": "(?<![.\\w]) prevents matching type names inside domains like txamg.type.long",
           "name": "keyword.control.conditional.baanc",
-          "match": "\\b(?i:if|then|else|elif|endif)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:if|then|else|elif|endif)(?![.\\w])"
         },
         {
           "name": "keyword.control.loop.baanc",
-          "match": "\\b(?i:while|endwhile|for|to|step|endfor|repeat|until|break|continue)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:while|endwhile|for|to|step|endfor|repeat|until|break|continue)(?![.\\w])"
         },
         {
           "name": "keyword.control.case.baanc",
-          "match": "(?i)(\\bon\\s+case\\b|\\bcase\\b|\\bdefault\\b|\\bendcase\\b)(?![.\\w])"
+          "match": "(?i)((?<![.\\w])on\\s+case(?![.\\w])|(?<![.\\w])case(?![.\\w])|(?<![.\\w])default(?![.\\w])|(?<![.\\w])endcase(?![.\\w]))"
         },
         {
           "name": "keyword.control.transfer.baanc",
-          "match": "\\b(?i:goto|return)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:goto|return)(?![.\\w])"
         },
         {
           "comment": "and/or/not same scope as select/from/where so they render purple",
           "name": "keyword.control.sql.baanc",
-          "match": "\\b(?i:and|or|not)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:and|or|not)(?![.\\w])"
         },
         {
           "comment": "Embedded SQL multi-word phrases first",
           "name": "keyword.control.sql.baanc",
-          "match": "(?i)\\b(group\\s+by|order\\s+by|for\\s+update|with\\s+retry|refers\\s+to|is\\s+null|not\\s+null|inner\\s+join|left\\s+join|right\\s+join|cross\\s+join|as\\s+set\\s+with)(?![.\\w])"
+          "match": "(?i)(?<![.\\w])(group\\s+by|order\\s+by|for\\s+update|with\\s+retry|refers\\s+to|is\\s+null|not\\s+null|inner\\s+join|left\\s+join|right\\s+join|cross\\s+join|as\\s+set\\s+with)(?![.\\w])"
         },
         {
-          "comment": "SQL keywords. (?![.\\w]) avoids matching update.field.x",
+          "comment": "SQL keywords. (?<![.\\w])/(?![.\\w]) avoid matching inside dotted ids (update.field.x, type.long)",
           "name": "keyword.control.sql.baanc",
-          "match": "\\b(?i:selectdo|selectempty|selecteos|selecterror|endselect|selectbind|wherebind|select|from|where|having|union|distinct|all|as|asc|desc|join|inner|outer|left|right|cross|between|alike|exists|null|fetch|prepared|empty|update|delete|set|into|in|on|like)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:selectdo|selectempty|selecteos|selecterror|endselect|selectbind|wherebind|select|from|where|having|union|distinct|all|as|asc|desc|join|inner|outer|left|right|cross|between|alike|exists|null|fetch|prepared|empty|update|delete|set|into|in|on|like)(?![.\\w])"
         },
         {
           "name": "keyword.other.baanc",
-          "match": "\\b(?i:function|prototype|void|ref|reference|const|based|fixed|mb)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:function|prototype|void|ref|reference|const|based|fixed|mb)(?![.\\w])"
         }
       ]
     },
     "types": {
       "patterns": [
         {
+          "comment": "Do not highlight long/double/... when they are the last segment of a dotted domain/name (txamg.type.long)",
           "name": "storage.type.baanc",
-          "match": "\\b(?i:long|double|boolean|string|table|domain|void)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:long|double|boolean|string|table|domain|void)(?![.\\w])"
         }
       ]
     },
@@ -248,7 +252,7 @@
       "patterns": [
         {
           "name": "storage.modifier.baanc",
-          "match": "\\b(?i:extern|static|common|based|fixed|mb|ref|reference|const)(?![.\\w])"
+          "match": "(?<![.\\w])(?i:extern|static|common|based|fixed|mb|ref|reference|const)(?![.\\w])"
         }
       ]
     },
@@ -271,7 +275,7 @@
       "patterns": [
         {
           "name": "meta.function-call.baanc",
-          "match": "\\b([A-Za-z_][\\w.]*)\\s*(?=\\()",
+          "match": "\\b([A-Za-z_][\\w.$]*)\\s*(?=\\()",
           "captures": {
             "1": { "name": "entity.name.function.call.baanc" }
           }
@@ -282,14 +286,14 @@
       "patterns": [
         {
           "name": "variable.other.table.baanc",
-          "match": "\\b(t[a-z]{2,6}\\d{3})\\b"
+          "match": "\\b(t[a-z]{2,6}\\d{3}[a-z0-9]*)\\b"
         },
         {
+          "comment": "Full dotted identifiers (domains, functions, table.fields) as one unit — multi-segment",
           "name": "variable.other.member.baanc",
-          "match": "\\b([A-Za-z_][\\w]*)\\.([A-Za-z_][\\w]*)\\b(?!\\s*\\()",
+          "match": "\\b([A-Za-z_][\\w]*(?:\\.[A-Za-z_][\\w]*)+)\\b(?!\\s*\\()",
           "captures": {
-            "1": { "name": "variable.other.object.baanc" },
-            "2": { "name": "variable.other.property.baanc" }
+            "1": { "name": "variable.other.dotted.baanc" }
           }
         }
       ]

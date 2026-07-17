@@ -1,6 +1,16 @@
 const vscode = require('vscode');
+const { BUILTIN_FUNCTIONS, BUILTIN_BY_NAME } = require('./builtins');
 
 /** @typedef {{ type: string, line: number, text: string }} BlockFrame */
+
+/** Diagnostic codes for naming convention hints (used by quick fixes). */
+const NAMING_CODE = {
+  case: 'naming-case',
+  separator: 'naming-separator',
+  singleLetter: 'naming-single-letter',
+  temp: 'naming-temp',
+  argPrefix: 'naming-arg-prefix'
+};
 
 const CONTROL_KEYWORDS = [
   'if', 'then', 'else', 'elif', 'endif',
@@ -399,6 +409,26 @@ function activate(context) {
           );
         }
 
+        // Built-in language / API functions (dotted names complete after ".")
+        if (cfg.completionIncludeBuiltins) {
+          const dottedPartial = getDottedSectionPartial(prefix, position);
+          for (const fn of BUILTIN_FUNCTIONS) {
+            /** @type {{ insertText: string|vscode.SnippetString, filterText: string, sortText: string, documentation?: string, range?: vscode.Range }} */
+            const opts = {
+              insertText: fn.insert
+                ? new vscode.SnippetString(fn.insert)
+                : new vscode.SnippetString(`${fn.name}($0)`),
+              filterText: fn.name,
+              sortText: `2_fn_${fn.name}`,
+              documentation: fn.doc || undefined
+            };
+            if (dottedPartial) {
+              opts.range = dottedPartial.range;
+            }
+            add(fn.name, vscode.CompletionItemKind.Function, fn.detail, opts);
+          }
+        }
+
         // Directives also without having typed '#' yet
         if (cfg.completionIncludePreprocessor && !ppPartial) {
           for (const d of PREPROCESSOR_DIRECTIVES) {
@@ -483,7 +513,7 @@ function activate(context) {
     provideHover(document, position) {
       const wordRange = document.getWordRangeAtPosition(
         position,
-        /#?[A-Za-z_][\w.]*/
+        /#?[A-Za-z_][\w.$]*/
       );
       if (!wordRange) {
         return null;
@@ -502,6 +532,14 @@ function activate(context) {
 
       if (Object.prototype.hasOwnProperty.call(HOVER_DOCS, key)) {
         return makeHover(HOVER_DOCS[key], wordRange);
+      }
+
+      const builtin = BUILTIN_BY_NAME.get(key);
+      if (builtin) {
+        const body =
+          builtin.doc ||
+          `\`\`\`baanc\n${builtin.name}(...)\n\`\`\`\nBuilt-in: ${builtin.detail}`;
+        return makeHover(body, wordRange);
       }
 
       const after = document.getText(
@@ -732,6 +770,64 @@ function activate(context) {
     .filter(d => d.languageId === 'baanc')
     .forEach(d => runDiagnostics(d, diagnosticCollection, cfg));
 
+  const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+    selector,
+    {
+      /**
+       * @param {vscode.TextDocument} document
+       * @param {vscode.Range} range
+       * @param {vscode.CodeActionContext} context
+       */
+      provideCodeActions(document, range, context) {
+        /** @type {vscode.CodeAction[]} */
+        const actions = [];
+        for (const d of context.diagnostics) {
+          if (d.source !== 'baanc' || !d.code) {
+            continue;
+          }
+          const code = String(d.code);
+          if (
+            code !== NAMING_CODE.case &&
+            code !== NAMING_CODE.separator &&
+            code !== NAMING_CODE.temp &&
+            code !== NAMING_CODE.argPrefix
+          ) {
+            continue;
+          }
+          const name = document.getText(d.range);
+          if (!name) {
+            continue;
+          }
+          let suggested = suggestBaanName(name);
+          if (code === NAMING_CODE.argPrefix) {
+            suggested = suggestArgPrefixName(name, d.message);
+          }
+          if (!suggested || suggested === name) {
+            continue;
+          }
+          const action = new vscode.CodeAction(
+            `Rename to '${suggested}'`,
+            vscode.CodeActionKind.QuickFix
+          );
+          action.diagnostics = [d];
+          action.isPreferred = true;
+          action.edit = new vscode.WorkspaceEdit();
+          // Rename all occurrences of this identifier in the document
+          let renames = findIdentifierRanges(document, name);
+          if (renames.length === 0) {
+            renames = [d.range];
+          }
+          for (const r of renames) {
+            action.edit.replace(document.uri, r, suggested);
+          }
+          actions.push(action);
+        }
+        return actions;
+      }
+    },
+    { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+  );
+
   context.subscriptions.push(
     vscode.commands.registerCommand('baanc.formatDocument', async () => {
       const editor = vscode.window.activeTextEditor;
@@ -763,6 +859,7 @@ function activate(context) {
     definitionProvider,
     formattingProvider,
     rangeFormattingProvider,
+    codeActionProvider,
     willSave,
     diagnosticCollection,
     output
@@ -780,9 +877,12 @@ function loadConfig() {
     formatOnSave: c.get('formatOnSave', false),
     diagnosticsEnabled: c.get('diagnostics.enabled', true),
     strictComments: c.get('diagnostics.strictComments', true),
+    namingConventions: c.get('diagnostics.namingConventions', true),
+    namingArgPrefixes: c.get('diagnostics.namingArgPrefixes', false),
     completionIncludeSql: c.get('completion.includeSql', true),
     completionIncludePreprocessor: c.get('completion.includePreprocessor', true),
-    completionInclude4gl: c.get('completion.include4gl', true)
+    completionInclude4gl: c.get('completion.include4gl', true),
+    completionIncludeBuiltins: c.get('completion.includeBuiltins', true)
   };
 }
 
@@ -1522,6 +1622,10 @@ function runDiagnostics(document, collection, cfg) {
     );
   }
 
+  if (cfg.namingConventions) {
+    collectNamingDiagnostics(document, diagnostics, cfg);
+  }
+
   collection.set(document.uri, diagnostics);
 }
 
@@ -1619,7 +1723,355 @@ function debounce(fn, ms) {
   };
 }
 
+// ── Naming conventions (Infor LN design principles) ─────────────────────
+
+const TEMP_NAME_RE = /^(temp|tmp|tmp\d+|temp\d+|dummy)$/i;
+const TYPE_IN_NAME_RE =
+  /^(string|long|double|boolean|table|domain)\./i;
+/** 4GL sections / reserved labels — never rename-check */
+const RESERVED_NAME_RE =
+  /^(declaration|before|after|on|when|field|form|group|choice|zoom|main|functions|init|read|check|ref|domain|selection|default|case)$/i;
+
+/**
+ * Convert CamelCase / snake_case / mixed identifiers to Baan dotted lowercase.
+ * @param {string} name
+ */
+function suggestBaanName(name) {
+  if (!name) {
+    return name;
+  }
+  // Keep leading i./o./io. argument prefixes
+  let prefix = '';
+  const argM = /^(i|o|io)\./i.exec(name);
+  if (argM) {
+    prefix = argM[1].toLowerCase() + '.';
+    name = name.slice(argM[0].length);
+  }
+  // g. / b. style prefixes
+  const styleM = /^(g|b)\./i.exec(name);
+  if (styleM) {
+    prefix = styleM[1].toLowerCase() + '.';
+    name = name.slice(styleM[0].length);
+  }
+
+  let body;
+  if (name.includes('.')) {
+    body = name
+      .split('.')
+      .map(s => s.replace(/_/g, ''))
+      .map(s =>
+        s
+          .replace(/([a-z0-9])([A-Z])/g, '$1.$2')
+          .replace(/([A-Z]+)([A-Z][a-z])/g, '$1.$2')
+      )
+      .join('.')
+      .split('.')
+      .map(s => s.toLowerCase())
+      .filter(Boolean)
+      .join('.');
+  } else if (name.includes('_')) {
+    body = name
+      .split('_')
+      .filter(Boolean)
+      .map(s => s.toLowerCase())
+      .join('.');
+  } else {
+    body = name
+      .replace(/([a-z0-9])([A-Z])/g, '$1.$2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1.$2')
+      .split('.')
+      .map(s => s.toLowerCase())
+      .filter(Boolean)
+      .join('.');
+  }
+  return prefix + body;
+}
+
+/**
+ * @param {string} name
+ * @param {string} message
+ */
+function suggestArgPrefixName(name, message) {
+  const base = suggestBaanName(name.replace(/^(i|o|io)\./i, ''));
+  if (/input and output|io\./i.test(message)) {
+    return `io.${base}`;
+  }
+  if (/output|o\./i.test(message)) {
+    return `o.${base}`;
+  }
+  return `i.${base}`;
+}
+
+/**
+ * @param {string} name
+ */
+function isTableLikeName(name) {
+  return /^t[a-z]{2,6}\d{3}[a-z0-9]*$/i.test(name);
+}
+
+/**
+ * Skip names that are clearly not user identifiers we should lint.
+ * @param {string} name
+ */
+function shouldSkipNaming(name) {
+  if (!name || name.length === 0) {
+    return true;
+  }
+  if (BUILTIN_BY_NAME.has(name.toLowerCase())) {
+    return true;
+  }
+  if (isTableLikeName(name)) {
+    return true;
+  }
+  // Table field access: tccom001.item or rcd.t...
+  if (/^t[a-z]{2,6}\d{3}/i.test(name) || /^rcd\./i.test(name)) {
+    return true;
+  }
+  if (RESERVED_NAME_RE.test(name.split('.')[0])) {
+    // only skip pure section keywords; allow before.program as declaration label etc.
+    if (!name.includes('.') || /^(before|after|on|when|field|form|group|choice|zoom|main)\./i.test(name)) {
+      // 4GL style section names — skip if looks like section (ends handled elsewhere)
+      if (
+        /^(before|after|on|when|field|form|group|choice|zoom\.from|main\.table\.io|functions|declaration)(\.|$)/i.test(
+          name
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * @param {vscode.TextDocument} document
+ * @param {string} name
+ * @returns {vscode.Range[]}
+ */
+function findIdentifierRanges(document, name) {
+  /** @type {vscode.Range[]} */
+  const ranges = [];
+  const re = new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w.])`, 'g');
+  for (let i = 0; i < document.lineCount; i++) {
+    const text = document.lineAt(i).text;
+    const code = stripLineComment(text);
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      // Skip if inside a string on this line (simple check)
+      const before = code.slice(0, m.index);
+      const quotes = (before.match(/"/g) || []).length;
+      if (quotes % 2 === 1) {
+        continue;
+      }
+      ranges.push(new vscode.Range(i, m.index, i, m.index + name.length));
+    }
+  }
+  return ranges.length ? ranges : [];
+}
+
+/**
+ * Emit Hint-level naming diagnostics for declarations and function names.
+ * @param {vscode.TextDocument} document
+ * @param {vscode.Diagnostic[]} diagnostics
+ * @param {ReturnType<typeof loadConfig>} cfg
+ */
+function collectNamingDiagnostics(document, diagnostics, cfg) {
+  const functionRe =
+    /^\s*function(?:\s+(?:extern|static))?(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
+  const typedVarRe =
+    /^\s*(?:extern\s+|static\s+|common\s+)?(?:long|double|boolean|string)\s+([A-Za-z_][\w.]*)/i;
+  const domainVarRe =
+    /^\s*(?:extern\s+)?domain\s+[\w.]+\s+([A-Za-z_][\w.]*)/i;
+  const forVarRe = /^\s*for\s+([A-Za-z_][\w.]*)\s*=/i;
+
+  /** @type {Set<string>} already reported names */
+  const seen = new Set();
+
+  /**
+   * @param {string} name
+   * @param {number} line
+   * @param {number} col
+   * @param {'function'|'variable'|'argument'|'for'} kind
+   * @param {{ isRef?: boolean }} [meta]
+   */
+  const checkName = (name, line, col, kind, meta = {}) => {
+    if (shouldSkipNaming(name) || seen.has(`${line}:${name}`)) {
+      return;
+    }
+    seen.add(`${line}:${name}`);
+
+    const range = new vscode.Range(line, col, line, col + name.length);
+
+    // Capitals not allowed (except #define macros which we never pass here)
+    if (/[A-Z]/.test(name)) {
+      const suggested = suggestBaanName(name);
+      pushNamingDiag(
+        diagnostics,
+        range,
+        `Naming: use lowercase with dots (suggested: '${suggested}')`,
+        NAMING_CODE.case
+      );
+      return; // one hint is enough
+    }
+
+    // Underscores → prefer dots
+    if (name.includes('_')) {
+      const suggested = suggestBaanName(name);
+      pushNamingDiag(
+        diagnostics,
+        range,
+        `Naming: prefer dots over underscores (suggested: '${suggested}')`,
+        NAMING_CODE.separator
+      );
+      return;
+    }
+
+    // Single-letter names (docs forbid i, j, k, …)
+    const base = name.includes('.')
+      ? name.split('.').pop() || name
+      : name;
+    if (base.length === 1) {
+      pushNamingDiag(
+        diagnostics,
+        range,
+        `Naming: avoid single-letter names like '${name}' — use an expressive name (e.g. work.center)`,
+        NAMING_CODE.singleLetter
+      );
+      return;
+    }
+
+    // temp / tmp
+    if (TEMP_NAME_RE.test(base) || TEMP_NAME_RE.test(name)) {
+      pushNamingDiag(
+        diagnostics,
+        range,
+        `Naming: avoid temporary names like '${name}' — use an expressive name`,
+        NAMING_CODE.temp
+      );
+      return;
+    }
+
+    // Type names embedded (string.item)
+    if (TYPE_IN_NAME_RE.test(name)) {
+      pushNamingDiag(
+        diagnostics,
+        range,
+        `Naming: do not embed type names in identifiers ('${name}')`,
+        NAMING_CODE.case
+      );
+      return;
+    }
+
+    // Multi-word camel was already handled via capitals.
+    // Soft: function args without i./o./io. (optional)
+    if (cfg.namingArgPrefixes && kind === 'argument') {
+      if (!/^(i|o|io)\./i.test(name)) {
+        const prefix = meta.isRef ? 'o' : 'i';
+        pushNamingDiag(
+          diagnostics,
+          range,
+          `Naming: function arguments should use ${prefix}. prefix (suggested: '${prefix}.${name}')`,
+          NAMING_CODE.argPrefix
+        );
+      }
+    }
+  };
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const raw = document.lineAt(i).text;
+    const text = stripLineComment(raw);
+    if (!text.trim() || /^\s*#/.test(text)) {
+      continue;
+    }
+
+    let m = functionRe.exec(text);
+    if (m) {
+      const name = m[1];
+      const col = text.indexOf(name, m.index);
+      checkName(name, i, col, 'function');
+
+      // Parse argument list on same line (simple)
+      const open = text.indexOf('(', m.index);
+      const close = text.indexOf(')', open + 1);
+      if (open >= 0 && close > open) {
+        const args = text.slice(open + 1, close);
+        parseFunctionArgs(args, (argName, isRef) => {
+          const absCol = open + 1 + args.indexOf(argName);
+          checkName(argName, i, absCol, 'argument', { isRef });
+        });
+      }
+      continue;
+    }
+
+    m = domainVarRe.exec(text);
+    if (m) {
+      checkName(m[1], i, text.indexOf(m[1], m.index), 'variable');
+      continue;
+    }
+
+    m = typedVarRe.exec(text);
+    if (m) {
+      checkName(m[1], i, text.indexOf(m[1], m.index), 'variable');
+      continue;
+    }
+
+    m = forVarRe.exec(text);
+    if (m) {
+      checkName(m[1], i, text.indexOf(m[1], m.index), 'for');
+    }
+  }
+}
+
+/**
+ * @param {string} argsText
+ * @param {(name: string, isRef: boolean) => void} cb
+ */
+function parseFunctionArgs(argsText, cb) {
+  if (!argsText.trim()) {
+    return;
+  }
+  // Split on commas not perfect for nested but args are flat
+  const parts = argsText.split(',');
+  for (const part of parts) {
+    const p = part.trim();
+    if (!p) {
+      continue;
+    }
+    const isRef = /^(ref|reference)\b/i.test(p);
+    // last identifier token
+    const tokens = p.match(/[A-Za-z_][\w.]*/g);
+    if (!tokens || tokens.length === 0) {
+      continue;
+    }
+    const name = tokens[tokens.length - 1];
+    // skip type-only tokens
+    if (/^(long|double|string|boolean|void|domain|ref|reference|const|based|fixed|mb)$/i.test(name)) {
+      continue;
+    }
+    cb(name, isRef);
+  }
+}
+
+/**
+ * @param {vscode.Diagnostic[]} diagnostics
+ * @param {vscode.Range} range
+ * @param {string} message
+ * @param {string} code
+ */
+function pushNamingDiag(diagnostics, range, message, code) {
+  const d = new vscode.Diagnostic(
+    range,
+    message,
+    vscode.DiagnosticSeverity.Hint
+  );
+  d.source = 'baanc';
+  d.code = code;
+  diagnostics.push(d);
+}
+
 module.exports = {
   activate,
-  deactivate
+  deactivate,
+  suggestBaanName
 };

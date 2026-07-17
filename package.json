@@ -1,8 +1,8 @@
 {
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
-  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, hovers, symbols, and more",
-  "version": "1.0.2",
+  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, built-in completions, hovers, symbols, and more",
+  "version": "1.0.3",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
@@ -92,6 +92,16 @@
           "default": true,
           "description": "Ignore | and /* */ comments when analyzing blocks"
         },
+        "baanc.diagnostics.namingConventions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hint when identifiers do not follow Baan/Infor LN naming conventions (lowercase, dots, expressive names). Uses Hint severity only — not errors."
+        },
+        "baanc.diagnostics.namingArgPrefixes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also hint when function arguments lack i./o./io. prefixes (off by default — can be noisy)"
+        },
         "baanc.completion.includeSql": {
           "type": "boolean",
           "default": true,
@@ -106,6 +116,11 @@
           "type": "boolean",
           "default": true,
           "description": "Include common 4GL section names in completions"
+        },
+        "baanc.completion.includeBuiltins": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include built-in Baan C / Infor LN API functions in completions (db.*, strip$, message, …)"
         }
       }
     },
