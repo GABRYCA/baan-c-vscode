@@ -1,8 +1,8 @@
 {
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
-  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, built-in completions, hovers, symbols, and more",
-  "version": "1.0.3",
+  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, 980+ built-in completions, signature help, references, rename, folding, hovers, symbols, and more",
+  "version": "1.0.4",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
@@ -120,7 +120,12 @@
         "baanc.completion.includeBuiltins": {
           "type": "boolean",
           "default": true,
-          "description": "Include built-in Baan C / Infor LN API functions in completions (db.*, strip$, message, …)"
+          "description": "Include built-in Baan C / Infor LN API functions in completions (db.*, strip$, message, http.*, curl.*, …)"
+        },
+        "baanc.completion.includeErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include database / ES error constants (ELOCKED, EDUPL, ENOREC, …) in completions"
         }
       }
     },
@@ -132,6 +137,14 @@
       {
         "command": "baanc.runDiagnostics",
         "title": "Baan C: Run Diagnostics"
+      },
+      {
+        "command": "baanc.insertTransactionTemplate",
+        "title": "Baan C: Insert Transaction + Select Template"
+      },
+      {
+        "command": "baanc.insertSelectTemplate",
+        "title": "Baan C: Insert Select Template"
       }
     ],
     "menus": {
@@ -140,6 +153,34 @@
           "when": "resourceLangId == baanc",
           "command": "baanc.formatDocument",
           "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == baanc",
+          "command": "baanc.insertSelectTemplate",
+          "group": "1_modification@2"
+        },
+        {
+          "when": "resourceLangId == baanc",
+          "command": "baanc.insertTransactionTemplate",
+          "group": "1_modification@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "baanc.formatDocument",
+          "when": "editorLangId == baanc"
+        },
+        {
+          "command": "baanc.runDiagnostics",
+          "when": "editorLangId == baanc"
+        },
+        {
+          "command": "baanc.insertTransactionTemplate",
+          "when": "editorLangId == baanc"
+        },
+        {
+          "command": "baanc.insertSelectTemplate",
+          "when": "editorLangId == baanc"
         }
       ]
     },
@@ -158,6 +199,8 @@
         },
         "editor.acceptSuggestionOnEnter": "on",
         "editor.suggestSelection": "first",
+        "editor.parameterHints.enabled": true,
+        "editor.folding": true,
         "files.trimTrailingWhitespace": true
       }
     }

@@ -4,6 +4,20 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.4] - 18-07-2026
+
+### Added
+
+- Large expansion of built-in API completions (HTTP client, cURL, SOAP, digests, BLOBs, programmable dialogs/charts, RDI/dictionary, parallel processing, keyfields, selection helpers, images, composite sessions, random, varargs, and more) — 980+ functions.
+- Database / ES error constant completions and hovers (`ELOCKED`, `EDUPL`, `ENOREC`, `EREFERENCE`, …) via `baanc.completion.includeErrors`.
+- Signature help (parameter hints) for built-ins and local functions.
+- Find All References, Rename Symbol, and Document Highlights for identifiers in the current file.
+- Improved Go to Definition for tables, domains, and typed variables (in addition to functions).
+- Folding ranges for control blocks, functions, preprocessor regions, and 4GL sections.
+- Hover for local function definitions and richer builtin signature text.
+- Commands: Insert Select Template, Insert Transaction + Select Template.
+- New snippets: `txselect`, `dalgs`, `httpget`, `curlget`, `sqlpf`, `qext`, `funcex`, `elocked`, and more.
+
 ## [1.0.3] - 17-07-2026
 
 ### Added

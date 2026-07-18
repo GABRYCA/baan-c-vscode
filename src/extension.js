@@ -1,5 +1,11 @@
 const vscode = require('vscode');
-const { BUILTIN_FUNCTIONS, BUILTIN_BY_NAME } = require('./builtins');
+const {
+  BUILTIN_FUNCTIONS,
+  BUILTIN_BY_NAME,
+  getBuiltinSignature,
+  ERROR_CONSTANTS,
+  ERROR_BY_NAME
+} = require('./builtins');
 
 /** @typedef {{ type: string, line: number, text: string }} BlockFrame */
 
@@ -429,6 +435,16 @@ function activate(context) {
           }
         }
 
+        // Database / ES error symbolic constants (ELOCKED, EDUPL, …)
+        if (cfg.completionIncludeErrors) {
+          for (const err of ERROR_CONSTANTS) {
+            add(err.name, vscode.CompletionItemKind.Constant, `error · ${err.code} ${err.detail}`, {
+              sortText: `2_err_${err.name}`,
+              documentation: err.doc || `Error code **${err.code}**: ${err.detail}`
+            });
+          }
+        }
+
         // Directives also without having typed '#' yet
         if (cfg.completionIncludePreprocessor && !ppPartial) {
           for (const d of PREPROCESSOR_DIRECTIVES) {
@@ -536,10 +552,28 @@ function activate(context) {
 
       const builtin = BUILTIN_BY_NAME.get(key);
       if (builtin) {
+        const sig = getBuiltinSignature(builtin);
         const body =
           builtin.doc ||
-          `\`\`\`baanc\n${builtin.name}(...)\n\`\`\`\nBuilt-in: ${builtin.detail}`;
+          `\`\`\`baanc\n${sig.label}\n\`\`\`\nBuilt-in: ${builtin.detail}`;
         return makeHover(body, wordRange);
+      }
+
+      const err = ERROR_BY_NAME.get(key);
+      if (err) {
+        return makeHover(
+          err.doc || `Error **${err.name}** (${err.code}): ${err.detail}`,
+          wordRange
+        );
+      }
+
+      // Local function definition hover
+      const localFn = findLocalFunction(document, word);
+      if (localFn) {
+        return makeHover(
+          `\`\`\`baanc\n${localFn.header}\n\`\`\`\nFunction defined in this file (line ${localFn.line + 1}).`,
+          wordRange
+        );
       }
 
       const after = document.getText(
@@ -709,19 +743,195 @@ function activate(context) {
         )})\\s*\\(`,
         'i'
       );
+      const tableRe = new RegExp(
+        `^\\s*table\\s+(${escapeRegExp(word)})\\b`,
+        'i'
+      );
+      const domainRe = new RegExp(
+        `^\\s*(?:extern\\s+)?domain\\s+[\\w.]+\\s+(${escapeRegExp(word)})\\b`,
+        'i'
+      );
+      const typedVarRe = new RegExp(
+        `^\\s*(?:extern\\s+|static\\s+|common\\s+)?(?:long|double|boolean|string)\\s+(${escapeRegExp(word)})\\b`,
+        'i'
+      );
+      /** @type {vscode.Location[]} */
+      const locs = [];
       for (let i = 0; i < document.lineCount; i++) {
         const text = document.lineAt(i).text;
-        const m = functionRe.exec(text);
+        let m = functionRe.exec(text);
         if (m) {
-          return new vscode.Location(
-            document.uri,
-            new vscode.Position(i, m.index)
+          locs.push(
+            new vscode.Location(document.uri, new vscode.Position(i, m.index))
+          );
+          continue;
+        }
+        m = tableRe.exec(text) || domainRe.exec(text) || typedVarRe.exec(text);
+        if (m) {
+          const col = text.indexOf(m[1]);
+          locs.push(
+            new vscode.Location(
+              document.uri,
+              new vscode.Position(i, col >= 0 ? col : m.index)
+            )
           );
         }
       }
-      return null;
+      return locs.length === 1 ? locs[0] : locs.length ? locs : null;
     }
   });
+
+  const signatureHelpProvider = vscode.languages.registerSignatureHelpProvider(
+    selector,
+    {
+      provideSignatureHelp(document, position) {
+        const call = findCallAtPosition(document, position);
+        if (!call) {
+          return null;
+        }
+        const builtin = BUILTIN_BY_NAME.get(call.name.toLowerCase());
+        if (!builtin) {
+          // Local function: show header if available
+          const local = findLocalFunction(document, call.name);
+          if (!local) {
+            return null;
+          }
+          const help = new vscode.SignatureHelp();
+          const sig = new vscode.SignatureInformation(
+            local.header,
+            new vscode.MarkdownString(`Function in this file (line ${local.line + 1}).`)
+          );
+          const params = parseParamsFromHeader(local.header);
+          sig.parameters = params.map(
+            p => new vscode.ParameterInformation(p, p)
+          );
+          help.signatures = [sig];
+          help.activeSignature = 0;
+          help.activeParameter = Math.min(
+            call.argIndex,
+            Math.max(0, params.length - 1)
+          );
+          return help;
+        }
+        const { label, parameters } = getBuiltinSignature(builtin);
+        const help = new vscode.SignatureHelp();
+        const sig = new vscode.SignatureInformation(
+          label,
+          new vscode.MarkdownString(builtin.doc || builtin.detail)
+        );
+        sig.parameters = parameters.map(
+          p => new vscode.ParameterInformation(p, p)
+        );
+        help.signatures = [sig];
+        help.activeSignature = 0;
+        help.activeParameter = Math.min(
+          call.argIndex,
+          Math.max(0, parameters.length - 1)
+        );
+        return help;
+      }
+    },
+    '(',
+    ','
+  );
+
+  const referenceProvider = vscode.languages.registerReferenceProvider(selector, {
+    provideReferences(document, position, context) {
+      const wordRange = document.getWordRangeAtPosition(
+        position,
+        /[A-Za-z_][\w.]*/
+      );
+      if (!wordRange) {
+        return [];
+      }
+      const word = document.getText(wordRange);
+      const ranges = findIdentifierRanges(document, word);
+      /** @type {vscode.Location[]} */
+      const locs = ranges.map(r => new vscode.Location(document.uri, r));
+      if (!context.includeDeclaration) {
+        // Drop the definition line if we can identify it
+        const def = findLocalFunction(document, word);
+        if (def) {
+          return locs.filter(l => l.range.start.line !== def.line);
+        }
+      }
+      return locs;
+    }
+  });
+
+  const renameProvider = vscode.languages.registerRenameProvider(selector, {
+    prepareRename(document, position) {
+      const wordRange = document.getWordRangeAtPosition(
+        position,
+        /[A-Za-z_][\w.]*/
+      );
+      if (!wordRange) {
+        throw new Error('No symbol to rename');
+      }
+      const word = document.getText(wordRange);
+      if (BUILTIN_BY_NAME.has(word.toLowerCase()) || ERROR_BY_NAME.has(word.toLowerCase())) {
+        throw new Error(`'${word}' is a built-in and cannot be renamed`);
+      }
+      if (CONTROL_KEYWORDS.includes(word.toLowerCase()) ||
+          TYPE_KEYWORDS.includes(word.toLowerCase())) {
+        throw new Error(`'${word}' is a keyword and cannot be renamed`);
+      }
+      return wordRange;
+    },
+    provideRenameEdits(document, position, newName) {
+      const wordRange = document.getWordRangeAtPosition(
+        position,
+        /[A-Za-z_][\w.]*/
+      );
+      if (!wordRange) {
+        return null;
+      }
+      const word = document.getText(wordRange);
+      if (!/^[A-Za-z_][\w.]*$/.test(newName)) {
+        throw new Error('Invalid Baan C identifier');
+      }
+      const edit = new vscode.WorkspaceEdit();
+      const ranges = findIdentifierRanges(document, word);
+      for (const r of ranges) {
+        edit.replace(document.uri, r, newName);
+      }
+      return edit;
+    }
+  });
+
+  const highlightProvider = vscode.languages.registerDocumentHighlightProvider(
+    selector,
+    {
+      provideDocumentHighlights(document, position) {
+        const wordRange = document.getWordRangeAtPosition(
+          position,
+          /[A-Za-z_][\w.]*/
+        );
+        if (!wordRange) {
+          return [];
+        }
+        const word = document.getText(wordRange);
+        const ranges = findIdentifierRanges(document, word);
+        const def = findLocalFunction(document, word);
+        return ranges.map(r => {
+          const kind =
+            def && r.start.line === def.line
+              ? vscode.DocumentHighlightKind.Write
+              : vscode.DocumentHighlightKind.Read;
+          return new vscode.DocumentHighlight(r, kind);
+        });
+      }
+    }
+  );
+
+  const foldingProvider = vscode.languages.registerFoldingRangeProvider(
+    selector,
+    {
+      provideFoldingRanges(document) {
+        return computeFoldingRanges(document);
+      }
+    }
+  );
 
   const formattingProvider =
     vscode.languages.registerDocumentFormattingEditProvider(selector, {
@@ -849,6 +1059,55 @@ function activate(context) {
         `Diagnostics refreshed for ${editor.document.fileName}`
       );
       output.show(true);
+    }),
+    vscode.commands.registerCommand('baanc.insertTransactionTemplate', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'baanc') {
+        return;
+      }
+      const snippet = new vscode.SnippetString(
+        [
+          'db.retry.point()',
+          'long ${1:ret} = 0',
+          'select ${2:*}',
+          'from ${3:table}',
+          'for update',
+          'where ${4:condition}',
+          'selectdo',
+          '\t$0',
+          '\t${1:ret} = db.update(${5:table.id}, db.retry)',
+          'selectempty',
+          '\t| no records',
+          'endselect',
+          'if ${1:ret} = 0 then',
+          '\tcommit.transaction()',
+          'else',
+          '\tabort.transaction()',
+          'endif'
+        ].join('\n')
+      );
+      await editor.insertSnippet(snippet);
+    }),
+    vscode.commands.registerCommand('baanc.insertSelectTemplate', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'baanc') {
+        return;
+      }
+      const snippet = new vscode.SnippetString(
+        [
+          'select ${1:*}',
+          'from ${2:table}',
+          'where ${3:condition}',
+          'selectdo',
+          '\t$0',
+          'selectempty',
+          '\t| no records',
+          'selecterror',
+          '\tmessage("SQL error: %d", db.error())',
+          'endselect'
+        ].join('\n')
+      );
+      await editor.insertSnippet(snippet);
     })
   );
 
@@ -857,6 +1116,11 @@ function activate(context) {
     hoverProvider,
     symbolProvider,
     definitionProvider,
+    signatureHelpProvider,
+    referenceProvider,
+    renameProvider,
+    highlightProvider,
+    foldingProvider,
     formattingProvider,
     rangeFormattingProvider,
     codeActionProvider,
@@ -865,7 +1129,9 @@ function activate(context) {
     output
   );
 
-  output.appendLine('Baan C Support activated.');
+  output.appendLine(
+    `Baan C Support activated (${BUILTIN_FUNCTIONS.length} builtins, ${ERROR_CONSTANTS.length} error codes).`
+  );
 }
 
 function deactivate() {}
@@ -882,8 +1148,270 @@ function loadConfig() {
     completionIncludeSql: c.get('completion.includeSql', true),
     completionIncludePreprocessor: c.get('completion.includePreprocessor', true),
     completionInclude4gl: c.get('completion.include4gl', true),
-    completionIncludeBuiltins: c.get('completion.includeBuiltins', true)
+    completionIncludeBuiltins: c.get('completion.includeBuiltins', true),
+    completionIncludeErrors: c.get('completion.includeErrors', true)
   };
+}
+
+/**
+ * Find a local function definition by name.
+ * @param {vscode.TextDocument} document
+ * @param {string} name
+ * @returns {{ line: number, header: string } | null}
+ */
+function findLocalFunction(document, name) {
+  const functionRe = new RegExp(
+    `^\\s*(function(?:\\s+(?:extern|static))?(?:\\s+(?:long|double|string|void|domain\\s+[\\w.]+))?\\s+${escapeRegExp(
+      name
+    )}\\s*\\([^)]*\\)?)`,
+    'i'
+  );
+  for (let i = 0; i < document.lineCount; i++) {
+    const text = document.lineAt(i).text;
+    const m = functionRe.exec(text);
+    if (m) {
+      return { line: i, header: m[1].trim() };
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse parameter names from a function header string.
+ * @param {string} header
+ * @returns {string[]}
+ */
+function parseParamsFromHeader(header) {
+  const open = header.indexOf('(');
+  const close = header.lastIndexOf(')');
+  if (open < 0) {
+    return [];
+  }
+  const inside = close > open ? header.slice(open + 1, close) : header.slice(open + 1);
+  if (!inside.trim()) {
+    return [];
+  }
+  return inside
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => {
+      // "ref long i.foo" → "i.foo"
+      const parts = p.split(/\s+/);
+      return parts[parts.length - 1].replace(/[()]/g, '');
+    });
+}
+
+/**
+ * Locate the function call and active argument index at the cursor.
+ * Walks backward from position to find "name( ... )" with nested parens.
+ * @param {vscode.TextDocument} document
+ * @param {vscode.Position} position
+ * @returns {{ name: string, argIndex: number } | null}
+ */
+function findCallAtPosition(document, position) {
+  const text = document.getText(
+    new vscode.Range(new vscode.Position(0, 0), position)
+  );
+  let depth = 0;
+  let argIndex = 0;
+  for (let i = text.length - 1; i >= 0; i--) {
+    const ch = text[i];
+    // Skip simple string literals (best-effort)
+    if (ch === '"') {
+      i--;
+      while (i >= 0 && text[i] !== '"') {
+        if (text[i] === '\\') {
+          i--;
+        }
+        i--;
+      }
+      continue;
+    }
+    if (ch === ')') {
+      depth++;
+      continue;
+    }
+    if (ch === '(') {
+      if (depth === 0) {
+        let j = i - 1;
+        while (j >= 0 && /\s/.test(text[j])) {
+          j--;
+        }
+        const end = j + 1;
+        while (j >= 0 && /[\w.$]/.test(text[j])) {
+          j--;
+        }
+        const name = text.slice(j + 1, end);
+        if (!name || !/^[A-Za-z_][\w.$]*$/.test(name)) {
+          return null;
+        }
+        return { name, argIndex };
+      }
+      depth--;
+      continue;
+    }
+    if (ch === ',' && depth === 0) {
+      argIndex++;
+    }
+  }
+  return null;
+}
+
+/**
+ * Compute fold ranges for Baan control blocks, functions, and 4GL sections.
+ * @param {vscode.TextDocument} document
+ * @returns {vscode.FoldingRange[]}
+ */
+function computeFoldingRanges(document) {
+  /** @type {vscode.FoldingRange[]} */
+  const ranges = [];
+  /** @type {{ type: string, line: number }[]} */
+  const stack = [];
+  let inBlockComment = false;
+
+  /**
+   * @param {number} start
+   * @param {number} end
+   * @param {vscode.FoldingRangeKind} [kind]
+   */
+  const pushRange = (start, end, kind) => {
+    if (end > start) {
+      ranges.push(
+        kind !== undefined
+          ? new vscode.FoldingRange(start, end, kind)
+          : new vscode.FoldingRange(start, end)
+      );
+    }
+  };
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const text = stripLineComment(document.lineAt(i).text);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (trimmed.includes('*/')) {
+        inBlockComment = false;
+      }
+      continue;
+    }
+    if (trimmed.startsWith('/*')) {
+      if (!trimmed.includes('*/')) {
+        inBlockComment = true;
+      }
+      continue;
+    }
+
+    if (/^\s*#/.test(trimmed)) {
+      const pp = trimmed.toLowerCase();
+      if (/^#\s*(if|ifdef|ifndef)\b/.test(pp)) {
+        stack.push({ type: 'pp-if', line: i });
+      } else if (/^#\s*endif\b/.test(pp)) {
+        for (let s = stack.length - 1; s >= 0; s--) {
+          if (stack[s].type === 'pp-if') {
+            const open = stack.splice(s, 1)[0];
+            pushRange(open.line, i, vscode.FoldingRangeKind.Region);
+            break;
+          }
+        }
+      }
+      continue;
+    }
+
+    const lower = trimmed.toLowerCase();
+
+    if (/^if\b/.test(lower)) {
+      stack.push({ type: 'if', line: i });
+    } else if (/^while\b/.test(lower)) {
+      stack.push({ type: 'while', line: i });
+    } else if (/^for\b/.test(lower)) {
+      stack.push({ type: 'for', line: i });
+    } else if (/^repeat\b/.test(lower)) {
+      stack.push({ type: 'repeat', line: i });
+    } else if (/^on\s+case\b/.test(lower)) {
+      stack.push({ type: 'case', line: i });
+    } else if (
+      /^select\b/.test(lower) &&
+      !/^(selectdo|selectempty|selecteos|selecterror|selectbind)\b/.test(lower)
+    ) {
+      stack.push({ type: 'select', line: i });
+    } else if (/^function\b/.test(lower)) {
+      stack.push({ type: 'function', line: i });
+    } else if (lower === '{' || /^\{\s*$/.test(lower)) {
+      // If previous was function, keep it; else brace block
+      const top = stack[stack.length - 1];
+      if (!top || top.type !== 'function') {
+        stack.push({ type: 'brace', line: i });
+      }
+    } else if (
+      /^(declaration|before\.program|after\.program|on\.error|main\.table\.io|functions)\s*:/i.test(
+        trimmed
+      ) ||
+      /^(field|form|group|choice|zoom\.from)\.[\w.*]+\s*:/i.test(trimmed)
+    ) {
+      // Close previous 4GL section fold at previous line
+      for (let s = stack.length - 1; s >= 0; s--) {
+        if (stack[s].type === 'section') {
+          const open = stack.splice(s, 1)[0];
+          pushRange(open.line, i - 1, vscode.FoldingRangeKind.Region);
+          break;
+        }
+      }
+      stack.push({ type: 'section', line: i });
+    }
+
+    if (/^endif\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'if');
+    } else if (/^endwhile\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'while');
+    } else if (/^endfor\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'for');
+    } else if (/^until\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'repeat');
+    } else if (/^endcase\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'case');
+    } else if (/^endselect\b/.test(lower)) {
+      closeFold(stack, ranges, i, 'select');
+    } else if (lower === '}' || /^\}\s*$/.test(lower)) {
+      for (let s = stack.length - 1; s >= 0; s--) {
+        if (stack[s].type === 'function' || stack[s].type === 'brace') {
+          const open = stack.splice(s, 1)[0];
+          pushRange(open.line, i);
+          break;
+        }
+      }
+    }
+  }
+
+  // Close trailing 4GL sections at EOF
+  for (let s = stack.length - 1; s >= 0; s--) {
+    if (stack[s].type === 'section') {
+      pushRange(stack[s].line, document.lineCount - 1, vscode.FoldingRangeKind.Region);
+    }
+  }
+
+  return ranges;
+}
+
+/**
+ * @param {{ type: string, line: number }[]} stack
+ * @param {vscode.FoldingRange[]} ranges
+ * @param {number} endLine
+ * @param {string} type
+ */
+function closeFold(stack, ranges, endLine, type) {
+  for (let s = stack.length - 1; s >= 0; s--) {
+    if (stack[s].type === type) {
+      const open = stack.splice(s, 1)[0];
+      if (endLine > open.line) {
+        ranges.push(new vscode.FoldingRange(open.line, endLine));
+      }
+      return;
+    }
+  }
 }
 
 /**

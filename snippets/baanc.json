@@ -345,5 +345,155 @@
       "$0"
     ],
     "description": "db.retry.point()"
+  },
+  "Transaction with select for update": {
+    "prefix": "txselect",
+    "body": [
+      "db.retry.point()",
+      "long ${1:ret} = 0",
+      "select ${2:*}",
+      "from ${3:table}",
+      "for update",
+      "where ${4:condition}",
+      "selectdo",
+      "\t$0",
+      "\t${1:ret} = db.update(${5:table.id}, db.retry)",
+      "selectempty",
+      "\t| no records",
+      "endselect",
+      "if ${1:ret} = 0 then",
+      "\tcommit.transaction()",
+      "else",
+      "\tabort.transaction()",
+      "endif"
+    ],
+    "description": "db.retry.point + select for update + commit/abort"
+  },
+  "DAL get and save object": {
+    "prefix": "dalgs",
+    "body": [
+      "long ${1:ret}",
+      "${1:ret} = dal.get.object(\"${2:class.name}\", ${3:true})",
+      "if ${1:ret} = 0 then",
+      "\tdal.set.field(\"${4:field}\", ${5:value})",
+      "\t${1:ret} = dal.save.object(\"${2:class.name}\")",
+      "endif",
+      "$0"
+    ],
+    "description": "dal.get.object + set field + dal.save.object"
+  },
+  "HTTP GET pattern": {
+    "prefix": "httpget",
+    "body": [
+      "long ${1:resp} = http.get(\"${2:https://example.com/api}\")",
+      "if http.response.statuscode(${1:resp}) = 200 then",
+      "\t$0",
+      "else",
+      "\tmessage(\"HTTP error: %s\", http.response.error_message(${1:resp}))",
+      "endif",
+      "http.response.delete(${1:resp})"
+    ],
+    "description": "http.get with status check and cleanup"
+  },
+  "cURL download string": {
+    "prefix": "curlget",
+    "body": [
+      "string ${1:data}(4096)",
+      "long ${2:ret} = curl.download.string(\"${3:https://example.com}\", ${1:data})",
+      "if ${2:ret} = 0 then",
+      "\t$0",
+      "else",
+      "\tmessage(\"cURL error: %s\", curl.strerror$(${2:ret}))",
+      "endif"
+    ],
+    "description": "curl.download.string with error handling"
+  },
+  "Function extern long": {
+    "prefix": "funcex",
+    "body": [
+      "function extern long ${1:name}(",
+      "\t${2:ref long i.arg}",
+      ")",
+      "{",
+      "\t$0",
+      "\treturn(0)",
+      "}"
+    ],
+    "description": "function extern long with ref argument"
+  },
+  "On case string": {
+    "prefix": "oncases",
+    "body": [
+      "on case ${1:expression}",
+      "case \"${2:value}\":",
+      "\t$3",
+      "\tbreak",
+      "default:",
+      "\t$0",
+      "endcase"
+    ],
+    "description": "ON CASE with string case labels"
+  },
+  "Prototype": {
+    "prefix": "proto",
+    "body": [
+      "prototype ${1|long,double,string,void|} ${2:name}(${3})"
+    ],
+    "description": "function prototype declaration"
+  },
+  "SQL parse exec fetch": {
+    "prefix": "sqlpf",
+    "body": [
+      "long ${1:sql.id} = sql.parse(\"${2:select * from ttccom001}\")",
+      "sql.select.bind(${1:sql.id}, ${3:1}, ${4:var})",
+      "sql.exec(${1:sql.id})",
+      "while sql.fetch(${1:sql.id}) = 0",
+      "\t$0",
+      "endwhile",
+      "sql.close(${1:sql.id})"
+    ],
+    "description": "Dynamic SQL: parse, bind, exec, fetch, close"
+  },
+  "Query extend where": {
+    "prefix": "qext",
+    "body": [
+      "query.extend.where(\"${1:ttccom001.cuno = :cuno}\")",
+      "$0"
+    ],
+    "description": "query.extend.where extension"
+  },
+  "4GL after.field": {
+    "prefix": "after.field",
+    "body": [
+      "after.field:",
+      "\t$0"
+    ],
+    "description": "4GL after.field: subsection"
+  },
+  "4GL check.input": {
+    "prefix": "check.input",
+    "body": [
+      "check.input:",
+      "\t$0"
+    ],
+    "description": "4GL check.input: subsection"
+  },
+  "4GL choice section": {
+    "prefix": "choice.",
+    "body": [
+      "choice.${1:cont.process}:",
+      "\ton.choice:",
+      "\t\t$0"
+    ],
+    "description": "4GL choice.<command>: section"
+  },
+  "Error check ELOCKED": {
+    "prefix": "elocked",
+    "body": [
+      "if db.error() = ELOCKED then",
+      "\t$0",
+      "endif"
+    ],
+    "description": "Check for ELOCKED database error"
   }
 }
