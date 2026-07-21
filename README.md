@@ -1,6 +1,6 @@
 # Baan C / Infor LN Support
 
-Complete language support for Baan C and Infor LN (3GL & 4GL) inside Visual Studio Code.
+Complete language support for Baan C and Infor LN (3GL and 4GL) inside Visual Studio Code.
 
 Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
 
