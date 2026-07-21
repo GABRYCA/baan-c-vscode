@@ -1,3 +1,4 @@
+const path = require('path');
 const vscode = require('vscode');
 const {
   BUILTIN_FUNCTIONS,
@@ -6,6 +7,19 @@ const {
   ERROR_CONSTANTS,
   ERROR_BY_NAME
 } = require('./builtins');
+const {
+  createLibraryMemory,
+  createDllImportEdit,
+  createLibraryImportEdit,
+  resolveBuiltinDll,
+  findCallSites,
+  showLibraryMemoryManager,
+  formatImportStatement,
+  formatImportLabel,
+  formatImportDoc,
+  ensureImportMeta,
+  IMPORT_CODE
+} = require('./libraryMemory');
 
 /** @typedef {{ type: string, line: number, text: string }} BlockFrame */
 
@@ -279,8 +293,21 @@ function activate(context) {
   const selector = { language: 'baanc', scheme: 'file' };
   const output = vscode.window.createOutputChannel('Baan C');
   const diagnosticCollection = vscode.languages.createDiagnosticCollection('baanc');
+  const libraryMemory = createLibraryMemory(context);
 
   let cfg = loadConfig();
+
+  /** Debounced learn-from-document so BECS temp libs are captured before close/delete. */
+  const scheduleLearn = debounce(doc => {
+    if (!cfg.libraryMemoryEnabled || doc.languageId !== 'baanc') {
+      return;
+    }
+    libraryMemory.learnFromDocument(doc, {
+      enabled: cfg.libraryMemoryEnabled,
+      maxLibraries: cfg.libraryMemoryMaxLibraries,
+      maxFunctionsPerLibrary: cfg.libraryMemoryMaxFunctionsPerLibrary
+    });
+  }, 400);
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
@@ -288,7 +315,7 @@ function activate(context) {
         cfg = loadConfig();
         vscode.workspace.textDocuments
           .filter(d => d.languageId === 'baanc')
-          .forEach(d => runDiagnostics(d, diagnosticCollection, cfg));
+          .forEach(d => runDiagnostics(d, diagnosticCollection, cfg, libraryMemory));
       }
     })
   );
@@ -311,7 +338,7 @@ function activate(context) {
          * @param {string} label
          * @param {vscode.CompletionItemKind} kind
          * @param {string} detail
-         * @param {{ insertText?: string|vscode.SnippetString, range?: vscode.Range, filterText?: string, sortText?: string, documentation?: string }} [opts]
+         * @param {{ insertText?: string|vscode.SnippetString, range?: vscode.Range, filterText?: string, sortText?: string, documentation?: string, additionalTextEdits?: vscode.TextEdit[] }} [opts]
          */
         const add = (label, kind, detail, opts = {}) => {
           const key = `${label}||${detail}`;
@@ -335,6 +362,9 @@ function activate(context) {
           }
           if (opts.documentation) {
             item.documentation = new vscode.MarkdownString(opts.documentation);
+          }
+          if (opts.additionalTextEdits && opts.additionalTextEdits.length) {
+            item.additionalTextEdits = opts.additionalTextEdits;
           }
           items.push(item);
         };
@@ -419,7 +449,7 @@ function activate(context) {
         if (cfg.completionIncludeBuiltins) {
           const dottedPartial = getDottedSectionPartial(prefix, position);
           for (const fn of BUILTIN_FUNCTIONS) {
-            /** @type {{ insertText: string|vscode.SnippetString, filterText: string, sortText: string, documentation?: string, range?: vscode.Range }} */
+            /** @type {{ insertText: string|vscode.SnippetString, filterText: string, sortText: string, documentation?: string, range?: vscode.Range, additionalTextEdits?: vscode.TextEdit[] }} */
             const opts = {
               insertText: fn.insert
                 ? new vscode.SnippetString(fn.insert)
@@ -430,6 +460,19 @@ function activate(context) {
             };
             if (dottedPartial) {
               opts.range = dottedPartial.range;
+            }
+            // Conservative auto-import: only when a DLL is explicitly known for this builtin
+            if (cfg.autoImportBuiltinsOnCompletion) {
+              const dllInfo = resolveBuiltinDll(fn.name, fn);
+              if (dllInfo) {
+                const edit = createDllImportEdit(document, dllInfo.dll);
+                if (edit) {
+                  opts.additionalTextEdits = [edit];
+                  opts.documentation =
+                    (opts.documentation ? `${opts.documentation}\n\n` : '') +
+                    `Auto-import: \`#pragma used dll "${dllInfo.dll}"\``;
+                }
+              }
             }
             add(fn.name, vscode.CompletionItemKind.Function, fn.detail, opts);
           }
@@ -459,6 +502,8 @@ function activate(context) {
 
         // Document-local symbols (tables, functions, declarations)
         const locals = collectDocumentCompletions(document);
+        /** @type {Set<string>} */
+        const localFnSet = new Set(locals.functions.map(f => f.toLowerCase()));
         for (const t of locals.tables) {
           add(t, vscode.CompletionItemKind.Struct, 'table (this file)', {
             sortText: `0_table_${t}`
@@ -475,6 +520,65 @@ function activate(context) {
           add(v, vscode.CompletionItemKind.Variable, 'declaration (this file)', {
             sortText: `0_var_${v}`
           });
+        }
+
+        // Memorized library exports (from previously opened BECS / .bc libraries)
+        if (cfg.libraryMemoryEnabled) {
+          const dottedPartial = getDottedSectionPartial(prefix, position);
+          const currentScript = document.uri.scheme === 'file'
+            ? path.basename(document.uri.fsPath).replace(/\.(bc|cl|bcl|script)$/i, '').toLowerCase()
+            : '';
+          for (const lib of libraryMemory.listLibraries()) {
+            ensureImportMeta(lib);
+            // Don't suggest a library's exports while editing that same library
+            if (lib.id === currentScript) {
+              continue;
+            }
+            for (const fn of lib.functions) {
+              // DLL: only extern; include: all memorized non-static functions
+              if (lib.importKind === 'dll' && !fn.isExtern) {
+                continue;
+              }
+              if (localFnSet.has(fn.name.toLowerCase())) {
+                continue;
+              }
+              if (BUILTIN_BY_NAME.has(fn.name.toLowerCase())) {
+                continue;
+              }
+              const importStmt = formatImportStatement(
+                lib.importKind,
+                lib.importTarget
+              );
+              /** @type {{ insertText: string|vscode.SnippetString, filterText: string, sortText: string, documentation?: string, range?: vscode.Range, additionalTextEdits?: vscode.TextEdit[] }} */
+              const opts = {
+                insertText: new vscode.SnippetString(`${fn.name}($0)`),
+                filterText: fn.name,
+                sortText: `1_lib_${fn.name}`,
+                documentation:
+                  `\`\`\`baanc\n${fn.header}\n\`\`\`\n` +
+                  `From memorized **${lib.importKind}** \`${lib.importTarget}\` ` +
+                  `(script \`${lib.scriptName}\`).\n\n` +
+                  (cfg.libraryMemoryAutoImport
+                    ? `Accepting this completion adds \`${importStmt}\` if missing.`
+                    : formatImportDoc(lib))
+              };
+              if (dottedPartial) {
+                opts.range = dottedPartial.range;
+              }
+              if (cfg.libraryMemoryAutoImport) {
+                const edit = createLibraryImportEdit(document, lib);
+                if (edit) {
+                  opts.additionalTextEdits = [edit];
+                }
+              }
+              add(
+                fn.name,
+                vscode.CompletionItemKind.Function,
+                formatImportLabel(lib),
+                opts
+              );
+            }
+          }
         }
 
         const blockSnippets = [
@@ -574,6 +678,21 @@ function activate(context) {
           `\`\`\`baanc\n${localFn.header}\n\`\`\`\nFunction defined in this file (line ${localFn.line + 1}).`,
           wordRange
         );
+      }
+
+      // Memorized library export hover
+      if (cfg.libraryMemoryEnabled) {
+        const mem = libraryMemory.findFunction(word);
+        if (mem) {
+          ensureImportMeta(mem.library);
+          return makeHover(
+            `\`\`\`baanc\n${mem.header}\n\`\`\`\n` +
+              `Memorized from **${mem.library.importKind}** \`${mem.library.importTarget}\` ` +
+              `(script \`${mem.library.scriptName}\`).\n\n` +
+              formatImportDoc(mem.library),
+            wordRange
+          );
+        }
       }
 
       const after = document.getText(
@@ -793,25 +912,51 @@ function activate(context) {
         if (!builtin) {
           // Local function: show header if available
           const local = findLocalFunction(document, call.name);
-          if (!local) {
-            return null;
+          if (local) {
+            const help = new vscode.SignatureHelp();
+            const sig = new vscode.SignatureInformation(
+              local.header,
+              new vscode.MarkdownString(`Function in this file (line ${local.line + 1}).`)
+            );
+            const params = parseParamsFromHeader(local.header);
+            sig.parameters = params.map(
+              p => new vscode.ParameterInformation(p, p)
+            );
+            help.signatures = [sig];
+            help.activeSignature = 0;
+            help.activeParameter = Math.min(
+              call.argIndex,
+              Math.max(0, params.length - 1)
+            );
+            return help;
           }
-          const help = new vscode.SignatureHelp();
-          const sig = new vscode.SignatureInformation(
-            local.header,
-            new vscode.MarkdownString(`Function in this file (line ${local.line + 1}).`)
-          );
-          const params = parseParamsFromHeader(local.header);
-          sig.parameters = params.map(
-            p => new vscode.ParameterInformation(p, p)
-          );
-          help.signatures = [sig];
-          help.activeSignature = 0;
-          help.activeParameter = Math.min(
-            call.argIndex,
-            Math.max(0, params.length - 1)
-          );
-          return help;
+          // Memorized library function
+          if (cfg.libraryMemoryEnabled) {
+            const mem = libraryMemory.findFunction(call.name);
+            if (mem) {
+              ensureImportMeta(mem.library);
+              const help = new vscode.SignatureHelp();
+              const sig = new vscode.SignatureInformation(
+                mem.header,
+                new vscode.MarkdownString(
+                  `From memorized **${mem.library.importKind}** \`${mem.library.importTarget}\`.\n\n` +
+                    formatImportDoc(mem.library)
+                )
+              );
+              const params = parseParamsFromHeader(mem.header);
+              sig.parameters = params.map(
+                p => new vscode.ParameterInformation(p, p)
+              );
+              help.signatures = [sig];
+              help.activeSignature = 0;
+              help.activeParameter = Math.min(
+                call.argIndex,
+                Math.max(0, params.length - 1)
+              );
+              return help;
+            }
+          }
+          return null;
         }
         const { label, parameters } = getBuiltinSignature(builtin);
         const help = new vscode.SignatureHelp();
@@ -957,28 +1102,46 @@ function activate(context) {
   });
 
   const schedule = debounce(doc => {
-    runDiagnostics(doc, diagnosticCollection, cfg);
+    runDiagnostics(doc, diagnosticCollection, cfg, libraryMemory);
   }, 200);
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(e => {
       if (e.document.languageId === 'baanc') {
         schedule(e.document);
+        scheduleLearn(e.document);
       }
     }),
     vscode.workspace.onDidOpenTextDocument(doc => {
       if (doc.languageId === 'baanc') {
-        runDiagnostics(doc, diagnosticCollection, cfg);
+        runDiagnostics(doc, diagnosticCollection, cfg, libraryMemory);
+        scheduleLearn(doc);
+      }
+    }),
+    vscode.workspace.onDidSaveTextDocument(doc => {
+      if (doc.languageId === 'baanc') {
+        scheduleLearn(doc);
       }
     }),
     vscode.workspace.onDidCloseTextDocument(doc => {
+      // Final capture before BECS deletes the temp file
+      if (doc.languageId === 'baanc' && cfg.libraryMemoryEnabled) {
+        libraryMemory.learnFromDocument(doc, {
+          enabled: true,
+          maxLibraries: cfg.libraryMemoryMaxLibraries,
+          maxFunctionsPerLibrary: cfg.libraryMemoryMaxFunctionsPerLibrary
+        });
+      }
       diagnosticCollection.delete(doc.uri);
     })
   );
 
   vscode.workspace.textDocuments
     .filter(d => d.languageId === 'baanc')
-    .forEach(d => runDiagnostics(d, diagnosticCollection, cfg));
+    .forEach(d => {
+      runDiagnostics(d, diagnosticCollection, cfg, libraryMemory);
+      scheduleLearn(d);
+    });
 
   const codeActionProvider = vscode.languages.registerCodeActionsProvider(
     selector,
@@ -996,6 +1159,38 @@ function activate(context) {
             continue;
           }
           const code = String(d.code);
+
+          // IntelliJ-style: import missing library / optional builtin DLL
+          if (code === IMPORT_CODE.library || code === IMPORT_CODE.builtin) {
+            const parsed = extractImportFromDiagnosticMessage(d.message);
+            if (parsed) {
+              const edit =
+                parsed.kind === 'include'
+                  ? createLibraryImportEdit(document, {
+                      importKind: 'include',
+                      importTarget: parsed.target,
+                      scriptName: parsed.target
+                    })
+                  : createDllImportEdit(document, parsed.target);
+              if (edit) {
+                const label =
+                  parsed.kind === 'include'
+                    ? `Add #include "${parsed.target}"`
+                    : `Add #pragma used dll "${parsed.target}"`;
+                const action = new vscode.CodeAction(
+                  label,
+                  vscode.CodeActionKind.QuickFix
+                );
+                action.diagnostics = [d];
+                action.isPreferred = true;
+                action.edit = new vscode.WorkspaceEdit();
+                action.edit.set(document.uri, [edit]);
+                actions.push(action);
+              }
+            }
+            continue;
+          }
+
           if (
             code !== NAMING_CODE.case &&
             code !== NAMING_CODE.separator &&
@@ -1054,7 +1249,7 @@ function activate(context) {
       if (!editor || editor.document.languageId !== 'baanc') {
         return;
       }
-      runDiagnostics(editor.document, diagnosticCollection, cfg);
+      runDiagnostics(editor.document, diagnosticCollection, cfg, libraryMemory);
       output.appendLine(
         `Diagnostics refreshed for ${editor.document.fileName}`
       );
@@ -1108,6 +1303,123 @@ function activate(context) {
         ].join('\n')
       );
       await editor.insertSnippet(snippet);
+    }),
+    vscode.commands.registerCommand('baanc.manageLibraryMemory', async () => {
+      await showLibraryMemoryManager(libraryMemory);
+    }),
+    vscode.commands.registerCommand('baanc.clearLibraryMemory', async () => {
+      const { libraries, functions } = libraryMemory.stats;
+      if (!libraries) {
+        vscode.window.showInformationMessage('No memorized libraries to clear.');
+        return;
+      }
+      const confirm = await vscode.window.showWarningMessage(
+        `Clear all ${libraries} memorized libraries (${functions} functions)?`,
+        { modal: true },
+        'Clear all'
+      );
+      if (confirm === 'Clear all') {
+        libraryMemory.clearAll();
+        vscode.window.showInformationMessage('Memorized libraries cleared.');
+        vscode.workspace.textDocuments
+          .filter(d => d.languageId === 'baanc')
+          .forEach(d => runDiagnostics(d, diagnosticCollection, cfg, libraryMemory));
+      }
+    }),
+    vscode.commands.registerCommand('baanc.addLibraryImport', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'baanc') {
+        return;
+      }
+      const wordRange = editor.document.getWordRangeAtPosition(
+        editor.selection.active,
+        /[A-Za-z_][\w.]*/
+      );
+      const word = wordRange ? editor.document.getText(wordRange) : '';
+      /** @type {{ importKind: 'dll' | 'include', importTarget: string, scriptName?: string, objectName?: string } | null} */
+      let spec = null;
+      if (word && cfg.libraryMemoryEnabled) {
+        const mem = libraryMemory.findFunction(word);
+        if (mem) {
+          ensureImportMeta(mem.library);
+          spec = {
+            importKind: mem.library.importKind,
+            importTarget: mem.library.importTarget,
+            scriptName: mem.library.scriptName,
+            objectName: mem.library.objectName
+          };
+        }
+      }
+      if (!spec) {
+        const builtin = word ? BUILTIN_BY_NAME.get(word.toLowerCase()) : null;
+        const dllInfo = word ? resolveBuiltinDll(word, builtin) : null;
+        if (dllInfo) {
+          spec = { importKind: 'dll', importTarget: dllInfo.dll, objectName: dllInfo.dll };
+        }
+      }
+      if (!spec) {
+        const kindPick = await vscode.window.showQuickPick(
+          [
+            {
+              label: '#include "…"',
+              description: 'Include script (e.g. itxadv0000)',
+              kind: /** @type {'include'} */ ('include')
+            },
+            {
+              label: '#pragma used dll "…"',
+              description: 'Compiled DLL object (e.g. otccomdll0200)',
+              kind: /** @type {'dll'} */ ('dll')
+            }
+          ],
+          { title: 'Add library import', placeHolder: 'Choose import style' }
+        );
+        if (!kindPick) {
+          return;
+        }
+        const target =
+          (await vscode.window.showInputBox({
+            title:
+              kindPick.kind === 'include'
+                ? 'Add #include'
+                : 'Add #pragma used dll',
+            prompt:
+              kindPick.kind === 'include'
+                ? 'Include name (e.g. itxadv0000)'
+                : 'DLL object name (e.g. otccomdll0200)',
+            placeHolder:
+              kindPick.kind === 'include' ? 'itxadv0000' : 'otccomdll0200'
+          })) || '';
+        if (!target) {
+          return;
+        }
+        spec = {
+          importKind: kindPick.kind,
+          importTarget: target,
+          scriptName: target,
+          objectName: target
+        };
+      }
+      const edit = createLibraryImportEdit(editor.document, spec);
+      if (!edit) {
+        vscode.window.showInformationMessage(
+          `${formatImportStatement(spec.importKind, spec.importTarget)} is already present in this file.`
+        );
+        return;
+      }
+      const we = new vscode.WorkspaceEdit();
+      we.set(editor.document.uri, [edit]);
+      await vscode.workspace.applyEdit(we);
+      if (cfg.libraryMemoryEnabled) {
+        const lib = libraryMemory.listLibraries().find(
+          l =>
+            l.importTarget.toLowerCase() === spec.importTarget.toLowerCase() ||
+            l.objectName.toLowerCase() === spec.importTarget.toLowerCase() ||
+            l.scriptName.toLowerCase() === spec.importTarget.toLowerCase()
+        );
+        if (lib) {
+          libraryMemory.touch(lib.id);
+        }
+      }
     })
   );
 
@@ -1130,7 +1442,8 @@ function activate(context) {
   );
 
   output.appendLine(
-    `Baan C Support activated (${BUILTIN_FUNCTIONS.length} builtins, ${ERROR_CONSTANTS.length} error codes).`
+    `Baan C Support activated (${BUILTIN_FUNCTIONS.length} builtins, ${ERROR_CONSTANTS.length} error codes` +
+      `, ${libraryMemory.stats.libraries} memorized libraries).`
   );
 }
 
@@ -1149,8 +1462,46 @@ function loadConfig() {
     completionIncludePreprocessor: c.get('completion.includePreprocessor', true),
     completionInclude4gl: c.get('completion.include4gl', true),
     completionIncludeBuiltins: c.get('completion.includeBuiltins', true),
-    completionIncludeErrors: c.get('completion.includeErrors', true)
+    completionIncludeErrors: c.get('completion.includeErrors', true),
+    libraryMemoryEnabled: c.get('libraryMemory.enabled', true),
+    libraryMemoryMaxLibraries: c.get('libraryMemory.maxLibraries', 40),
+    libraryMemoryMaxFunctionsPerLibrary: c.get(
+      'libraryMemory.maxFunctionsPerLibrary',
+      200
+    ),
+    libraryMemoryAutoImport: c.get('libraryMemory.autoImportOnCompletion', true),
+    libraryMemoryImportHints: c.get('libraryMemory.showImportHints', true),
+    autoImportBuiltinsOnCompletion: c.get(
+      'autoImport.builtinsOnCompletion',
+      true
+    ),
+    autoImportBuiltinHints: c.get('autoImport.builtinImportHints', true)
   };
+}
+
+/**
+ * Pull import kind + target from an import-hint diagnostic message.
+ * @param {string} message
+ * @returns {{ kind: 'dll' | 'include', target: string } | null}
+ */
+function extractImportFromDiagnosticMessage(message) {
+  let m = /#include\s+"([^"]+)"/i.exec(message);
+  if (m) {
+    return { kind: 'include', target: m[1] };
+  }
+  m = /#pragma used dll "([^"]+)"/i.exec(message);
+  if (m) {
+    return { kind: 'dll', target: m[1] };
+  }
+  m = /include '([^']+)'/i.exec(message);
+  if (m) {
+    return { kind: 'include', target: m[1] };
+  }
+  m = /library '([^']+)'/i.exec(message);
+  if (m) {
+    return { kind: 'dll', target: m[1] };
+  }
+  return null;
 }
 
 /**
@@ -1886,7 +2237,13 @@ function formatDocument(document, indentSize) {
  * @param {vscode.DiagnosticCollection} collection
  * @param {ReturnType<typeof loadConfig>} cfg
  */
-function runDiagnostics(document, collection, cfg) {
+/**
+ * @param {vscode.TextDocument} document
+ * @param {vscode.DiagnosticCollection} collection
+ * @param {ReturnType<typeof loadConfig>} cfg
+ * @param {ReturnType<typeof createLibraryMemory>} [libraryMemory]
+ */
+function runDiagnostics(document, collection, cfg, libraryMemory) {
   if (!cfg.diagnosticsEnabled || document.languageId !== 'baanc') {
     return;
   }
@@ -2154,7 +2511,94 @@ function runDiagnostics(document, collection, cfg) {
     collectNamingDiagnostics(document, diagnostics, cfg);
   }
 
+  if (libraryMemory) {
+    collectImportDiagnostics(document, diagnostics, cfg, libraryMemory);
+  }
+
   collection.set(document.uri, diagnostics);
+}
+
+/**
+ * Soft (Information) hints when a call matches a memorized library export
+ * or a builtin with a known optional DLL, but the file lacks the pragma.
+ * Not errors — LN installations differ and auto-import must stay non-aggressive.
+ *
+ * @param {vscode.TextDocument} document
+ * @param {vscode.Diagnostic[]} diagnostics
+ * @param {ReturnType<typeof loadConfig>} cfg
+ * @param {ReturnType<typeof createLibraryMemory>} libraryMemory
+ */
+function collectImportDiagnostics(document, diagnostics, cfg, libraryMemory) {
+  const locals = collectDocumentCompletions(document);
+  /** @type {Set<string>} */
+  const localFns = new Set(locals.functions.map(f => f.toLowerCase()));
+  const sites = findCallSites(document, localFns);
+  /** @type {Set<string>} */
+  const reportedDlls = new Set();
+
+  for (const site of sites) {
+    const range = new vscode.Range(
+      site.line,
+      site.col,
+      site.line,
+      site.col + site.name.length
+    );
+
+    // Memorized library / include exports
+    if (cfg.libraryMemoryEnabled && cfg.libraryMemoryImportHints) {
+      const mem = libraryMemory.findFunction(site.name);
+      if (mem) {
+        ensureImportMeta(mem.library);
+        const key = `lib:${mem.library.importKind}:${mem.library.importTarget.toLowerCase()}`;
+        if (!reportedDlls.has(key)) {
+          const edit = createLibraryImportEdit(document, mem.library);
+          if (edit) {
+            reportedDlls.add(key);
+            const stmt = formatImportStatement(
+              mem.library.importKind,
+              mem.library.importTarget
+            );
+            const kindLabel =
+              mem.library.importKind === 'include' ? 'include' : 'library';
+            const d = new vscode.Diagnostic(
+              range,
+              `Function '${site.name}' is available from memorized ${kindLabel} '${mem.library.importTarget}'. ` +
+                `Add ${stmt} (Quick Fix).`,
+              vscode.DiagnosticSeverity.Information
+            );
+            d.source = 'baanc';
+            d.code = IMPORT_CODE.library;
+            diagnostics.push(d);
+          }
+        }
+        continue;
+      }
+    }
+
+    // Optional builtin DLL (only when explicitly mapped — never guess)
+    if (cfg.autoImportBuiltinHints) {
+      const builtin = BUILTIN_BY_NAME.get(site.name.toLowerCase());
+      const dllInfo = resolveBuiltinDll(site.name, builtin);
+      if (dllInfo) {
+        const key = `bi:${dllInfo.dll.toLowerCase()}`;
+        if (!reportedDlls.has(key)) {
+          const edit = createDllImportEdit(document, dllInfo.dll);
+          if (edit) {
+            reportedDlls.add(key);
+            const d = new vscode.Diagnostic(
+              range,
+              `Builtin '${site.name}' may need library '${dllInfo.dll}'. ` +
+                `Add #pragma used dll "${dllInfo.dll}" if your LN installation provides it (Quick Fix).`,
+              vscode.DiagnosticSeverity.Information
+            );
+            d.source = 'baanc';
+            d.code = IMPORT_CODE.builtin;
+            diagnostics.push(d);
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

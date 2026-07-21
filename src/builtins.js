@@ -3,7 +3,10 @@
  * Sourced from the official programming guide (string ops, DB, messages, dates, etc.).
  * insertText may be a plain string or use $0 for cursor placement after '('.
  *
- * @typedef {{ name: string, detail: string, doc?: string, insert?: string }} BuiltinFn
+ * @typedef {{ name: string, detail: string, doc?: string, insert?: string, dll?: string }} BuiltinFn
+ *
+ * Optional `dll`: object name for `#pragma used dll "…"`. Only set when the API
+ * is known to live in an optional package library — never for core bshell APIs.
  */
 
 /** @type {BuiltinFn[]} */

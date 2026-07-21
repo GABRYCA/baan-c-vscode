@@ -4,6 +4,20 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.5] - 21-07-2026
+
+### Added
+
+- **Library memory** for BECS / temp `.bc` workflows: functions from opened libraries and includes are remembered after the file is closed and deleted.
+- Completions, hovers, and signature help for memorized exports (`include · itxadv0000` / `dll · otccomdll0200`).
+- **Better auto-import** that distinguishes import forms:
+  - Include scripts → `#include "itxadv0000"`
+  - Compiled DLLs → `#pragma used dll "otccomdll0200"`
+  Information hints + Quick Fix for existing calls; toggle kind in Manage Memorized Libraries.
+- Conservative **builtin auto-import** for APIs with an explicit optional DLL mapping only (no aggressive guessing across LN installs).
+- Commands: Manage Memorized Libraries…, Clear Memorized Libraries, Add Library Import (`#include` / `#pragma used dll`).
+- Settings: `baanc.libraryMemory.*`, `baanc.autoImport.builtinsOnCompletion`, `baanc.autoImport.builtinImportHints`.
+
 ## [1.0.4] - 18-07-2026
 
 ### Added

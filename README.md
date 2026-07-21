@@ -22,6 +22,12 @@ Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?item
 - **Document Symbols (Outline)**: Navigate functions, domains, tables, and 4GL sections in the Outline view.
 - **Snippets**: Shortcuts like `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, `domain`, and more.
 - **Insert Templates**: Command Palette / context menu — transaction+select and full select skeletons.
+- **Library Memory (BECS-friendly)**: When you open a library or include `.bc` file, the extension remembers its functions even after BECS closes and deletes the temp file. Those functions appear in completions in other scripts.
+- **IntelliJ-style Auto-Import (include vs pragma)**: Accepting a completion inserts the **correct** import form when missing:
+  - Include scripts (e.g. `itxadv0000`) → `#include "itxadv0000"`
+  - Compiled DLLs (e.g. `tccomdll0200`) → `#pragma used dll "otccomdll0200"`
+  Soft Information hints + Quick Fix cover calls that already exist without the import. You can toggle include/DLL kind in **Manage Memorized Libraries**. Optional builtin DLL mappings stay conservative (never aggressive guessing across LN installations).
+- **Manage Memorized Libraries**: Command Palette actions to inspect, switch import kind (`#include` ↔ `#pragma used dll`), remove individual libraries/functions, or clear all.
 
 ## Extension Settings
 
@@ -38,6 +44,13 @@ This extension contributes the following settings that can be tweaked in VS Code
 * `baanc.completion.include4gl`: Include common 4GL section names in autocomplete.
 * `baanc.completion.includeBuiltins`: Include built-in API functions in autocomplete (Default: `true`).
 * `baanc.completion.includeErrors`: Include database/ES error constants (`ELOCKED`, …) in autocomplete (Default: `true`).
+* `baanc.libraryMemory.enabled`: Remember functions from opened library/include `.bc` files (Default: `true`).
+* `baanc.libraryMemory.maxLibraries`: Cap on memorized libraries; least-recently used are pruned (Default: `40`).
+* `baanc.libraryMemory.maxFunctionsPerLibrary`: Cap on functions stored per library (Default: `200`).
+* `baanc.libraryMemory.autoImportOnCompletion`: Auto-insert `#include "…"` or `#pragma used dll "…"` (whichever fits the memorized source) on completion accept (Default: `true`).
+* `baanc.libraryMemory.showImportHints`: Information hints + Quick Fix for missing `#include` / `#pragma used dll` (Default: `true`).
+* `baanc.autoImport.builtinsOnCompletion`: Auto-insert `#pragma used dll` for builtins that have an explicit optional DLL mapping (Default: `true`).
+* `baanc.autoImport.builtinImportHints`: Soft hints for those same mapped builtins when used without the pragma (Default: `true`).
 
 ## Commands
 
@@ -47,11 +60,16 @@ This extension contributes the following settings that can be tweaked in VS Code
 | `Baan C: Run Diagnostics` | Refresh block diagnostics and open the output channel |
 | `Baan C: Insert Select Template` | Insert a full `select` / `selectdo` / `selecterror` skeleton |
 | `Baan C: Insert Transaction + Select Template` | Insert `db.retry.point` + `for update` + commit/abort pattern |
+| `Baan C: Manage Memorized Libraries…` | Inspect, switch include/DLL kind, remove, or list functions |
+| `Baan C: Clear Memorized Libraries` | Wipe all remembered library/include exports |
+| `Baan C: Add Library Import (#include / #pragma used dll)` | Insert the right import for the symbol under the cursor (or choose style + name) |
 
 ## Known Issues
 
 - Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files.
 - Find References / Rename operate on the **current file** only (not a full workspace index).
+- Library memory classifies sources as include vs DLL by name/content heuristics (`*dll*` → pragma; classic `i…` includes like `itxadv0000` → `#include`). Use **Manage Memorized Libraries** to override if a name is ambiguous. Unusual temp names may need a manual import.
+- Builtin auto-import only runs for APIs with an explicit optional DLL mapping (core bshell functions never force a pragma).
 
 ## Building:
 
@@ -60,6 +78,20 @@ This extension contributes the following settings that can be tweaked in VS Code
 - Open VSCode and do `Ctrl+Shift+P` then `Extensions: Install from vsix`, select the file and click `Install`
 
 ## Release Notes
+
+## [1.0.5] - 21-07-2026
+
+### Added
+
+- **Library memory** for BECS / temp `.bc` workflows: functions from opened libraries and includes are remembered after the file is closed and deleted.
+- Completions, hovers, and signature help for memorized exports (`include · itxadv0000` / `dll · otccomdll0200`).
+- **Better auto-import** that distinguishes import forms:
+  - Include scripts → `#include "itxadv0000"`
+  - Compiled DLLs → `#pragma used dll "otccomdll0200"`
+  Information hints + Quick Fix for existing calls; toggle kind in Manage Memorized Libraries.
+- Conservative **builtin auto-import** for APIs with an explicit optional DLL mapping only (no aggressive guessing across LN installs).
+- Commands: Manage Memorized Libraries…, Clear Memorized Libraries, Add Library Import (`#include` / `#pragma used dll`).
+- Settings: `baanc.libraryMemory.*`, `baanc.autoImport.builtinsOnCompletion`, `baanc.autoImport.builtinImportHints`.
 
 ## [1.0.4] - 18-07-2026
 

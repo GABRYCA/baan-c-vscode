@@ -1,8 +1,8 @@
 {
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
-  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, 980+ built-in completions, signature help, references, rename, folding, hovers, symbols, and more",
-  "version": "1.0.4",
+  "description": "Complete language support for Baan C / Infor LN (3GL & 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, 980+ built-in completions, library memory with IntelliJ-style auto-import, signature help, references, rename, folding, hovers, symbols, and more",
+  "version": "1.0.5",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
@@ -126,6 +126,45 @@
           "type": "boolean",
           "default": true,
           "description": "Include database / ES error constants (ELOCKED, EDUPL, ENOREC, …) in completions"
+        },
+        "baanc.libraryMemory.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Remember functions from opened .bc library/include files (useful with BECS temp files) and offer them in completions. Includes use #include; DLLs use #pragma used dll."
+        },
+        "baanc.libraryMemory.maxLibraries": {
+          "type": "integer",
+          "default": 40,
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Maximum number of memorized libraries (oldest by last use are pruned)"
+        },
+        "baanc.libraryMemory.maxFunctionsPerLibrary": {
+          "type": "integer",
+          "default": 200,
+          "minimum": 10,
+          "maximum": 2000,
+          "description": "Maximum exported functions stored per memorized library"
+        },
+        "baanc.libraryMemory.autoImportOnCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "When accepting a completion from a memorized library/include, automatically insert the correct import if missing: #include \"…\" for include scripts (e.g. itxadv0000) or #pragma used dll \"…\" for DLLs (IntelliJ-style)"
+        },
+        "baanc.libraryMemory.showImportHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Information-level hints (with Quick Fix) when a call matches a memorized library/include that is not yet imported via #include or #pragma used dll"
+        },
+        "baanc.autoImport.builtinsOnCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "When accepting a builtin completion that has a known optional DLL mapping, insert #pragma used dll if missing. Only applies to explicitly mapped APIs (never guesses package DLLs)."
+        },
+        "baanc.autoImport.builtinImportHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show soft Information hints for builtins that have a known optional DLL and are used without #pragma used dll"
         }
       }
     },
@@ -145,6 +184,18 @@
       {
         "command": "baanc.insertSelectTemplate",
         "title": "Baan C: Insert Select Template"
+      },
+      {
+        "command": "baanc.manageLibraryMemory",
+        "title": "Baan C: Manage Memorized Libraries…"
+      },
+      {
+        "command": "baanc.clearLibraryMemory",
+        "title": "Baan C: Clear Memorized Libraries"
+      },
+      {
+        "command": "baanc.addLibraryImport",
+        "title": "Baan C: Add Library Import (#include / #pragma used dll)"
       }
     ],
     "menus": {
@@ -180,6 +231,16 @@
         },
         {
           "command": "baanc.insertSelectTemplate",
+          "when": "editorLangId == baanc"
+        },
+        {
+          "command": "baanc.manageLibraryMemory"
+        },
+        {
+          "command": "baanc.clearLibraryMemory"
+        },
+        {
+          "command": "baanc.addLibraryImport",
           "when": "editorLangId == baanc"
         }
       ]
