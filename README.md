@@ -129,6 +129,14 @@ More: [docs/troubleshooting.md](./docs/troubleshooting.md).
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
+## [1.0.7] - 23-07-2026
+
+- Added `Baan C: Open documentation` command to open the extension documentation.
+- Added `/docs` folder with .md documentation for commands, development, troubleshooting and more.
+- Added `/scripts/build-docs.js` script to generate the documentation as an `index.html` HTML file from `/docs/*.md`.
+- Added Github Action workflow to build the documentation and deploy it to GitHub Pages on every push to `master`.
+- Optimized build process to reduce the size of the extension package and improve performance.
+
 ### [1.0.6] - 22-07-2026
 
 - Select snippets and insert templates use `table.*` with linked placeholders and aligned clauses.

@@ -4,6 +4,19 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.7] - 23-07-2026
+
+### Added
+
+- New `Baan C: Open documentation` command to open the extension documentation.
+- New `/docs` folder with .md documentation for commands, development, troubleshooting and more.
+- New `/scripts/build-docs.js` script to generate the documentation as an `index.html` HTML file from `/docs/*.md`.
+- New Github Action workflow to build the documentation and deploy it to GitHub Pages on every push to `master`.
+
+### Changed
+
+- Optimized build process to reduce the size of the extension package and improve performance.
+
 ## [1.0.6] - 22-07-2026
 
 ### Changed
