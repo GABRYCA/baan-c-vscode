@@ -196,6 +196,14 @@
       {
         "command": "baanc.addLibraryImport",
         "title": "Baan C: Add Library Import (#include / #pragma used dll)"
+      },
+      {
+        "command": "baanc.openDocumentation",
+        "title": "Baan C: Open Documentation",
+        "icon": {
+          "light": "./icons/baanc-light-icon.webp",
+          "dark": "./icons/baanc-dark-icon.webp"
+        }
       }
     ],
     "menus": {
@@ -242,6 +250,9 @@
         {
           "command": "baanc.addLibraryImport",
           "when": "editorLangId == baanc"
+        },
+        {
+          "command": "baanc.openDocumentation"
         }
       ]
     },
@@ -267,10 +278,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "node esbuild.js --production",
+    "vscode:prepublish": "node esbuild.js --production && node scripts/build-docs.js",
     "package": "node esbuild.js --production",
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
+    "docs:build": "node scripts/build-docs.js",
     "lint": "eslint src"
   },
   "devDependencies": {

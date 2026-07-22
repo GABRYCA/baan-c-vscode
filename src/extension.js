@@ -20,6 +20,7 @@ const {
   ensureImportMeta,
   IMPORT_CODE
 } = require('./libraryMemory');
+const { registerDocsCommands } = require('./docsViewer');
 
 /** @typedef {{ type: string, line: number, text: string }} BlockFrame */
 
@@ -1232,6 +1233,8 @@ function activate(context) {
     },
     { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
   );
+
+  registerDocsCommands(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('baanc.formatDocument', async () => {

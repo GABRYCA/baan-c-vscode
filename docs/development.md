@@ -44,7 +44,9 @@ baan-c-support/          # repository root (name may vary locally)
 │   └── test/            # tests / smoke helpers
 ├── dist/
 │   └── extension.js     # bundled entry (runtime main)
-├── docs/                # this documentation
+├── docs/                # markdown sources + generated index.html site
+├── scripts/
+│   └── build-docs.js    # builds docs/index.html from docs/*.md
 ├── CHANGELOG.md
 ├── README.md
 └── LICENSE
@@ -65,8 +67,19 @@ baan-c-support/          # repository root (name may vary locally)
 | `src/extension.js` | `activate` / `deactivate`; completions, hover, definition, references, rename, highlights, folding, symbols, signature help, formatting, diagnostics, code actions, commands |
 | `src/builtins.js` | `BUILTIN_FUNCTIONS`, `ERROR_CONSTANTS`, lookup maps, signature parsing |
 | `src/libraryMemory.js` | Persistent library store, import edits, manager Quick Pick, builtin DLL resolve hooks |
+| `src/docsViewer.js` | Webview host for the single-file documentation site |
 
 There is **no** separate language server process; all providers run in the extension host.
+
+### Documentation site
+
+Markdown under `docs/*.md` is the source of truth. The professional SPA lives at `docs/index.html` (sidebar, search, light/dark theme). Regenerate after editing guides:
+
+```bash
+npm run docs:build
+```
+
+Open via **Baan C: Open Documentation** in the Command Palette, or open `docs/index.html` in a browser.
 
 ---
 
@@ -79,7 +92,8 @@ Defined in `package.json`:
 | `compile` | `node esbuild.js` | One-shot development bundle (with sourcemap) |
 | `watch` | `node esbuild.js --watch` | Rebuild on change |
 | `package` | `node esbuild.js --production` | Minified production bundle |
-| `vscode:prepublish` | `node esbuild.js --production` | Runs automatically before `vsce package` / publish |
+| `docs:build` | `node scripts/build-docs.js` | Rebuild single-file docs site (`docs/index.html`) |
+| `vscode:prepublish` | production esbuild + docs build | Runs automatically before `vsce package` / publish |
 | `lint` | `eslint src` | Lint source |
 
 ### esbuild options

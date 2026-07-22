@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Documentation for Baan C VSCode — language support for Baan C / Infor LN in Visual Studio Code." />
+  <title>Baan C VSCode Documentation</title>
+  <style>
+/* ── Reset & tokens ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+:root, [data-theme="dark"] {
+  --bg: #0b0f14;
+  --bg-elevated: #111820;
+  --bg-sidebar: #0d1219;
+  --bg-code: #0a0e13;
+  --bg-hover: rgba(125, 180, 255, 0.08);
+  --bg-active: rgba(56, 139, 253, 0.15);
+  --border: #1e2a38;
+  --border-subtle: #16202b;
+  --text: #e6edf3;
+  --text-muted: #8b9cb3;
+  --text-faint: #5c6b80;
+  --accent: #3b9eff;
+  --accent-soft: #58a6ff;
+  --accent-dim: rgba(59, 158, 255, 0.2);
+  --link: #6cb6ff;
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --code-text: #e6edf3;
+  --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  --radius: 10px;
+  --sidebar-w: 280px;
+  --toc-w: 220px;
+  --header-h: 56px;
+  --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, "Courier New", monospace;
+  --selection: rgba(59, 158, 255, 0.28);
+}
+[data-theme="light"] {
+  --bg: #f7f9fc;
+  --bg-elevated: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-code: #f0f4f8;
+  --bg-hover: rgba(9, 105, 218, 0.06);
+  --bg-active: rgba(9, 105, 218, 0.1);
+  --border: #d8e0ea;
+  --border-subtle: #e8eef5;
+  --text: #1a2332;
+  --text-muted: #5b6b7c;
+  --text-faint: #8a97a8;
+  --accent: #0969da;
+  --accent-soft: #218bff;
+  --accent-dim: rgba(9, 105, 218, 0.12);
+  --link: #0969da;
+  --code-text: #1a2332;
+  --shadow: 0 8px 30px rgba(16, 24, 40, 0.08);
+  --selection: rgba(9, 105, 218, 0.18);
+}
+::selection { background: var(--selection); }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; height: auto; }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-decoration: none;
+  color: var(--text);
+}
+.sidebar-brand:hover { text-decoration: none; }
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #1a6fd4 0%, #0d3d7a 100%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+  box-shadow: 0 2px 8px rgba(26, 111, 212, 0.35);
+  flex-shrink: 0;
+}
+.brand-text { min-width: 0; }
+.brand-title {
+  font-weight: 650;
+  font-size: 14.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.sidebar-search {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.search-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.search-trigger:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.search-trigger kbd {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-faint);
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px 24px;
+  overflow-y: auto;
+}
+.nav-group { margin-bottom: 18px; }
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 4px 10px 8px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-link:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-link.active {
+  background: var(--bg-active);
+  color: var(--accent-soft);
+}
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.75;
+  flex-shrink: 0;
+  background: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+.nav-link.active .nav-icon { opacity: 1; }
+.sidebar-footer {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-dim);
+  color: var(--accent-soft);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* Icons via mask */
+.nav-icon[data-icon="home"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="rocket"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 10V3L4 14h7v7l9-11h-7z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 10V3L4 14h7v7l9-11h-7z'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="spark"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="gear"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="terminal"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="snippet"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="memory"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="code"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8 9l-4 3 4 3m8-6l4 3-4 3M14 5l-4 14'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8 9l-4 3 4 3m8-6l4 3-4 3M14 5l-4 14'/%3E%3C/svg%3E"); }
+.nav-icon[data-icon="help"] { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E"); }
+
+/* Main column */
+.main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.menu-btn {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.menu-btn:hover { background: var(--bg-hover); }
+.breadcrumbs {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.breadcrumbs strong { color: var(--text); font-weight: 600; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+.content-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--toc-w);
+  gap: 32px;
+  padding: 28px 36px 80px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+.article {
+  min-width: 0;
+  max-width: 760px;
+}
+.article > :first-child { margin-top: 0; }
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.page-badge {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  background: var(--accent-dim);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* Prose */
+.article h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+  color: var(--text);
+}
+.article h2 {
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin: 2.4rem 0 0.85rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-subtle);
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+.article h3 {
+  font-size: 1.1rem;
+  font-weight: 650;
+  margin: 1.8rem 0 0.65rem;
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+.article h4, .article h5, .article h6 {
+  font-size: 1rem;
+  font-weight: 650;
+  margin: 1.4rem 0 0.5rem;
+}
+.article h2 .anchor,
+.article h3 .anchor,
+.article h1 .anchor {
+  opacity: 0;
+  margin-right: 0.35em;
+  color: var(--text-faint);
+  font-weight: 500;
+  text-decoration: none;
+}
+.article h2:hover .anchor,
+.article h3:hover .anchor,
+.article h1:hover .anchor { opacity: 1; }
+.article p { margin: 0 0 1rem; color: var(--text); }
+.article li { margin: 0.25rem 0; }
+.article ul, .article ol { margin: 0 0 1rem; padding-left: 1.4rem; }
+.article hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+.article blockquote {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-hover);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text-muted);
+}
+.article blockquote p { margin: 0; }
+.article strong { font-weight: 650; color: var(--text); }
+.article code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg-code);
+  border: 1px solid var(--border-subtle);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+  color: var(--code-text);
+}
+.article a { font-weight: 500; }
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.article th, .article td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+.article th {
+  font-weight: 650;
+  background: var(--bg-hover);
+  color: var(--text);
+  white-space: nowrap;
+}
+.article tr:last-child td { border-bottom: none; }
+.article tbody tr:hover td { background: var(--bg-hover); }
+
+/* Code blocks */
+.code-block {
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-code);
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.code-lang {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+.copy-btn {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+.copy-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+.copy-btn.copied { color: var(--success); }
+.code-block pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.code-block code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--code-text);
+  border-radius: 0;
+}
+
+/* TOC */
+.toc {
+  position: sticky;
+  top: calc(var(--header-h) + 20px);
+  align-self: start;
+  max-height: calc(100vh - var(--header-h) - 40px);
+  overflow-y: auto;
+  padding-left: 4px;
+}
+.toc-title {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+.toc a {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--border);
+  text-decoration: none;
+  line-height: 1.4;
+}
+.toc a:hover { color: var(--text); }
+.toc a.active {
+  color: var(--accent-soft);
+  border-left-color: var(--accent);
+  font-weight: 550;
+}
+.toc a.depth-3 { padding-left: 22px; font-size: 12px; }
+.toc-empty { display: none; }
+
+/* Pager */
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.pager a {
+  display: block;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.12s, background 0.12s;
+}
+.pager a:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+  text-decoration: none;
+}
+.pager .label {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.pager .title { font-weight: 600; font-size: 14px; }
+.pager .next { text-align: right; }
+.pager .disabled { visibility: hidden; }
+
+/* Search modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+}
+.modal-backdrop.open { display: flex; }
+.search-modal {
+  width: min(560px, 100%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.search-input-wrap svg { color: var(--text-faint); flex-shrink: 0; }
+#search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+}
+#search-input::placeholder { color: var(--text-faint); }
+.search-results {
+  max-height: min(50vh, 360px);
+  overflow-y: auto;
+  padding: 8px;
+}
+.search-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+}
+.search-hit:hover, .search-hit.active {
+  background: var(--bg-active);
+}
+.search-hit .hit-page {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-soft);
+  margin-bottom: 2px;
+}
+.search-hit .hit-snippet {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-hit mark {
+  background: var(--accent-dim);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.search-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+.search-hint {
+  padding: 8px 16px 12px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Mobile overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 35;
+}
+.sidebar-overlay.open { display: block; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .content-wrap { grid-template-columns: 1fr; }
+  .toc { display: none; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: min(var(--sidebar-w), 88vw);
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .menu-btn { display: inline-grid; }
+  .content-wrap { padding: 20px 18px 64px; }
+  .pager { grid-template-columns: 1fr; }
+  .pager .next { text-align: left; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+  </style>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <a class="sidebar-brand" href="#/overview" data-route="overview">
+        <div class="brand-mark">BC</div>
+        <div class="brand-text">
+          <div class="brand-title">Baan C VSCode</div>
+          <div class="brand-sub">Extension documentation</div>
+        </div>
+      </a>
+      <div class="sidebar-search">
+        <button type="button" class="search-trigger" id="open-search" aria-label="Search documentation">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3" stroke-linecap="round"/></svg>
+          <span>Search docs…</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Documentation">
+<div class="nav-group"><div class="nav-group-title">Start</div><a class="nav-link" href="#/overview" data-route="overview" data-icon="home"><span class="nav-icon" data-icon="home"></span><span class="nav-label">Overview</span></a>
+<a class="nav-link" href="#/getting-started" data-route="getting-started" data-icon="rocket"><span class="nav-icon" data-icon="rocket"></span><span class="nav-label">Getting started</span></a></div>
+<div class="nav-group"><div class="nav-group-title">Guides</div><a class="nav-link" href="#/features" data-route="features" data-icon="spark"><span class="nav-icon" data-icon="spark"></span><span class="nav-label">Features</span></a>
+<a class="nav-link" href="#/configuration" data-route="configuration" data-icon="gear"><span class="nav-icon" data-icon="gear"></span><span class="nav-label">Configuration</span></a>
+<a class="nav-link" href="#/commands" data-route="commands" data-icon="terminal"><span class="nav-icon" data-icon="terminal"></span><span class="nav-label">Commands</span></a>
+<a class="nav-link" href="#/snippets" data-route="snippets" data-icon="snippet"><span class="nav-icon" data-icon="snippet"></span><span class="nav-label">Snippets</span></a>
+<a class="nav-link" href="#/library-memory" data-route="library-memory" data-icon="memory"><span class="nav-icon" data-icon="memory"></span><span class="nav-label">Library memory</span></a></div>
+<div class="nav-group"><div class="nav-group-title">Contribute</div><a class="nav-link" href="#/development" data-route="development" data-icon="code"><span class="nav-icon" data-icon="code"></span><span class="nav-label">Development</span></a></div>
+<div class="nav-group"><div class="nav-group-title">Help</div><a class="nav-link" href="#/troubleshooting" data-route="troubleshooting" data-icon="help"><span class="nav-icon" data-icon="help"></span><span class="nav-label">Troubleshooting</span></a></div>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="version-badge">v1.0.6</span>
+        <span>MIT License</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button type="button" class="menu-btn" id="menu-btn" aria-label="Open navigation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+        </button>
+        <div class="breadcrumbs" id="breadcrumbs">Documentation</div>
+        <div class="topbar-actions">
+          <button type="button" class="icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+        <article class="article" id="article" aria-live="polite"></article>
+        <aside class="toc" id="toc" aria-label="On this page">
+          <div class="toc-title">On this page</div>
+          <div id="toc-links"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="search-modal" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="search-modal">
+      <div class="search-input-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3" stroke-linecap="round"/></svg>
+        <input id="search-input" type="search" placeholder="Search documentation…" autocomplete="off" spellcheck="false" />
+        <kbd style="font-size:11px;color:var(--text-faint);border:1px solid var(--border);padding:2px 6px;border-radius:4px;">Esc</kbd>
+      </div>
+      <div class="search-results" id="search-results"></div>
+      <div class="search-hint">Navigate with ↑ ↓ · Enter to open · Esc to close</div>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  var PAGES = {"overview":{"id":"overview","title":"Overview","group":"Start","icon":"home","html":"<h1 id=\"baan-c-vscode-documentation\"><a class=\"anchor\" href=\"#baan-c-vscode-documentation\" aria-hidden=\"true\">#</a>Baan C VSCode — Documentation</h1>\n<p>Complete language support for <strong>Baan C</strong> and <strong>Infor LN</strong> (3GL and 4GL) in Visual Studio Code.</p>\n<blockquote><strong>Preferred reading experience:</strong> open the single-file docs site   <a href=\"./index.html\"><code>docs/index.html</code></a> in a browser, or run <strong>Baan C: Open Documentation</strong>   from the Command Palette. Rebuild with <code>npm run docs:build</code> after editing these <code>.md</code> sources.</blockquote>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th></th>\n<th></th>\n</tr></thead><tbody>\n<tr>\n<td><strong>Extension ID</strong></td>\n<td><code>AnonymousGCA.baan-c-vscode</code></td>\n</tr>\n<tr>\n<td><strong>Version</strong></td>\n<td>1.0.6</td>\n</tr>\n<tr>\n<td><strong>License</strong></td>\n<td><a href=\"../LICENSE\">MIT</a></td>\n</tr>\n<tr>\n<td><strong>Marketplace</strong></td>\n<td><a href=\"https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode\" target=\"_blank\" rel=\"noopener noreferrer\">Baan C VSCode</a></td>\n</tr>\n<tr>\n<td><strong>Repository</strong></td>\n<td><a href=\"https://github.com/GABRYCA/baan-c-vscode\" target=\"_blank\" rel=\"noopener noreferrer\">GABRYCA/baan-c-vscode</a></td>\n</tr>\n<tr>\n<td><strong>Engine</strong></td>\n<td>VS Code <code>^1.125.0</code></td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"what-you-get\"><a class=\"anchor\" href=\"#what-you-get\" aria-hidden=\"true\">#</a>What you get</h2>\n<ul>\n<li>Syntax highlighting for Baan C / Infor LN (keywords, SQL, 4GL sections, types, preprocessor)</li>\n<li>Document formatting with SQL clause alignment</li>\n<li>Block and naming diagnostics (Hint-level naming, structural errors)</li>\n<li>980+ built-in API completions with hovers and signature help</li>\n<li>Database / ES error constants (<code>ELOCKED</code>, <code>EDUPL</code>, …)</li>\n<li>Go to Definition, Find References, Rename, Outline, folding</li>\n<li>Snippets and insert templates for selects, transactions, 4GL, HTTP, DAL</li>\n<li><strong>Library memory</strong> for BECS temp-file workflows with IntelliJ-style auto-import   (<code>#include</code> vs <code>#pragma used dll</code>)</li>\n</ul>\n<hr />\n<h2 id=\"documentation-map\"><a class=\"anchor\" href=\"#documentation-map\" aria-hidden=\"true\">#</a>Documentation map</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Guide</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><a href=\"#/getting-started\" data-route=\"getting-started\">Getting started</a></td>\n<td>Install, open Baan files, first steps</td>\n</tr>\n<tr>\n<td><a href=\"#/features\" data-route=\"features\">Features</a></td>\n<td>Full feature reference and how each capability works</td>\n</tr>\n<tr>\n<td><a href=\"#/configuration\" data-route=\"configuration\">Configuration</a></td>\n<td>All <code>baanc.*</code> settings with defaults</td>\n</tr>\n<tr>\n<td><a href=\"#/commands\" data-route=\"commands\">Commands</a></td>\n<td>Command Palette actions and editor shortcuts</td>\n</tr>\n<tr>\n<td><a href=\"#/snippets\" data-route=\"snippets\">Snippets</a></td>\n<td>Prefix catalog for control flow, SQL, 4GL, APIs</td>\n</tr>\n<tr>\n<td><a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a></td>\n<td>Memorized libraries, auto-import, BECS workflow</td>\n</tr>\n<tr>\n<td><a href=\"#/development\" data-route=\"development\">Development</a></td>\n<td>Clone, build, debug, package, project layout</td>\n</tr>\n<tr>\n<td><a href=\"#/troubleshooting\" data-route=\"troubleshooting\">Troubleshooting</a></td>\n<td>Known limits, FAQ, and fixes</td>\n</tr>\n</tbody></table></div>\n<p>Release history lives in the root <a href=\"../CHANGELOG.md\" class=\"ext-link\">CHANGELOG.md</a>.</p>\n<hr />\n<h2 id=\"supported-file-types\"><a class=\"anchor\" href=\"#supported-file-types\" aria-hidden=\"true\">#</a>Supported file types</h2>\n<p>The language id is <code>baanc</code>. These extensions activate language support automatically:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Extension</th>\n<th>Typical use</th>\n</tr></thead><tbody>\n<tr>\n<td><code>.bc</code></td>\n<td>Baan C / Infor LN script</td>\n</tr>\n<tr>\n<td><code>.cl</code></td>\n<td>Client / library script</td>\n</tr>\n<tr>\n<td><code>.bcl</code></td>\n<td>Baan C library</td>\n</tr>\n<tr>\n<td><code>.script</code></td>\n<td>Generic script extension</td>\n</tr>\n</tbody></table></div>\n<p>You can also set the language mode manually: <strong>Command Palette → “Change Language Mode” → Baan C</strong>.</p>\n<hr />\n<h2 id=\"quick-links-for-users\"><a class=\"anchor\" href=\"#quick-links-for-users\" aria-hidden=\"true\">#</a>Quick links for users</h2>\n<ol>\n<li>Install <a href=\"#/getting-started#install-visual-studio-code\" data-route=\"getting-started\">Visual Studio Code</a> (path <code>C:\\apps\\VSCODE</code> for LN) and set <strong>Development Parameters = VSCODE</strong> in LN — see <a href=\"#/getting-started\" data-route=\"getting-started\">Getting started</a>.</li>\n<li>Install the extension from the <a href=\"https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode\" target=\"_blank\" rel=\"noopener noreferrer\">Marketplace</a> or from a <code>.vsix</code>.</li>\n<li>Open a <code>.bc</code> file — highlighting, completions, and diagnostics start immediately.</li>\n<li>Format with <code>Shift+Alt+F</code> (Windows/Linux) or <code>Shift+Option+F</code> (macOS).</li>\n<li>For BECS workflows, open library/include files once so <strong>Library memory</strong> can learn them — see <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</li>\n</ol>\n<hr />\n<h2 id=\"quick-links-for-contributors\"><a class=\"anchor\" href=\"#quick-links-for-contributors\" aria-hidden=\"true\">#</a>Quick links for contributors</h2>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">npm install\nnpm run compile          # build dist/extension.js\nnpm run watch            # rebuild on change\nnpx @vscode/vsce package # produce .vsix</code></pre></div>\n<p>Details: <a href=\"#/development\" data-route=\"development\">Development</a>.</p>\n<hr />\n<h2 id=\"license\"><a class=\"anchor\" href=\"#license\" aria-hidden=\"true\">#</a>License</h2>\n<p>MIT — see <a href=\"../LICENSE\">LICENSE</a>.</p>","toc":[{"id":"what-you-get","text":"What you get","level":2},{"id":"documentation-map","text":"Documentation map","level":2},{"id":"supported-file-types","text":"Supported file types","level":2},{"id":"quick-links-for-users","text":"Quick links for users","level":2},{"id":"quick-links-for-contributors","text":"Quick links for contributors","level":2},{"id":"license","text":"License","level":2}],"plain":"Baan C VSCode — Documentation\nComplete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visual Studio Code.\nWhat you get\nSyntax highlighting for Baan C / Infor LN (keywords, SQL, 4GL sections, types, preprocessor)\nDocument formatting with SQL clause alignment\nBlock and naming diagnostics (Hint-level naming, structural errors)\n980+ built-in API completions with hovers and signature help\nDatabase / ES error constants (`ELOCKED`, `EDUPL`, …)\nGo to Definition, Find References, Rename, Outline, folding\nSnippets and insert templates for selects, transactions, 4GL, HTTP, DAL\n**Library memory** for BECS temp-file workflows with IntelliJ-style auto-import  \nDocumentation map\nRelease history lives in the root [CHANGELOG.md](../CHANGELOG.md).\nSupported file types\nThe language id is `baanc`. These extensions activate language support automatically:\nYou can also set the language mode manually: **Command Palette → “Change Language Mode” → Baan C**.\nQuick links for users\nInstall [Visual Studio Code](./getting-started.md#install-visual-studio-code) (path `C:\\apps\\VSCODE` for LN) and set **Development Parameters = VSCODE** in LN — see [Getting started](./getting-started.md).\nInstall the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) or from a `.vsix`.\nOpen a `.bc` file — highlighting, completions, and diagnostics start immediately.\nFormat with `Shift+Alt+F` (Windows/Linux) or `Shift+Option+F` (macOS).\nFor BECS workflows, open library/include files once so **Library memory** can learn them — see [Library memory](./library-memory.md).\nQuick links for contributors\nnpm install\nnpm run compile          # build dist/extension.js\nnpm run watch            # rebuild on change\nnpx @vscode/vsce package # produce .vsix\nDetails: [Development](./development.md).\nLicense\nMIT — see [LICENSE](../LICENSE)."},"getting-started":{"id":"getting-started","title":"Getting started","group":"Start","icon":"rocket","html":"<h1 id=\"getting-started\"><a class=\"anchor\" href=\"#getting-started\" aria-hidden=\"true\">#</a>Getting started</h1>\n<p>This guide covers installing <strong>Visual Studio Code</strong>, connecting it to <strong>Infor LN</strong>, installing <strong>Baan C VSCode</strong>, opening scripts, and the essentials you need on day one.</p>\n<hr />\n<h2 id=\"requirements\"><a class=\"anchor\" href=\"#requirements\" aria-hidden=\"true\">#</a>Requirements</h2>\n<p>Before you use the extension, make sure you have:</p>\n<ul>\n<li><strong>Visual Studio Code</strong> 1.125.0 or newer (see <a href=\"#install-visual-studio-code\">Install Visual Studio Code</a> below)</li>\n<li><strong>Infor LN</strong> user defaults with <strong>Development Parameters</strong> set to <strong>VSCODE</strong> (see <a href=\"#set-vs-code-as-the-default-editor-in-ln\">Set VS Code as the default editor in LN</a>)</li>\n<li>No Infor LN runtime is required for <em>editor</em> features alone (highlighting, format, completions, etc.)</li>\n<li>Optional: access to library/include <code>.bc</code> sources if you want <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a> to learn project APIs</li>\n</ul>\n<hr />\n<h2 id=\"install-visual-studio-code\"><a class=\"anchor\" href=\"#install-visual-studio-code\" aria-hidden=\"true\">#</a>Install Visual Studio Code</h2>\n<p>If VS Code is not on your PC yet, install it first. These steps match the AlteaIn internal guide (custom path used with LN / BECS).</p>\n<ol>\n<li>Download the installer from the official site:   <strong>https://code.visualstudio.com/</strong></li>\n<li>Run the installer and follow the wizard until you reach the <strong>installation path</strong> step.</li>\n<li><strong>Important (company / LN setup):</strong> choose a <strong>custom</strong> install path:</li>\n</ol>\n<p>``<code>text    C:\\apps\\VSCODE    </code>``</p>\n<p>Do <strong>not</strong> leave the default user-profile path if your LN environment expects <code>C:\\apps\\VSCODE</code>.</p>\n<ol>\n<li>Finish the installation.</li>\n<li>Verify the folder exists and contains <strong><code>Code.exe</code></strong> (and the usual VS Code files), for example:</li>\n</ol>\n<p>``<code>text    C:\\apps\\VSCODE\\Code.exe    </code>``</p>\n<ol>\n<li>Start VS Code once (from the Start menu or by running <code>Code.exe</code>) to complete first-run setup.</li>\n</ol>\n<blockquote><strong>Tip:</strong> If your IT department already deploys VS Code to <code>C:\\apps\\VSCODE</code>, skip the installer and open that copy instead.</blockquote>\n<hr />\n<h2 id=\"set-vs-code-as-the-default-editor-in-ln\"><a class=\"anchor\" href=\"#set-vs-code-as-the-default-editor-in-ln\" aria-hidden=\"true\">#</a>Set VS Code as the default editor in LN</h2>\n<p>Infor LN must open sources in VS Code (not the legacy editor). Configure this on <strong>your LN user</strong> via <strong>LNUI</strong>.</p>\n<h3 id=\"select-vscode-in-user-data\"><a class=\"anchor\" href=\"#select-vscode-in-user-data\" aria-hidden=\"true\">#</a>Select VSCODE in User Data</h3>\n<ol>\n<li>Open <strong>LNUI</strong>.</li>\n<li>Go to:   <strong>Tools → User Management → General User Data → User Data</strong> (session).</li>\n<li>Search for <strong>your user</strong> and open it (use the <strong>→</strong> / open button).</li>\n<li>On the top bar, open the <strong>Defaults</strong> tab.</li>\n<li>Find <strong>Development Parameters</strong>.</li>\n<li>Click the <strong>Zoom / lens</strong> icon, select <strong>VSCODE</strong>, then click <strong>OK</strong>.</li>\n<li><strong>Save</strong> the user record.</li>\n</ol>\n<p>You should now have:</p>\n<blockquote>User Data → Defaults → Development Parameters = <strong>VSCODE</strong></blockquote>\n<h3 id=\"if-vscode-is-not-in-the-list\"><a class=\"anchor\" href=\"#if-vscode-is-not-in-the-list\" aria-hidden=\"true\">#</a>If VSCODE is not in the list</h3>\n<p>Create the development-parameter entry first, then select it:</p>\n<ol>\n<li>Still in <strong>User Data</strong>, on the relevant parameters area, click <strong>New</strong>.</li>\n<li>In <strong>Edit</strong>, define the <strong>VSCODE</strong> development parameter so it points at your VS Code install (typically under <code>C:\\apps\\VSCODE</code> / <code>Code.exe</code>, as required by your site).</li>\n<li><strong>Save</strong> the new parameter.</li>\n<li>Return to <strong>Defaults → Development Parameters</strong>, select the new <strong>VSCODE</strong> entry, click <strong>OK</strong>.</li>\n<li><strong>Save</strong> your user again.</li>\n</ol>\n<p>Exact field labels can vary slightly by LN version; if <strong>New</strong> fields are unclear, ask your LN administrator for the site-standard <strong>VSCODE</strong> development-parameter definition.</p>\n<h3 id=\"check-that-ln-opens-vs-code\"><a class=\"anchor\" href=\"#check-that-ln-opens-vs-code\" aria-hidden=\"true\">#</a>Check that LN opens VS Code</h3>\n<ol>\n<li>From LN / BECS, open any script or library for edit.</li>\n<li>The file should open in <strong>Visual Studio Code</strong> (not the old built-in editor).</li>\n<li>If it still opens elsewhere, re-check Development Parameters and that <code>C:\\apps\\VSCODE\\Code.exe</code> exists.</li>\n</ol>\n<hr />\n<h2 id=\"install-the-baan-c-extension-from-the-marketplace\"><a class=\"anchor\" href=\"#install-the-baan-c-extension-from-the-marketplace\" aria-hidden=\"true\">#</a>Install the Baan C extension from the Marketplace</h2>\n<ol>\n<li>Open VS Code.</li>\n<li>Open <strong>Extensions</strong> (<code>Ctrl+Shift+X</code> / <code>Cmd+Shift+X</code>).</li>\n<li>Search for <strong>Baan C VSCode</strong> (publisher: <code>AnonymousGCA</code>).</li>\n<li>Click <strong>Install</strong>.</li>\n</ol>\n<p>Marketplace page:   https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode</p>\n<hr />\n<h2 id=\"install-from-a-vsix\"><a class=\"anchor\" href=\"#install-from-a-vsix\" aria-hidden=\"true\">#</a>Install from a VSIX</h2>\n<p>Useful for private builds or offline machines.</p>\n<ol>\n<li>Obtain a <code>.vsix</code> file (from a release, or by packaging — see <a href=\"#/development\" data-route=\"development\">Development</a>).</li>\n<li>Open the Command Palette (<code>Ctrl+Shift+P</code> / <code>Cmd+Shift+P</code>).</li>\n<li>Run <strong>Extensions: Install from VSIX…</strong></li>\n<li>Select the <code>.vsix</code> and confirm <strong>Install</strong>.</li>\n<li>Reload the window if prompted.</li>\n</ol>\n<hr />\n<h2 id=\"open-a-baan-c-file\"><a class=\"anchor\" href=\"#open-a-baan-c-file\" aria-hidden=\"true\">#</a>Open a Baan C file</h2>\n<ol>\n<li>Open any file with extension <code>.bc</code>, <code>.cl</code>, <code>.bcl</code>, or <code>.script</code>.</li>\n<li>The status bar language mode should show <strong>Baan C</strong>.</li>\n<li>If it does not, run <strong>Change Language Mode</strong> and pick <strong>Baan C</strong>.</li>\n</ol>\n<p>The extension activates on <code>onLanguage:baanc</code> — features load when a Baan document is open.</p>\n<hr />\n<h2 id=\"first-day-workflow\"><a class=\"anchor\" href=\"#first-day-workflow\" aria-hidden=\"true\">#</a>First-day workflow</h2>\n<h3 id=\"1.-explore-syntax-and-outline\"><a class=\"anchor\" href=\"#1.-explore-syntax-and-outline\" aria-hidden=\"true\">#</a>1. Explore syntax and Outline</h3>\n<ul>\n<li>Keywords, SQL, 4GL sections, and types are colored automatically.</li>\n<li>Open the <strong>Outline</strong> view (Explorer sidebar) to jump between functions, tables, domains, and 4GL sections.</li>\n</ul>\n<h3 id=\"2.-use-completions\"><a class=\"anchor\" href=\"#2.-use-completions\" aria-hidden=\"true\">#</a>2. Use completions</h3>\n<p>Type part of a name and accept a suggestion (<code>Tab</code> / <code>Enter</code>):</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>You type</th>\n<th>You may get</th>\n</tr></thead><tbody>\n<tr>\n<td><code>db.</code></td>\n<td>Built-in DB API (<code>db.bind</code>, <code>db.update</code>, …)</td>\n</tr>\n<tr>\n<td><code>ELOCK</code></td>\n<td>Error constant <code>ELOCKED</code></td>\n</tr>\n<tr>\n<td><code>select</code></td>\n<td>Snippet or SQL keywords</td>\n</tr>\n<tr>\n<td><code>before.</code></td>\n<td>4GL section names</td>\n</tr>\n<tr>\n<td>Local function names</td>\n<td>Functions declared in the same file</td>\n</tr>\n<tr>\n<td>Memorized library exports</td>\n<td>Functions learned from other opened <code>.bc</code> files</td>\n</tr>\n</tbody></table></div>\n<p>Hover a symbol for documentation. While inside <code>function(</code>, parameter hints appear (or press <code>Ctrl+Shift+Space</code>).</p>\n<h3 id=\"3.-format-the-document\"><a class=\"anchor\" href=\"#3.-format-the-document\" aria-hidden=\"true\">#</a>3. Format the document</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Action</th>\n<th>Shortcut (Windows/Linux)</th>\n<th>Shortcut (macOS)</th>\n</tr></thead><tbody>\n<tr>\n<td>Format Document</td>\n<td><code>Shift+Alt+F</code></td>\n<td><code>Shift+Option+F</code></td>\n</tr>\n<tr>\n<td>Command</td>\n<td><strong>Baan C: Format Document</strong></td>\n<td>same</td>\n</tr>\n</tbody></table></div>\n<p>Optional: enable format on save with <code>baanc.formatOnSave</code> (see <a href=\"#/configuration\" data-route=\"configuration\">Configuration</a>).</p>\n<p>Embedded SQL is indented so clause keywords and operands line up:</p>\n<div class=\"code-block\" data-lang=\"baanc\"><div class=\"code-head\"><span class=\"code-lang\">baanc</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-baanc\">select  tcmcs001.*\nfrom    tcmcs001\nwhere   tcmcs001.compnr = 100\nselectdo\n\t| ...\nendselect</code></pre></div>\n<h3 id=\"4.-insert-a-select-or-transaction-skeleton\"><a class=\"anchor\" href=\"#4.-insert-a-select-or-transaction-skeleton\" aria-hidden=\"true\">#</a>4. Insert a select or transaction skeleton</h3>\n<p>From the Command Palette or the editor context menu (right-click in a Baan file):</p>\n<ul>\n<li><strong>Baan C: Insert Select Template</strong></li>\n<li><strong>Baan C: Insert Transaction + Select Template</strong></li>\n</ul>\n<p>Snippets such as <code>selectf</code> and <code>txselect</code> do the same from the keyboard — see <a href=\"#/snippets\" data-route=\"snippets\">Snippets</a>.</p>\n<h3 id=\"5.-fix-structure-and-naming\"><a class=\"anchor\" href=\"#5.-fix-structure-and-naming\" aria-hidden=\"true\">#</a>5. Fix structure and naming</h3>\n<ul>\n<li>Unmatched <code>endif</code> / <code>endwhile</code> / <code>endselect</code> and similar issues appear as diagnostics.</li>\n<li>Naming convention issues are <strong>Hints</strong> only (not errors). Use <strong>Quick Fix</strong> to rename when suggested.</li>\n<li>Refresh diagnostics with <strong>Baan C: Run Diagnostics</strong> (also opens the <strong>Baan C</strong> output channel).</li>\n</ul>\n<h3 id=\"6.-optional-library-memory-with-becs\"><a class=\"anchor\" href=\"#6.-optional-library-memory-with-becs\" aria-hidden=\"true\">#</a>6. (Optional) Library memory with BECS</h3>\n<p>If you edit via BECS temp files:</p>\n<ol>\n<li>Open the library or include <code>.bc</code> once (so the extension can learn its functions).</li>\n<li>Switch back to your session script.</li>\n<li>Completions offer memorized exports; accepting them can auto-insert:</li>\n</ol>\n<ul>\n<li><code>#include &quot;itxadv0000&quot;</code> for include scripts  </li>\n<li><code>#pragma used dll &quot;otccomdll0200&quot;</code> for DLLs  </li>\n</ul>\n<p>Full details: <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</p>\n<hr />\n<h2 id=\"default-editor-behavior-for-baan-c\"><a class=\"anchor\" href=\"#default-editor-behavior-for-baan-c\" aria-hidden=\"true\">#</a>Default editor behavior for Baan C</h2>\n<p>When the language is <code>baanc</code>, the extension sets sensible defaults (overridable in your settings):</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Default for <code>[baanc]</code></th>\n</tr></thead><tbody>\n<tr>\n<td>Tab size</td>\n<td>4 spaces</td>\n</tr>\n<tr>\n<td>Insert spaces</td>\n<td>yes</td>\n</tr>\n<tr>\n<td>Detect indentation</td>\n<td>off</td>\n</tr>\n<tr>\n<td>Quick suggestions</td>\n<td>on (not in comments/strings)</td>\n</tr>\n<tr>\n<td>Parameter hints</td>\n<td>on</td>\n</tr>\n<tr>\n<td>Folding</td>\n<td>on</td>\n</tr>\n<tr>\n<td>Trim trailing whitespace</td>\n<td>on</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"next-steps\"><a class=\"anchor\" href=\"#next-steps\" aria-hidden=\"true\">#</a>Next steps</h2>\n<ul>\n<li><a href=\"#/features\" data-route=\"features\">Features</a> — complete capability list  </li>\n<li><a href=\"#/configuration\" data-route=\"configuration\">Configuration</a> — tune completions, diagnostics, memory  </li>\n<li><a href=\"#/commands\" data-route=\"commands\">Commands</a> — palette and context menu actions  </li>\n<li><a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a> — BECS / multi-script workflows  </li>\n</ul>","toc":[{"id":"requirements","text":"Requirements","level":2},{"id":"install-visual-studio-code","text":"Install Visual Studio Code","level":2},{"id":"set-vs-code-as-the-default-editor-in-ln","text":"Set VS Code as the default editor in LN","level":2},{"id":"select-vscode-in-user-data","text":"Select VSCODE in User Data","level":3},{"id":"if-vscode-is-not-in-the-list","text":"If VSCODE is not in the list","level":3},{"id":"check-that-ln-opens-vs-code","text":"Check that LN opens VS Code","level":3},{"id":"install-the-baan-c-extension-from-the-marketplace","text":"Install the Baan C extension from the Marketplace","level":2},{"id":"install-from-a-vsix","text":"Install from a VSIX","level":2},{"id":"open-a-baan-c-file","text":"Open a Baan C file","level":2},{"id":"first-day-workflow","text":"First-day workflow","level":2},{"id":"1.-explore-syntax-and-outline","text":"1. Explore syntax and Outline","level":3},{"id":"2.-use-completions","text":"2. Use completions","level":3},{"id":"3.-format-the-document","text":"3. Format the document","level":3},{"id":"4.-insert-a-select-or-transaction-skeleton","text":"4. Insert a select or transaction skeleton","level":3},{"id":"5.-fix-structure-and-naming","text":"5. Fix structure and naming","level":3},{"id":"6.-optional-library-memory-with-becs","text":"6. (Optional) Library memory with BECS","level":3},{"id":"default-editor-behavior-for-baan-c","text":"Default editor behavior for Baan C","level":2},{"id":"next-steps","text":"Next steps","level":2}],"plain":"Getting started\nThis guide covers installing **Visual Studio Code**, connecting it to **Infor LN**, installing **Baan C VSCode**, opening scripts, and the essentials you need on day one.\nRequirements\nBefore you use the extension, make sure you have:\n**Visual Studio Code** 1.125.0 or newer (see [Install Visual Studio Code](#install-visual-studio-code) below)\n**Infor LN** user defaults with **Development Parameters** set to **VSCODE** (see [Set VS Code as the default editor in LN](#set-vs-code-as-the-default-editor-in-ln))\nNo Infor LN runtime is required for *editor* features alone (highlighting, format, completions, etc.)\nOptional: access to library/include `.bc` sources if you want [Library memory](./library-memory.md) to learn project APIs\nInstall Visual Studio Code\nIf VS Code is not on your PC yet, install it first. These steps match the AlteaIn internal guide (custom path used with LN / BECS).\nDownload the installer from the official site:  \nRun the installer and follow the wizard until you reach the **installation path** step.\n**Important (company / LN setup):** choose a **custom** install path:\n```text    C:\\apps\\VSCODE    ```\nDo **not** leave the default user-profile path if your LN environment expects `C:\\apps\\VSCODE`.\nFinish the installation.\nVerify the folder exists and contains **`Code.exe`** (and the usual VS Code files), for example:\n```text    C:\\apps\\VSCODE\\Code.exe    ```\nStart VS Code once (from the Start menu or by running `Code.exe`) to complete first-run setup.\nSet VS Code as the default editor in LN\nInfor LN must open sources in VS Code (not the legacy editor). Configure this on **your LN user** via **LNUI**.\nSelect VSCODE in User Data\nOpen **LNUI**.\nGo to:  \nSearch for **your user** and open it (use the **→** / open button).\nOn the top bar, open the **Defaults** tab.\nFind **Development Parameters**.\nClick the **Zoom / lens** icon, select **VSCODE**, then click **OK**.\n**Save** the user record.\nYou should now have:\nIf VSCODE is not in the list\nCreate the development-parameter entry first, then select it:\nStill in **User Data**, on the relevant parameters area, click **New**.\nIn **Edit**, define the **VSCODE** development parameter so it points at your VS Code install (typically under `C:\\apps\\VSCODE` / `Code.exe`, as required by your site).\n**Save** the new parameter.\nReturn to **Defaults → Development Parameters**, select the new **VSCODE** entry, click **OK**.\n**Save** your user again.\nExact field labels can vary slightly by LN version; if **New** fields are unclear, ask your LN administrator for the site-standard **VSCODE** development-parameter definition.\nCheck that LN opens VS Code\nFrom LN / BECS, open any script or library for edit.\nThe file should open in **Visual Studio Code** (not the old built-in editor).\nIf it still opens elsewhere, re-check Development Parameters and that `C:\\apps\\VSCODE\\Code.exe` exists.\nInstall the Baan C extension from the Marketplace\nOpen VS Code.\nOpen **Extensions** (`Ctrl+Shift+X` / `Cmd+Shift+X`).\nSearch for **Baan C VSCode** (publisher: `AnonymousGCA`).\nClick **Install**.\nMarketplace page:   https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode\nInstall from a VSIX\nUseful for private builds or offline machines.\nObtain a `.vsix` file (from a release, or by packaging — see [Development](./development.md)).\nOpen the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`).\nRun **Extensions: Install from VSIX…**\nSelect the `.vsix` and confirm **Install**.\nReload the window if prompted.\nOpen a Baan C file\nOpen any file with extension `.bc`, `.cl`, `.bcl`, or `.script`.\nThe status bar language mode should show **Baan C**.\nIf it does not, run **Change Language Mode** and pick **Baan C**.\nThe extension activates on `onLanguage:baanc` — features load when a Baan document is open.\nFirst-day workflow\n1. Explore syntax and Outline\nKeywords, SQL, 4GL sections, and types are colored automatically.\nOpen the **Outline** view (Explorer sidebar) to jump between functions, tables, domains, and 4GL sections.\n2. Use completions\nType part of a name and accept a suggestion (`Tab` / `Enter`):\nHover a symbol for documentation. While inside `function(`, parameter hints appear (or press `Ctrl+Shift+Space`).\n3. Format the document\nOptional: enable format on save with `baanc.formatOnSave` (see [Configuration](./configuration.md)).\nEmbedded SQL is indented so clause keywords and operands line up:\nselect  tcmcs001.*\nfrom    tcmcs001\nwhere   tcmcs001.compnr = 100\nselectdo\n\t| ...\nendselect\n4. Insert a select or transaction skeleton\nFrom the Command Palette or the editor context menu (right-click in a Baan file):\n**Baan C: Insert Select Template**\n**Baan C: Insert Transaction + Select Template**\nSnippets such as `selectf` and `txselect` do the same from the keyboard — see [Snippets](./snippets.md).\n5. Fix structure and naming\nUnmatched `endif` / `endwhile` / `endselect` and similar issues appear as diagnostics.\nNaming convention issues are **Hints** only (not errors). Use **Quick Fix** to rename when suggested.\nRefresh diagnostics with **Baan C: Run Diagnostics** (also opens the **Baan C** output channel).\n6. (Optional) Library memory with BECS\nIf you edit via BECS temp files:\nOpen the library or include `.bc` once (so the extension can learn its functions).\nSwitch back to your session script.\nCompletions offer memorized exports; accepting them can auto-insert:\n`#include \"itxadv0000\"` for include scripts  \n`#pragma used dll \"otccomdll0200\"` for DLLs  \nFull details: [Library memory](./library-memory.md).\nDefault editor behavior for Baan C\nWhen the language is `baanc`, the extension sets sensible defaults (overridable in your settings):\nNext steps\n[Features](./features.md) — complete capability list  \n[Configuration](./configuration.md) — tune completions, diagnostics, memory  \n[Commands](./commands.md) — palette and context menu actions  \n[Library memory](./library-memory.md) — BECS / multi-script workflows  "},"features":{"id":"features","title":"Features","group":"Guides","icon":"spark","html":"<h1 id=\"features\"><a class=\"anchor\" href=\"#features\" aria-hidden=\"true\">#</a>Features</h1>\n<p>Language support is registered for the <code>baanc</code> language id. Everything below applies to <code>.bc</code>, <code>.cl</code>, <code>.bcl</code>, and <code>.script</code> files (and any file set to language mode <strong>Baan C</strong>).</p>\n<hr />\n<h2 id=\"syntax-highlighting\"><a class=\"anchor\" href=\"#syntax-highlighting\" aria-hidden=\"true\">#</a>Syntax highlighting</h2>\n<p>TextMate grammar: <code>syntaxes/baanc.tmLanguage.json</code> (<code>source.baanc</code>).</p>\n<p>Colored elements include:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Category</th>\n<th>Examples</th>\n</tr></thead><tbody>\n<tr>\n<td>Comments</td>\n<td>`\\</td>\n</tr>\n<tr>\n<td>Preprocessor</td>\n<td><code>#include</code>, <code>#define</code>, <code>#pragma</code>, <code>#ifdef</code>, …</td>\n</tr>\n<tr>\n<td>Strings & numbers</td>\n<td><code>&quot;…&quot;</code>, numeric literals</td>\n</tr>\n<tr>\n<td>Booleans</td>\n<td><code>true</code> / <code>false</code> style tokens where applicable</td>\n</tr>\n<tr>\n<td>Keywords</td>\n<td><code>if</code> / <code>then</code> / <code>endif</code>, <code>while</code>, <code>for</code>, <code>function</code>, SQL verbs, …</td>\n</tr>\n<tr>\n<td>Types</td>\n<td><code>long</code>, <code>double</code>, <code>string</code>, <code>boolean</code>, <code>table</code>, <code>domain</code></td>\n</tr>\n<tr>\n<td>Storage</td>\n<td><code>extern</code>, <code>static</code>, <code>common</code></td>\n</tr>\n<tr>\n<td>4GL sections</td>\n<td><code>declaration:</code>, <code>before.program:</code>, <code>field.…</code>, <code>choice.…</code>, …</td>\n</tr>\n<tr>\n<td>Function definitions & calls</td>\n<td><code>function name(…)</code> and <code>name(…)</code></td>\n</tr>\n<tr>\n<td>Table fields</td>\n<td><code>table.field</code> patterns</td>\n</tr>\n<tr>\n<td>Operators</td>\n<td>arithmetic, comparison, assignment</td>\n</tr>\n</tbody></table></div>\n<p>Primitive type keywords do not incorrectly paint the trailing segment of domain-like names (e.g. <code>txamg.type.long</code>). Markers such as <code>TODO</code> / <code>FIXME</code> in comments stay comment-colored.</p>\n<hr />\n<h2 id=\"language-configuration\"><a class=\"anchor\" href=\"#language-configuration\" aria-hidden=\"true\">#</a>Language configuration</h2>\n<p><code>language-configuration.json</code> provides editor ergonomics:</p>\n<ul>\n<li>Line comment: <code>|</code></li>\n<li>Block comment: <code>/*</code> … <code>*/</code></li>\n<li>Auto-closing brackets, quotes, and block comments</li>\n<li>Indent increase/decrease rules for control blocks and select branches</li>\n<li>On-Enter indent for <code>if</code>/<code>while</code>/<code>for</code>/<code>selectdo</code>/… and stable indent for SQL clause lines</li>\n<li>Word pattern that includes dots and <code>$</code> (Baan identifiers often use both)</li>\n<li>Folding markers for control blocks and 4GL sections</li>\n</ul>\n<hr />\n<h2 id=\"code-formatting\"><a class=\"anchor\" href=\"#code-formatting\" aria-hidden=\"true\">#</a>Code formatting</h2>\n<p><strong>Document formatting provider</strong> + command <strong>Baan C: Format Document</strong>.</p>\n<p>What it does:</p>\n<ul>\n<li>Indents control structures (<code>if</code>/<code>else</code>/<code>elif</code>/<code>endif</code>, loops, <code>on case</code>, functions)</li>\n<li>Indents embedded SQL branches (<code>selectdo</code>, <code>selectempty</code>, <code>selecteos</code>, <code>selecterror</code>)</li>\n<li>Aligns multi-line argument lists</li>\n<li>Aligns embedded SQL clause keywords so operands share a column:</li>\n</ul>\n<p>``<code>baanc   select  table.*   from    table   where   table.field   and     table.other = value   order by table.key   </code>``</p>\n<p>Indent width is controlled by <code>baanc.indentSize</code> (default <code>4</code>).   Optional format-on-save: <code>baanc.formatOnSave</code>.</p>\n<hr />\n<h2 id=\"diagnostics\"><a class=\"anchor\" href=\"#diagnostics\" aria-hidden=\"true\">#</a>Diagnostics</h2>\n<p>Diagnostics run on open/edit (when enabled) and via <strong>Baan C: Run Diagnostics</strong>.</p>\n<h3 id=\"structural-block-matching\"><a class=\"anchor\" href=\"#structural-block-matching\" aria-hidden=\"true\">#</a>Structural / block matching</h3>\n<p><code>baanc.diagnostics.enabled</code> (default <code>true</code>).</p>\n<p>Catches unmatched or mis-nested block keywords, for example:</p>\n<ul>\n<li><code>if</code> / <code>endif</code></li>\n<li><code>while</code> / <code>endwhile</code></li>\n<li><code>for</code> / <code>endfor</code></li>\n<li><code>on case</code> / <code>endcase</code></li>\n<li><code>select</code> / <code>endselect</code></li>\n<li>related branch keywords</li>\n</ul>\n<p>With <code>baanc.diagnostics.strictComments</code> (default <code>true</code>), <code>|</code> and <code>/* */</code> comments are ignored when analyzing structure.</p>\n<h3 id=\"naming-conventions-hint-severity-only\"><a class=\"anchor\" href=\"#naming-conventions-hint-severity-only\" aria-hidden=\"true\">#</a>Naming conventions (Hint severity only)</h3>\n<p><code>baanc.diagnostics.namingConventions</code> (default <code>true</code>).</p>\n<p>Soft suggestions aligned with Infor LN style:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Rule</th>\n<th>Intent</th>\n</tr></thead><tbody>\n<tr>\n<td>Prefer lowercase</td>\n<td>Avoid mixed/upper identifiers where convention expects lower</td>\n</tr>\n<tr>\n<td>Prefer dots as separators</td>\n<td>e.g. <code>my.beautiful.function</code></td>\n</tr>\n<tr>\n<td>Avoid single-letter / <code>temp</code>-style names</td>\n<td>Prefer expressive names</td>\n</tr>\n</tbody></table></div>\n<p><strong>Quick Fix</strong> can rename across the <strong>current file</strong>.   These never report as Errors/Warnings by design.</p>\n<p>Optional argument-prefix hints (<code>i.</code> / <code>o.</code> / <code>io.</code> on function parameters):   <code>baanc.diagnostics.namingArgPrefixes</code> (default <code>false</code> — can be noisy).</p>\n<h3 id=\"import-hints-information\"><a class=\"anchor\" href=\"#import-hints-information\" aria-hidden=\"true\">#</a>Import hints (Information)</h3>\n<p>When <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a> (or conservative builtin DLL mappings) knows a function but the file lacks the matching import:</p>\n<ul>\n<li>Information diagnostic + <strong>Quick Fix</strong> to insert <code>#include &quot;…&quot;</code> or <code>#pragma used dll &quot;…&quot;</code></li>\n</ul>\n<p>Toggles: <code>baanc.libraryMemory.showImportHints</code>, <code>baanc.autoImport.builtinImportHints</code>.</p>\n<hr />\n<h2 id=\"completions\"><a class=\"anchor\" href=\"#completions\" aria-hidden=\"true\">#</a>Completions</h2>\n<p>Completion items can include:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Source</th>\n<th>Setting</th>\n<th>Notes</th>\n</tr></thead><tbody>\n<tr>\n<td>Built-in APIs (~980+)</td>\n<td><code>baanc.completion.includeBuiltins</code></td>\n<td><code>db.*</code>, <code>dal.*</code>, strings, dates, HTTP, cURL, SOAP, XML/JSON, dialogs, RDI, parallel, …</td>\n</tr>\n<tr>\n<td>Error constants</td>\n<td><code>baanc.completion.includeErrors</code></td>\n<td><code>ELOCKED</code>, <code>EDUPL</code>, <code>ENOREC</code>, …</td>\n</tr>\n<tr>\n<td>SQL keywords</td>\n<td><code>baanc.completion.includeSql</code></td>\n<td>Embedded select / join / where, …</td>\n</tr>\n<tr>\n<td>Preprocessor</td>\n<td><code>baanc.completion.includePreprocessor</code></td>\n<td><code>#include</code>, <code>#define</code>, … (avoids <code>##define</code> duplication)</td>\n</tr>\n<tr>\n<td>4GL section names</td>\n<td><code>baanc.completion.include4gl</code></td>\n<td>Dotted names stay one unit (<code>before.</code> still matches)</td>\n</tr>\n<tr>\n<td>Local functions / tables</td>\n<td>always</td>\n<td>Parsed from the current document</td>\n</tr>\n<tr>\n<td>Memorized library exports</td>\n<td><code>baanc.libraryMemory.enabled</code></td>\n<td>Survives temp-file deletion</td>\n</tr>\n</tbody></table></div>\n<p>Accepting a memorized (or mapped builtin) completion can auto-insert the correct import when enabled — see <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</p>\n<hr />\n<h2 id=\"signature-help\"><a class=\"anchor\" href=\"#signature-help\" aria-hidden=\"true\">#</a>Signature help</h2>\n<p>Parameter hints while typing a call (<code>Ctrl+Shift+Space</code> / <code>Cmd+Shift+Space</code>):</p>\n<ul>\n<li>Built-in functions (from insert/signature metadata)</li>\n<li>Local functions in the current file</li>\n<li>Memorized library function headers when available</li>\n</ul>\n<hr />\n<h2 id=\"hover-documentation\"><a class=\"anchor\" href=\"#hover-documentation\" aria-hidden=\"true\">#</a>Hover documentation</h2>\n<p>Hover shows context for:</p>\n<ul>\n<li>Keywords and language constructs</li>\n<li>Built-in API functions (signature + short doc)</li>\n<li>Error constants (code + meaning)</li>\n<li>Local function definitions</li>\n<li>Memorized library exports (with import kind label)</li>\n</ul>\n<hr />\n<h2 id=\"navigation-and-editing\"><a class=\"anchor\" href=\"#navigation-and-editing\" aria-hidden=\"true\">#</a>Navigation and editing</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Feature</th>\n<th>Shortcut (typical)</th>\n<th>Scope</th>\n</tr></thead><tbody>\n<tr>\n<td><strong>Go to Definition</strong></td>\n<td><code>F12</code></td>\n<td>Functions, tables, domains, typed variables in the <strong>current file</strong></td>\n</tr>\n<tr>\n<td><strong>Find All References</strong></td>\n<td><code>Shift+F12</code></td>\n<td>Identifier uses in the <strong>current file</strong></td>\n</tr>\n<tr>\n<td><strong>Rename Symbol</strong></td>\n<td><code>F2</code></td>\n<td>Rename in the <strong>current file</strong>; guards against renaming builtins/keywords</td>\n</tr>\n<tr>\n<td><strong>Document Highlights</strong></td>\n<td>automatic</td>\n<td>Occurrences of the symbol under the cursor</td>\n</tr>\n<tr>\n<td><strong>Document Symbols (Outline)</strong></td>\n<td>Outline view</td>\n<td>Functions, domains, tables, 4GL sections</td>\n</tr>\n<tr>\n<td><strong>Code Folding</strong></td>\n<td>editor folding</td>\n<td>Control blocks, functions, preprocessor regions, 4GL sections</td>\n</tr>\n</tbody></table></div>\n<blockquote><strong>Note:</strong> References and rename are <strong>single-file</strong>, not a full workspace index. Cross-file discovery for libraries is handled via Library memory completions/imports, not via a global rename index.</blockquote>\n<hr />\n<h2 id=\"snippets-and-templates\"><a class=\"anchor\" href=\"#snippets-and-templates\" aria-hidden=\"true\">#</a>Snippets and templates</h2>\n<h3 id=\"snippets\"><a class=\"anchor\" href=\"#snippets\" aria-hidden=\"true\">#</a>Snippets</h3>\n<p>User snippets in <code>snippets/baanc.json</code> — type a prefix and accept.   Catalog: <a href=\"#/snippets\" data-route=\"snippets\">Snippets</a>.</p>\n<p>Highlights:</p>\n<ul>\n<li>Control flow: <code>if</code>, <code>ife</code>, <code>while</code>, <code>for</code>, <code>oncase</code>, …</li>\n<li>SQL: <code>select</code>, <code>selectf</code>, <code>txselect</code> (aligned <code>table.*</code> style)</li>\n<li>Declarations: <code>domain</code>, <code>table</code>, <code>long</code>, <code>string</code>, …</li>\n<li>Preprocessor: <code>#include</code>, <code>#define</code>, <code>#ifdef</code>, …</li>\n<li>4GL: <code>declaration</code>, <code>before.program</code>, <code>field.</code>, <code>choice.</code>, …</li>\n<li>Patterns: <code>httpget</code>, <code>curlget</code>, <code>dalgs</code>, <code>sqlpf</code>, <code>elocked</code>, …</li>\n</ul>\n<h3 id=\"insert-templates-commands\"><a class=\"anchor\" href=\"#insert-templates-commands\" aria-hidden=\"true\">#</a>Insert templates (commands)</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Command</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><strong>Baan C: Insert Select Template</strong></td>\n<td>Full <code>select</code> / <code>selectdo</code> / <code>selectempty</code> / <code>selecterror</code> / <code>endselect</code> with linked table placeholders</td>\n</tr>\n<tr>\n<td><strong>Baan C: Insert Transaction + Select Template</strong></td>\n<td><code>db.retry.point</code> + <code>for update</code> + update + commit/abort pattern</td>\n</tr>\n</tbody></table></div>\n<p>Also available from the editor <strong>context menu</strong> on Baan files.</p>\n<hr />\n<h2 id=\"library-memory-auto-import\"><a class=\"anchor\" href=\"#library-memory-auto-import\" aria-hidden=\"true\">#</a>Library memory & auto-import</h2>\n<p>Summarized here; full guide: <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</p>\n<ol>\n<li>Opening a library/include <code>.bc</code> extracts exported functions into persistent memory (<code>globalState</code>).</li>\n<li>Those symbols appear in completions elsewhere (even after BECS deletes the temp file).</li>\n<li>On completion accept (optional), the extension inserts:</li>\n</ol>\n<ul>\n<li><strong>Include scripts</strong> → <code>#include &quot;scriptname&quot;</code></li>\n<li><strong>DLLs</strong> → <code>#pragma used dll &quot;o…&quot;</code></li>\n</ul>\n<ol>\n<li>Soft hints + Quick Fix cover calls that already exist without an import.</li>\n<li>Manage via <strong>Baan C: Manage Memorized Libraries…</strong> (inspect, switch kind, remove, clear).</li>\n</ol>\n<p>Builtin auto-import only applies when an API has an <strong>explicit</strong> optional DLL mapping — never guesses package DLLs across LN installations.</p>\n<hr />\n<h2 id=\"output-channel\"><a class=\"anchor\" href=\"#output-channel\" aria-hidden=\"true\">#</a>Output channel</h2>\n<p>Channel name: <strong>Baan C</strong>.</p>\n<p>Used when running <strong>Baan C: Run Diagnostics</strong> (logs that diagnostics were refreshed for the active file). Open via the Output panel dropdown.</p>\n<hr />\n<h2 id=\"feature-checklist-at-a-glance\"><a class=\"anchor\" href=\"#feature-checklist-at-a-glance\" aria-hidden=\"true\">#</a>Feature checklist (at a glance)</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Area</th>\n<th>Supported</th>\n</tr></thead><tbody>\n<tr>\n<td>Highlighting</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Snippets</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Format document / format on save</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Block diagnostics</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Naming hints + Quick Fix rename</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Completions (builtins, SQL, PP, 4GL, local, memory)</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Signature help</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Hover</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Go to Definition</td>\n<td>Yes (file)</td>\n</tr>\n<tr>\n<td>Find References</td>\n<td>Yes (file)</td>\n</tr>\n<tr>\n<td>Rename</td>\n<td>Yes (file)</td>\n</tr>\n<tr>\n<td>Document highlights</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Folding</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Outline / symbols</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Library memory + auto-import</td>\n<td>Yes</td>\n</tr>\n<tr>\n<td>Workspace-wide rename / project index</td>\n<td>No</td>\n</tr>\n<tr>\n<td>Language Server Protocol (external process)</td>\n<td>No (extension-hosted providers)</td>\n</tr>\n</tbody></table></div>","toc":[{"id":"syntax-highlighting","text":"Syntax highlighting","level":2},{"id":"language-configuration","text":"Language configuration","level":2},{"id":"code-formatting","text":"Code formatting","level":2},{"id":"diagnostics","text":"Diagnostics","level":2},{"id":"structural-block-matching","text":"Structural / block matching","level":3},{"id":"naming-conventions-hint-severity-only","text":"Naming conventions (Hint severity only)","level":3},{"id":"import-hints-information","text":"Import hints (Information)","level":3},{"id":"completions","text":"Completions","level":2},{"id":"signature-help","text":"Signature help","level":2},{"id":"hover-documentation","text":"Hover documentation","level":2},{"id":"navigation-and-editing","text":"Navigation and editing","level":2},{"id":"snippets-and-templates","text":"Snippets and templates","level":2},{"id":"snippets","text":"Snippets","level":3},{"id":"insert-templates-commands","text":"Insert templates (commands)","level":3},{"id":"library-memory-auto-import","text":"Library memory & auto-import","level":2},{"id":"output-channel","text":"Output channel","level":2},{"id":"feature-checklist-at-a-glance","text":"Feature checklist (at a glance)","level":2}],"plain":"Features\nLanguage support is registered for the `baanc` language id. Everything below applies to `.bc`, `.cl`, `.bcl`, and `.script` files (and any file set to language mode **Baan C**).\nSyntax highlighting\nTextMate grammar: `syntaxes/baanc.tmLanguage.json` (`source.baanc`).\nColored elements include:\nPrimitive type keywords do not incorrectly paint the trailing segment of domain-like names (e.g. `txamg.type.long`). Markers such as `TODO` / `FIXME` in comments stay comment-colored.\nLanguage configuration\n`language-configuration.json` provides editor ergonomics:\nLine comment: `|`\nBlock comment: `/*` … `*/`\nAuto-closing brackets, quotes, and block comments\nIndent increase/decrease rules for control blocks and select branches\nOn-Enter indent for `if`/`while`/`for`/`selectdo`/… and stable indent for SQL clause lines\nWord pattern that includes dots and `$` (Baan identifiers often use both)\nFolding markers for control blocks and 4GL sections\nCode formatting\n**Document formatting provider** + command **Baan C: Format Document**.\nWhat it does:\nIndents control structures (`if`/`else`/`elif`/`endif`, loops, `on case`, functions)\nIndents embedded SQL branches (`selectdo`, `selectempty`, `selecteos`, `selecterror`)\nAligns multi-line argument lists\nAligns embedded SQL clause keywords so operands share a column:\n```baanc   select  table.*   from    table   where   table.field   and     table.other = value   order by table.key   ```\nIndent width is controlled by `baanc.indentSize` (default `4`).   Optional format-on-save: `baanc.formatOnSave`.\nDiagnostics\nDiagnostics run on open/edit (when enabled) and via **Baan C: Run Diagnostics**.\nStructural / block matching\n`baanc.diagnostics.enabled` (default `true`).\nCatches unmatched or mis-nested block keywords, for example:\n`if` / `endif`\n`while` / `endwhile`\n`for` / `endfor`\n`on case` / `endcase`\n`select` / `endselect`\nrelated branch keywords\nWith `baanc.diagnostics.strictComments` (default `true`), `|` and `/* */` comments are ignored when analyzing structure.\nNaming conventions (Hint severity only)\n`baanc.diagnostics.namingConventions` (default `true`).\nSoft suggestions aligned with Infor LN style:\n**Quick Fix** can rename across the **current file**.   These never report as Errors/Warnings by design.\nOptional argument-prefix hints (`i.` / `o.` / `io.` on function parameters):   `baanc.diagnostics.namingArgPrefixes` (default `false` — can be noisy).\nImport hints (Information)\nWhen [Library memory](./library-memory.md) (or conservative builtin DLL mappings) knows a function but the file lacks the matching import:\nInformation diagnostic + **Quick Fix** to insert `#include \"…\"` or `#pragma used dll \"…\"`\nToggles: `baanc.libraryMemory.showImportHints`, `baanc.autoImport.builtinImportHints`.\nCompletions\nCompletion items can include:\nAccepting a memorized (or mapped builtin) completion can auto-insert the correct import when enabled — see [Library memory](./library-memory.md).\nSignature help\nParameter hints while typing a call (`Ctrl+Shift+Space` / `Cmd+Shift+Space`):\nBuilt-in functions (from insert/signature metadata)\nLocal functions in the current file\nMemorized library function headers when available\nHover documentation\nHover shows context for:\nKeywords and language constructs\nBuilt-in API functions (signature + short doc)\nError constants (code + meaning)\nLocal function definitions\nMemorized library exports (with import kind label)\nNavigation and editing\nSnippets and templates\nSnippets\nUser snippets in `snippets/baanc.json` — type a prefix and accept.   Catalog: [Snippets](./snippets.md).\nHighlights:\nControl flow: `if`, `ife`, `while`, `for`, `oncase`, …\nSQL: `select`, `selectf`, `txselect` (aligned `table.*` style)\nDeclarations: `domain`, `table`, `long`, `string`, …\nPreprocessor: `#include`, `#define`, `#ifdef`, …\n4GL: `declaration`, `before.program`, `field.`, `choice.`, …\nPatterns: `httpget`, `curlget`, `dalgs`, `sqlpf`, `elocked`, …\nInsert templates (commands)\nAlso available from the editor **context menu** on Baan files.\nLibrary memory & auto-import\nSummarized here; full guide: [Library memory](./library-memory.md).\nOpening a library/include `.bc` extracts exported functions into persistent memory (`globalState`).\nThose symbols appear in completions elsewhere (even after BECS deletes the temp file).\nOn completion accept (optional), the extension inserts:\n**Include scripts** → `#include \"scriptname\"`\n**DLLs** → `#pragma used dll \"o…\"`\nSoft hints + Quick Fix cover calls that already exist without an import.\nManage via **Baan C: Manage Memorized Libraries…** (inspect, switch kind, remove, clear).\nBuiltin auto-import only applies when an API has an **explicit** optional DLL mapping — never guesses package DLLs across LN installations.\nOutput channel\nChannel name: **Baan C**.\nUsed when running **Baan C: Run Diagnostics** (logs that diagnostics were refreshed for the active file). Open via the Output panel dropdown.\nFeature checklist (at a glance)"},"configuration":{"id":"configuration","title":"Configuration","group":"Guides","icon":"gear","html":"<h1 id=\"configuration\"><a class=\"anchor\" href=\"#configuration\" aria-hidden=\"true\">#</a>Configuration</h1>\n<p>All settings use the <code>baanc.</code> prefix. Open them via:</p>\n<ul>\n<li><strong>File → Preferences → Settings</strong> and search <code>baanc</code></li>\n<li>Or edit <code>settings.json</code> directly (User or Workspace)</li>\n</ul>\n<p>Settings take effect for open Baan documents when configuration changes (diagnostics are re-run automatically).</p>\n<hr />\n<h2 id=\"settings-reference\"><a class=\"anchor\" href=\"#settings-reference\" aria-hidden=\"true\">#</a>Settings reference</h2>\n<h3 id=\"formatting\"><a class=\"anchor\" href=\"#formatting\" aria-hidden=\"true\">#</a>Formatting</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Type</th>\n<th>Default</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.indentSize</code></td>\n<td>integer (1–16)</td>\n<td><code>4</code></td>\n<td>Spaces per indent level when formatting</td>\n</tr>\n<tr>\n<td><code>baanc.formatOnSave</code></td>\n<td>boolean</td>\n<td><code>false</code></td>\n<td>Format the document automatically on save</td>\n</tr>\n</tbody></table></div>\n<blockquote>Editor tab size for Baan files is also defaulted via <code>configurationDefaults</code> for <code>[baanc]</code> (<code>editor.tabSize</code>: 4). Keep <code>baanc.indentSize</code> and tab size in sync if you customize either.</blockquote>\n<hr />\n<h3 id=\"diagnostics\"><a class=\"anchor\" href=\"#diagnostics\" aria-hidden=\"true\">#</a>Diagnostics</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Type</th>\n<th>Default</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.diagnostics.enabled</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Block-matching and structural diagnostics</td>\n</tr>\n<tr>\n<td><code>baanc.diagnostics.strictComments</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Ignore `\\</td>\n</tr>\n<tr>\n<td><code>baanc.diagnostics.namingConventions</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Hint when identifiers break Infor LN naming style (Hint severity only)</td>\n</tr>\n<tr>\n<td><code>baanc.diagnostics.namingArgPrefixes</code></td>\n<td>boolean</td>\n<td><code>false</code></td>\n<td>Also hint when function args lack <code>i.</code> / <code>o.</code> / <code>io.</code> prefixes</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h3 id=\"completions\"><a class=\"anchor\" href=\"#completions\" aria-hidden=\"true\">#</a>Completions</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Type</th>\n<th>Default</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.completion.includeSql</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>SQL / embedded-select keywords</td>\n</tr>\n<tr>\n<td><code>baanc.completion.includePreprocessor</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Preprocessor directives</td>\n</tr>\n<tr>\n<td><code>baanc.completion.include4gl</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Common 4GL section names</td>\n</tr>\n<tr>\n<td><code>baanc.completion.includeBuiltins</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Built-in Baan C / Infor LN API functions</td>\n</tr>\n<tr>\n<td><code>baanc.completion.includeErrors</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Database / ES error constants (<code>ELOCKED</code>, …)</td>\n</tr>\n</tbody></table></div>\n<p>Local symbols (functions, tables declared in the file) are always candidates for completion when parseable.</p>\n<hr />\n<h3 id=\"library-memory\"><a class=\"anchor\" href=\"#library-memory\" aria-hidden=\"true\">#</a>Library memory</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Type</th>\n<th>Default</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.libraryMemory.enabled</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Remember functions from opened library/include <code>.bc</code> files</td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.maxLibraries</code></td>\n<td>integer (1–200)</td>\n<td><code>40</code></td>\n<td>Max memorized libraries (LRU pruning)</td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.maxFunctionsPerLibrary</code></td>\n<td>integer (10–2000)</td>\n<td><code>200</code></td>\n<td>Cap on functions stored per library</td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.autoImportOnCompletion</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>On accepting a memorized completion, insert <code>#include</code> or <code>#pragma used dll</code> if missing</td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.showImportHints</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Information hints + Quick Fix for calls missing the import</td>\n</tr>\n</tbody></table></div>\n<p>Deep dive: <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</p>\n<hr />\n<h3 id=\"builtin-auto-import\"><a class=\"anchor\" href=\"#builtin-auto-import\" aria-hidden=\"true\">#</a>Builtin auto-import</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Type</th>\n<th>Default</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.autoImport.builtinsOnCompletion</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>When accepting a <strong>mapped</strong> builtin completion, insert <code>#pragma used dll</code> if missing</td>\n</tr>\n<tr>\n<td><code>baanc.autoImport.builtinImportHints</code></td>\n<td>boolean</td>\n<td><code>true</code></td>\n<td>Soft hints for mapped builtins used without the pragma</td>\n</tr>\n</tbody></table></div>\n<p>Only APIs with an <strong>explicit</strong> optional DLL mapping are considered. Core bshell functions never force a pragma. Package DLLs are not guessed across LN installations.</p>\n<hr />\n<h2 id=\"example-settings.json\"><a class=\"anchor\" href=\"#example-settings.json\" aria-hidden=\"true\">#</a>Example <code>settings.json</code></h2>\n<p>Minimal personalization for a strict naming + always-format workflow:</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;baanc.indentSize&quot;: 4,\n  &quot;baanc.formatOnSave&quot;: true,\n  &quot;baanc.diagnostics.enabled&quot;: true,\n  &quot;baanc.diagnostics.namingConventions&quot;: true,\n  &quot;baanc.diagnostics.namingArgPrefixes&quot;: false,\n  &quot;baanc.completion.includeBuiltins&quot;: true,\n  &quot;baanc.completion.includeErrors&quot;: true,\n  &quot;baanc.libraryMemory.enabled&quot;: true,\n  &quot;baanc.libraryMemory.autoImportOnCompletion&quot;: true,\n  &quot;baanc.libraryMemory.showImportHints&quot;: true\n}</code></pre></div>\n<p>Disable library memory entirely (pure single-file editing):</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;baanc.libraryMemory.enabled&quot;: false,\n  &quot;baanc.libraryMemory.autoImportOnCompletion&quot;: false,\n  &quot;baanc.libraryMemory.showImportHints&quot;: false\n}</code></pre></div>\n<p>Lighter completions (keywords + local only):</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;baanc.completion.includeBuiltins&quot;: false,\n  &quot;baanc.completion.includeErrors&quot;: false,\n  &quot;baanc.completion.includeSql&quot;: true,\n  &quot;baanc.completion.include4gl&quot;: true,\n  &quot;baanc.completion.includePreprocessor&quot;: true\n}</code></pre></div>\n<hr />\n<h2 id=\"language-specific-editor-defaults\"><a class=\"anchor\" href=\"#language-specific-editor-defaults\" aria-hidden=\"true\">#</a>Language-specific editor defaults</h2>\n<p>Contributed under <code>configurationDefaults</code> for <code>[baanc]</code> (user settings override these):</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Key</th>\n<th>Value</th>\n</tr></thead><tbody>\n<tr>\n<td><code>editor.tabSize</code></td>\n<td><code>4</code></td>\n</tr>\n<tr>\n<td><code>editor.insertSpaces</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>editor.detectIndentation</code></td>\n<td><code>false</code></td>\n</tr>\n<tr>\n<td><code>editor.wordBasedSuggestions</code></td>\n<td><code>&quot;allDocuments&quot;</code></td>\n</tr>\n<tr>\n<td><code>editor.suggest.localityBonus</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>editor.suggest.showWords</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>editor.quickSuggestions.other</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>editor.quickSuggestions.comments</code></td>\n<td><code>false</code></td>\n</tr>\n<tr>\n<td><code>editor.quickSuggestions.strings</code></td>\n<td><code>false</code></td>\n</tr>\n<tr>\n<td><code>editor.acceptSuggestionOnEnter</code></td>\n<td><code>&quot;on&quot;</code></td>\n</tr>\n<tr>\n<td><code>editor.suggestSelection</code></td>\n<td><code>&quot;first&quot;</code></td>\n</tr>\n<tr>\n<td><code>editor.parameterHints.enabled</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>editor.folding</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>files.trimTrailingWhitespace</code></td>\n<td><code>true</code></td>\n</tr>\n</tbody></table></div>\n<p>Example override (2-space indent for Baan only):</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;baanc.indentSize&quot;: 2,\n  &quot;[baanc]&quot;: {\n    &quot;editor.tabSize&quot;: 2\n  }\n}</code></pre></div>\n<hr />\n<h2 id=\"where-memory-is-stored\"><a class=\"anchor\" href=\"#where-memory-is-stored\" aria-hidden=\"true\">#</a>Where memory is stored</h2>\n<p>Library memory uses VS Code <strong>Extension global state</strong> (not workspace files):</p>\n<ul>\n<li>Key: <code>baanc.libraryMemory.v1</code></li>\n<li>Survives reloads and window restarts</li>\n<li>Independent of whether the original temp file still exists</li>\n<li>Cleared via <strong>Baan C: Clear Memorized Libraries</strong> or the manage UI</li>\n</ul>\n<p>Global state is per user profile / machine for that VS Code installation, not committed to git.</p>","toc":[{"id":"settings-reference","text":"Settings reference","level":2},{"id":"formatting","text":"Formatting","level":3},{"id":"diagnostics","text":"Diagnostics","level":3},{"id":"completions","text":"Completions","level":3},{"id":"library-memory","text":"Library memory","level":3},{"id":"builtin-auto-import","text":"Builtin auto-import","level":3},{"id":"example-settings.json","text":"Example settings.json","level":2},{"id":"language-specific-editor-defaults","text":"Language-specific editor defaults","level":2},{"id":"where-memory-is-stored","text":"Where memory is stored","level":2}],"plain":"Configuration\nAll settings use the `baanc.` prefix. Open them via:\n**File → Preferences → Settings** and search `baanc`\nOr edit `settings.json` directly (User or Workspace)\nSettings take effect for open Baan documents when configuration changes (diagnostics are re-run automatically).\nSettings reference\nFormatting\nDiagnostics\nCompletions\nLocal symbols (functions, tables declared in the file) are always candidates for completion when parseable.\nLibrary memory\nDeep dive: [Library memory](./library-memory.md).\nBuiltin auto-import\nOnly APIs with an **explicit** optional DLL mapping are considered. Core bshell functions never force a pragma. Package DLLs are not guessed across LN installations.\nExample `settings.json`\nMinimal personalization for a strict naming + always-format workflow:\n{\n  \"baanc.indentSize\": 4,\n  \"baanc.formatOnSave\": true,\n  \"baanc.diagnostics.enabled\": true,\n  \"baanc.diagnostics.namingConventions\": true,\n  \"baanc.diagnostics.namingArgPrefixes\": false,\n  \"baanc.completion.includeBuiltins\": true,\n  \"baanc.completion.includeErrors\": true,\n  \"baanc.libraryMemory.enabled\": true,\n  \"baanc.libraryMemory.autoImportOnCompletion\": true,\n  \"baanc.libraryMemory.showImportHints\": true\n}\nDisable library memory entirely (pure single-file editing):\n{\n  \"baanc.libraryMemory.enabled\": false,\n  \"baanc.libraryMemory.autoImportOnCompletion\": false,\n  \"baanc.libraryMemory.showImportHints\": false\n}\nLighter completions (keywords + local only):\n{\n  \"baanc.completion.includeBuiltins\": false,\n  \"baanc.completion.includeErrors\": false,\n  \"baanc.completion.includeSql\": true,\n  \"baanc.completion.include4gl\": true,\n  \"baanc.completion.includePreprocessor\": true\n}\nLanguage-specific editor defaults\nContributed under `configurationDefaults` for `[baanc]` (user settings override these):\nExample override (2-space indent for Baan only):\n{\n  \"baanc.indentSize\": 2,\n  \"[baanc]\": {\n    \"editor.tabSize\": 2\n  }\n}\nWhere memory is stored\nLibrary memory uses VS Code **Extension global state** (not workspace files):\nKey: `baanc.libraryMemory.v1`\nSurvives reloads and window restarts\nIndependent of whether the original temp file still exists\nCleared via **Baan C: Clear Memorized Libraries** or the manage UI\nGlobal state is per user profile / machine for that VS Code installation, not committed to git."},"commands":{"id":"commands","title":"Commands","group":"Guides","icon":"terminal","html":"<h1 id=\"commands\"><a class=\"anchor\" href=\"#commands\" aria-hidden=\"true\">#</a>Commands</h1>\n<p>All commands appear in the <strong>Command Palette</strong> (<code>Ctrl+Shift+P</code> / <code>Cmd+Shift+P</code>).   Most are limited to Baan C editors (<code>editorLangId == baanc</code>). Library memory management is always available.</p>\n<hr />\n<h2 id=\"command-list\"><a class=\"anchor\" href=\"#command-list\" aria-hidden=\"true\">#</a>Command list</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Title</th>\n<th>Command ID</th>\n<th>When</th>\n<th>Description</th>\n</tr></thead><tbody>\n<tr>\n<td><strong>Baan C: Format Document</strong></td>\n<td><code>baanc.formatDocument</code></td>\n<td>Baan editor</td>\n<td>Format the active document using the extension formatter</td>\n</tr>\n<tr>\n<td><strong>Baan C: Run Diagnostics</strong></td>\n<td><code>baanc.runDiagnostics</code></td>\n<td>Baan editor</td>\n<td>Re-run diagnostics and open the <strong>Baan C</strong> output channel</td>\n</tr>\n<tr>\n<td><strong>Baan C: Insert Select Template</strong></td>\n<td><code>baanc.insertSelectTemplate</code></td>\n<td>Baan editor</td>\n<td>Insert a full select / selectdo / selectempty / selecterror skeleton</td>\n</tr>\n<tr>\n<td><strong>Baan C: Insert Transaction + Select Template</strong></td>\n<td><code>baanc.insertTransactionTemplate</code></td>\n<td>Baan editor</td>\n<td>Insert retry-point + for-update select + commit/abort pattern</td>\n</tr>\n<tr>\n<td><strong>Baan C: Manage Memorized Libraries…</strong></td>\n<td><code>baanc.manageLibraryMemory</code></td>\n<td>always</td>\n<td>Inspect, change import kind, remove libraries/functions, or clear all</td>\n</tr>\n<tr>\n<td><strong>Baan C: Clear Memorized Libraries</strong></td>\n<td><code>baanc.clearLibraryMemory</code></td>\n<td>always</td>\n<td>Wipe all remembered library/include exports (confirmation required)</td>\n</tr>\n<tr>\n<td><strong>Baan C: Add Library Import (#include / #pragma used dll)</strong></td>\n<td><code>baanc.addLibraryImport</code></td>\n<td>Baan editor</td>\n<td>Insert the right import for the symbol under the cursor, or pick style + name</td>\n</tr>\n<tr>\n<td><strong>Baan C: Open Documentation</strong></td>\n<td><code>baanc.openDocumentation</code></td>\n<td>always</td>\n<td>Open the professional in-editor documentation (sidebar, search, all guides)</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"context-menu\"><a class=\"anchor\" href=\"#context-menu\" aria-hidden=\"true\">#</a>Context menu</h2>\n<p>On Baan C editors, the right-click menu includes:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Group</th>\n<th>Command</th>\n</tr></thead><tbody>\n<tr>\n<td>Modification</td>\n<td>Format Document</td>\n</tr>\n<tr>\n<td>Modification</td>\n<td>Insert Select Template</td>\n</tr>\n<tr>\n<td>Modification</td>\n<td>Insert Transaction + Select Template</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"standard-vs-code-language-actions\"><a class=\"anchor\" href=\"#standard-vs-code-language-actions\" aria-hidden=\"true\">#</a>Standard VS Code language actions</h2>\n<p>These are provided by the extension’s language providers (not custom command IDs):</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Action</th>\n<th>Typical shortcut (Windows/Linux)</th>\n<th>macOS</th>\n</tr></thead><tbody>\n<tr>\n<td>Format Document</td>\n<td><code>Shift+Alt+F</code></td>\n<td><code>Shift+Option+F</code></td>\n</tr>\n<tr>\n<td>Go to Definition</td>\n<td><code>F12</code></td>\n<td><code>F12</code></td>\n</tr>\n<tr>\n<td>Peek Definition</td>\n<td><code>Alt+F12</code></td>\n<td><code>Option+F12</code></td>\n</tr>\n<tr>\n<td>Find All References</td>\n<td><code>Shift+F12</code></td>\n<td><code>Shift+F12</code></td>\n</tr>\n<tr>\n<td>Rename Symbol</td>\n<td><code>F2</code></td>\n<td><code>F2</code></td>\n</tr>\n<tr>\n<td>Trigger Suggest</td>\n<td><code>Ctrl+Space</code></td>\n<td><code>Ctrl+Space</code></td>\n</tr>\n<tr>\n<td>Trigger Parameter Hints</td>\n<td><code>Ctrl+Shift+Space</code></td>\n<td><code>Cmd+Shift+Space</code></td>\n</tr>\n<tr>\n<td>Quick Fix</td>\n<td><code>Ctrl+.</code></td>\n<td><code>Cmd+.</code></td>\n</tr>\n<tr>\n<td>Fold / Unfold</td>\n<td><code>Ctrl+Shift+[</code> / <code>]</code></td>\n<td><code>Cmd+Option+[</code> / <code>]</code></td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"template-contents\"><a class=\"anchor\" href=\"#template-contents\" aria-hidden=\"true\">#</a>Template contents</h2>\n<h3 id=\"insert-select-template\"><a class=\"anchor\" href=\"#insert-select-template\" aria-hidden=\"true\">#</a>Insert Select Template</h3>\n<div class=\"code-block\" data-lang=\"baanc\"><div class=\"code-head\"><span class=\"code-lang\">baanc</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-baanc\">select  table.*\nfrom    table\nwhere   table.field\nselectdo\n\t|\nselectempty\n\t| no records\nselecterror\n\tmessage(&quot;SQL error: %d&quot;, db.error())\nendselect</code></pre></div>\n<p>Placeholders link the table name across <code>select</code> / <code>from</code> / <code>where</code>.</p>\n<h3 id=\"insert-transaction-select-template\"><a class=\"anchor\" href=\"#insert-transaction-select-template\" aria-hidden=\"true\">#</a>Insert Transaction + Select Template</h3>\n<div class=\"code-block\" data-lang=\"baanc\"><div class=\"code-head\"><span class=\"code-lang\">baanc</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-baanc\">db.retry.point()\nlong ret = 0\nselect  table.*\nfrom    table\nfor update\nwhere   table.field\nselectdo\n\t|\n\tret = db.update(table.id, db.retry)\nselectempty\n\t| no records\nendselect\nif ret = 0 then\n\tcommit.transaction()\nelse\n\tabort.transaction()\nendif</code></pre></div>\n<hr />\n<h2 id=\"library-memory-commands\"><a class=\"anchor\" href=\"#library-memory-commands\" aria-hidden=\"true\">#</a>Library memory commands</h2>\n<h3 id=\"manage-memorized-libraries\"><a class=\"anchor\" href=\"#manage-memorized-libraries\" aria-hidden=\"true\">#</a>Manage Memorized Libraries…</h3>\n<p>Opens a Quick Pick of memorized libraries. Per library you can typically:</p>\n<ul>\n<li>View import kind (<code>include</code> vs <code>dll</code>) and import statement</li>\n<li>Switch kind (<code>#include</code> ↔ <code>#pragma used dll</code>) when heuristics got it wrong</li>\n<li>Inspect function list</li>\n<li>Remove one library or clear everything</li>\n</ul>\n<p>If nothing is memorized yet, a message explains that you should open a library/include <code>.bc</code> first.</p>\n<h3 id=\"clear-memorized-libraries\"><a class=\"anchor\" href=\"#clear-memorized-libraries\" aria-hidden=\"true\">#</a>Clear Memorized Libraries</h3>\n<p>Modal confirmation:   <code>Clear all N memorized libraries (M functions)?</code></p>\n<h3 id=\"add-library-import\"><a class=\"anchor\" href=\"#add-library-import\" aria-hidden=\"true\">#</a>Add Library Import</h3>\n<ol>\n<li>If the cursor is on a symbol found in library memory, inserts the matching import.</li>\n<li>Otherwise, prompts for import style and name so you can add <code>#include &quot;…&quot;</code> or <code>#pragma used dll &quot;…&quot;</code> manually.</li>\n</ol>\n<p>Import insertion prefers a sensible location near existing <code>#include</code> / <code>#pragma</code> lines at the top of the file.</p>\n<hr />\n<h2 id=\"output-channel\"><a class=\"anchor\" href=\"#output-channel\" aria-hidden=\"true\">#</a>Output channel</h2>\n<p><strong>Baan C: Run Diagnostics</strong> writes a short line to the <strong>Baan C</strong> output channel, for example:</p>\n<div class=\"code-block\" data-lang=\"text\"><div class=\"code-head\"><span class=\"code-lang\">text</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-text\">Diagnostics refreshed for C:\\path\\to\\script.bc</code></pre></div>\n<p>Open <strong>View → Output</strong>, then select <strong>Baan C</strong> from the dropdown.</p>","toc":[{"id":"command-list","text":"Command list","level":2},{"id":"context-menu","text":"Context menu","level":2},{"id":"standard-vs-code-language-actions","text":"Standard VS Code language actions","level":2},{"id":"template-contents","text":"Template contents","level":2},{"id":"insert-select-template","text":"Insert Select Template","level":3},{"id":"insert-transaction-select-template","text":"Insert Transaction + Select Template","level":3},{"id":"library-memory-commands","text":"Library memory commands","level":2},{"id":"manage-memorized-libraries","text":"Manage Memorized Libraries…","level":3},{"id":"clear-memorized-libraries","text":"Clear Memorized Libraries","level":3},{"id":"add-library-import","text":"Add Library Import","level":3},{"id":"output-channel","text":"Output channel","level":2}],"plain":"Commands\nAll commands appear in the **Command Palette** (`Ctrl+Shift+P` / `Cmd+Shift+P`).   Most are limited to Baan C editors (`editorLangId == baanc`). Library memory management is always available.\nCommand list\nContext menu\nOn Baan C editors, the right-click menu includes:\nStandard VS Code language actions\nThese are provided by the extension’s language providers (not custom command IDs):\nTemplate contents\nInsert Select Template\nselect  table.*\nfrom    table\nwhere   table.field\nselectdo\n\t|\nselectempty\n\t| no records\nselecterror\n\tmessage(\"SQL error: %d\", db.error())\nendselect\nPlaceholders link the table name across `select` / `from` / `where`.\nInsert Transaction + Select Template\ndb.retry.point()\nlong ret = 0\nselect  table.*\nfrom    table\nfor update\nwhere   table.field\nselectdo\n\t|\n\tret = db.update(table.id, db.retry)\nselectempty\n\t| no records\nendselect\nif ret = 0 then\n\tcommit.transaction()\nelse\n\tabort.transaction()\nendif\nLibrary memory commands\nManage Memorized Libraries…\nOpens a Quick Pick of memorized libraries. Per library you can typically:\nView import kind (`include` vs `dll`) and import statement\nSwitch kind (`#include` ↔ `#pragma used dll`) when heuristics got it wrong\nInspect function list\nRemove one library or clear everything\nIf nothing is memorized yet, a message explains that you should open a library/include `.bc` first.\nClear Memorized Libraries\nModal confirmation:   `Clear all N memorized libraries (M functions)?`\nAdd Library Import\nIf the cursor is on a symbol found in library memory, inserts the matching import.\nOtherwise, prompts for import style and name so you can add `#include \"…\"` or `#pragma used dll \"…\"` manually.\nImport insertion prefers a sensible location near existing `#include` / `#pragma` lines at the top of the file.\nOutput channel\n**Baan C: Run Diagnostics** writes a short line to the **Baan C** output channel, for example:\nDiagnostics refreshed for C:\\path\\to\\script.bc\nOpen **View → Output**, then select **Baan C** from the dropdown."},"snippets":{"id":"snippets","title":"Snippets","group":"Guides","icon":"snippet","html":"<h1 id=\"snippets\"><a class=\"anchor\" href=\"#snippets\" aria-hidden=\"true\">#</a>Snippets</h1>\n<p>Snippets are contributed for language <code>baanc</code> from <code>snippets/baanc.json</code>.</p>\n<p><strong>How to use:</strong> type the <strong>prefix</strong>, then accept the suggestion (<code>Tab</code> / <code>Enter</code>).   Tab stops (<code>$1</code>, <code>$2</code>, …) move with <code>Tab</code>. Linked placeholders update together (e.g. table name in select snippets).</p>\n<hr />\n<h2 id=\"control-flow\"><a class=\"anchor\" href=\"#control-flow\" aria-hidden=\"true\">#</a>Control flow</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>if</code></td>\n<td>If then endif</td>\n<td><code>if … then</code> / <code>endif</code></td>\n</tr>\n<tr>\n<td><code>ife</code></td>\n<td>If then else endif</td>\n<td><code>if</code> / <code>else</code> / <code>endif</code></td>\n</tr>\n<tr>\n<td><code>ifel</code></td>\n<td>If elif else endif</td>\n<td><code>if</code> / <code>elif</code> / <code>else</code> / <code>endif</code></td>\n</tr>\n<tr>\n<td><code>while</code></td>\n<td>While endwhile</td>\n<td><code>while</code> / <code>endwhile</code></td>\n</tr>\n<tr>\n<td><code>for</code></td>\n<td>For endfor</td>\n<td><code>for i = 1 to n</code> / <code>endfor</code></td>\n</tr>\n<tr>\n<td><code>fors</code></td>\n<td>For step endfor</td>\n<td><code>for … step …</code> / <code>endfor</code></td>\n</tr>\n<tr>\n<td><code>repeat</code></td>\n<td>Repeat until</td>\n<td><code>repeat</code> / <code>until</code></td>\n</tr>\n<tr>\n<td><code>oncase</code></td>\n<td>On case</td>\n<td><code>on case</code> / <code>case</code> / <code>default</code> / <code>endcase</code></td>\n</tr>\n<tr>\n<td><code>oncases</code></td>\n<td>On case string</td>\n<td>String-oriented <code>on case</code> skeleton</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"functions\"><a class=\"anchor\" href=\"#functions\" aria-hidden=\"true\">#</a>Functions</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>func</code></td>\n<td>Function void</td>\n<td><code>function name(…)</code> with braces</td>\n</tr>\n<tr>\n<td><code>funcl</code></td>\n<td>Function typed</td>\n<td>Typed return (<code>long</code> / <code>double</code> / <code>string</code> / <code>void</code>) + <code>return</code></td>\n</tr>\n<tr>\n<td><code>funcex</code></td>\n<td>Function extern long</td>\n<td><code>function extern long …</code> pattern</td>\n</tr>\n<tr>\n<td><code>proto</code></td>\n<td>Prototype</td>\n<td>Function prototype declaration</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"declarations\"><a class=\"anchor\" href=\"#declarations\" aria-hidden=\"true\">#</a>Declarations</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>domain</code></td>\n<td>Domain declaration</td>\n<td>Domain declaration line</td>\n</tr>\n<tr>\n<td><code>table</code></td>\n<td>Table declaration</td>\n<td><code>table</code> declaration</td>\n</tr>\n<tr>\n<td><code>long</code></td>\n<td>Long declaration</td>\n<td><code>long</code> variable</td>\n</tr>\n<tr>\n<td><code>string</code></td>\n<td>String declaration</td>\n<td><code>string</code> variable</td>\n</tr>\n<tr>\n<td><code>boolean</code></td>\n<td>Boolean declaration</td>\n<td><code>boolean</code> variable</td>\n</tr>\n<tr>\n<td><code>double</code></td>\n<td>Double declaration</td>\n<td><code>double</code> variable</td>\n</tr>\n<tr>\n<td><code>extern</code></td>\n<td>Extern long</td>\n<td><code>extern long</code> declaration</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"embedded-sql-transactions\"><a class=\"anchor\" href=\"#embedded-sql-transactions\" aria-hidden=\"true\">#</a>Embedded SQL & transactions</h2>\n<p>Select snippets use <strong><code>table.*</code></strong> (not bare <code>*</code>) with linked table placeholders and column-aligned clauses.</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>select</code></td>\n<td>Select block</td>\n<td>Basic select / selectdo / endselect</td>\n</tr>\n<tr>\n<td><code>selectf</code></td>\n<td>Select full</td>\n<td>Full select with empty/error branches</td>\n</tr>\n<tr>\n<td><code>txselect</code></td>\n<td>Transaction with select for update</td>\n<td>Retry + for update + commit/abort style flow</td>\n</tr>\n<tr>\n<td><code>sqlpf</code></td>\n<td>SQL parse exec fetch</td>\n<td>Parse / execute / fetch helper pattern</td>\n</tr>\n<tr>\n<td><code>qext</code></td>\n<td>Query extend where</td>\n<td>Query-extend / where helper pattern</td>\n</tr>\n<tr>\n<td><code>retry</code></td>\n<td>Db retry point</td>\n<td><code>db.retry.point()</code> usage</td>\n</tr>\n<tr>\n<td><code>commit</code></td>\n<td>Commit transaction</td>\n<td><code>commit.transaction()</code></td>\n</tr>\n<tr>\n<td><code>abort</code></td>\n<td>Abort transaction</td>\n<td><code>abort.transaction()</code></td>\n</tr>\n<tr>\n<td><code>elocked</code></td>\n<td>Error check ELOCKED</td>\n<td>Lock-error handling pattern</td>\n</tr>\n</tbody></table></div>\n<p>Equivalent command templates (not prefixes):</p>\n<ul>\n<li><strong>Baan C: Insert Select Template</strong></li>\n<li><strong>Baan C: Insert Transaction + Select Template</strong></li>\n</ul>\n<p>Example shape after expanding <code>selectf</code>:</p>\n<div class=\"code-block\" data-lang=\"baanc\"><div class=\"code-head\"><span class=\"code-lang\">baanc</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-baanc\">select  table.*\nfrom    table\nwhere   table.field\nselectdo\n\t|\nselectempty\n\t|\nselecterror\n\t|\nendselect</code></pre></div>\n<hr />\n<h2 id=\"preprocessor\"><a class=\"anchor\" href=\"#preprocessor\" aria-hidden=\"true\">#</a>Preprocessor</h2>\n<p>Prefixes that start with <code>#</code> replace a partially typed <code>#…</code> so you do not get <code>##define</code>.</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>#include</code> / <code>include</code></td>\n<td>Include quotes</td>\n<td><code>#include &quot;filename&quot;</code></td>\n</tr>\n<tr>\n<td><code>#include&lt;</code> / <code>include&lt;</code></td>\n<td>Include angle</td>\n<td><code>#include &lt;filename&gt;</code></td>\n</tr>\n<tr>\n<td><code>#define</code> / <code>define</code></td>\n<td>Define macro</td>\n<td><code>#define NAME value</code></td>\n</tr>\n<tr>\n<td><code>#undef</code> / <code>undef</code></td>\n<td>Undef macro</td>\n<td><code>#undef NAME</code></td>\n</tr>\n<tr>\n<td><code>#if</code> / <code>ppif</code></td>\n<td>If preprocessor</td>\n<td><code>#if</code> … <code>#endif</code></td>\n</tr>\n<tr>\n<td><code>#ifdef</code> / <code>ifdef</code></td>\n<td>Ifdef block</td>\n<td><code>#ifdef</code> … <code>#endif</code></td>\n</tr>\n<tr>\n<td><code>#ifndef</code> / <code>ifndef</code></td>\n<td>Ifndef block</td>\n<td><code>#ifndef</code> … <code>#endif</code></td>\n</tr>\n<tr>\n<td><code>#pragma</code> / <code>pragma</code></td>\n<td>Pragma</td>\n<td><code>#pragma …</code></td>\n</tr>\n<tr>\n<td><code>#ident</code> / <code>ident</code></td>\n<td>Ident</td>\n<td><code>#ident &quot;@(#)…&quot;</code></td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"4gl-sections\"><a class=\"anchor\" href=\"#4gl-sections\" aria-hidden=\"true\">#</a>4GL sections</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Typical section</th>\n</tr></thead><tbody>\n<tr>\n<td><code>declaration</code></td>\n<td>4GL declaration section</td>\n<td><code>declaration:</code></td>\n</tr>\n<tr>\n<td><code>before.program</code> / <code>before.</code></td>\n<td>4GL before.program</td>\n<td><code>before.program:</code></td>\n</tr>\n<tr>\n<td><code>after.program</code></td>\n<td>4GL after.program</td>\n<td><code>after.program:</code></td>\n</tr>\n<tr>\n<td><code>before.checks</code> / <code>before.ch</code></td>\n<td>4GL before.checks</td>\n<td><code>before.checks:</code></td>\n</tr>\n<tr>\n<td><code>when.field.changes</code></td>\n<td>4GL when.field.changes</td>\n<td>field change hook</td>\n</tr>\n<tr>\n<td><code>field.</code></td>\n<td>4GL field section</td>\n<td><code>field.table.field:</code></td>\n</tr>\n<tr>\n<td><code>after.field</code></td>\n<td>4GL after.field</td>\n<td><code>after.field:</code></td>\n</tr>\n<tr>\n<td><code>check.input</code></td>\n<td>4GL check.input</td>\n<td>input validation</td>\n</tr>\n<tr>\n<td><code>choice.</code></td>\n<td>4GL choice section</td>\n<td><code>choice.…:</code></td>\n</tr>\n<tr>\n<td><code>main.table.io</code></td>\n<td>4GL main.table.io</td>\n<td><code>main.table.io:</code></td>\n</tr>\n</tbody></table></div>\n<p>Typing after a trailing dot (e.g. <code>before.</code>) continues to match dotted 4GL completions.</p>\n<hr />\n<h2 id=\"apis-patterns\"><a class=\"anchor\" href=\"#apis-patterns\" aria-hidden=\"true\">#</a>APIs & patterns</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Prefix</th>\n<th>Name</th>\n<th>Inserts</th>\n</tr></thead><tbody>\n<tr>\n<td><code>message</code></td>\n<td>Message</td>\n<td><code>message(&quot;…&quot;)</code></td>\n</tr>\n<tr>\n<td><code>dalgs</code></td>\n<td>DAL get and save object</td>\n<td>DAL get/save skeleton</td>\n</tr>\n<tr>\n<td><code>httpget</code></td>\n<td>HTTP GET pattern</td>\n<td>HTTP client GET flow</td>\n</tr>\n<tr>\n<td><code>curlget</code></td>\n<td>cURL download string</td>\n<td>cURL download skeleton</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"tips\"><a class=\"anchor\" href=\"#tips\" aria-hidden=\"true\">#</a>Tips</h2>\n<ol>\n<li><strong>Snippets vs completions</strong> — Snippets appear alongside keyword/builtin completions. Use the description/detail column to pick the right item.</li>\n<li><strong>SQL alignment</strong> — After inserting a select snippet, run <strong>Format Document</strong> if you have mixed hand-edited clauses; the formatter re-aligns SQL keywords.</li>\n<li><strong>Disable a category of keyword completions</strong> — Snippets remain available even if you turn off builtin/SQL completion settings; only dynamic completion sources are gated (see <a href=\"#/configuration\" data-route=\"configuration\">Configuration</a>).</li>\n<li><strong>Discover all snippets</strong> — Command Palette → <strong>Snippets: Insert Snippet</strong> while a Baan file is focused.</li>\n</ol>","toc":[{"id":"control-flow","text":"Control flow","level":2},{"id":"functions","text":"Functions","level":2},{"id":"declarations","text":"Declarations","level":2},{"id":"embedded-sql-transactions","text":"Embedded SQL & transactions","level":2},{"id":"preprocessor","text":"Preprocessor","level":2},{"id":"4gl-sections","text":"4GL sections","level":2},{"id":"apis-patterns","text":"APIs & patterns","level":2},{"id":"tips","text":"Tips","level":2}],"plain":"Snippets\nSnippets are contributed for language `baanc` from `snippets/baanc.json`.\n**How to use:** type the **prefix**, then accept the suggestion (`Tab` / `Enter`).   Tab stops (`$1`, `$2`, …) move with `Tab`. Linked placeholders update together (e.g. table name in select snippets).\nControl flow\nFunctions\nDeclarations\nEmbedded SQL & transactions\nSelect snippets use **`table.*`** (not bare `*`) with linked table placeholders and column-aligned clauses.\nEquivalent command templates (not prefixes):\n**Baan C: Insert Select Template**\n**Baan C: Insert Transaction + Select Template**\nExample shape after expanding `selectf`:\nselect  table.*\nfrom    table\nwhere   table.field\nselectdo\n\t|\nselectempty\n\t|\nselecterror\n\t|\nendselect\nPreprocessor\nPrefixes that start with `#` replace a partially typed `#…` so you do not get `##define`.\n4GL sections\nTyping after a trailing dot (e.g. `before.`) continues to match dotted 4GL completions.\nAPIs & patterns\nTips\n**Snippets vs completions** — Snippets appear alongside keyword/builtin completions. Use the description/detail column to pick the right item.\n**SQL alignment** — After inserting a select snippet, run **Format Document** if you have mixed hand-edited clauses; the formatter re-aligns SQL keywords.\n**Disable a category of keyword completions** — Snippets remain available even if you turn off builtin/SQL completion settings; only dynamic completion sources are gated (see [Configuration](./configuration.md)).\n**Discover all snippets** — Command Palette → **Snippets: Insert Snippet** while a Baan file is focused."},"library-memory":{"id":"library-memory","title":"Library memory","group":"Guides","icon":"memory","html":"<h1 id=\"library-memory\"><a class=\"anchor\" href=\"#library-memory\" aria-hidden=\"true\">#</a>Library memory</h1>\n<p>Library memory is designed for <strong>BECS</strong> and other workflows where library or include sources open as temporary <code>.bc</code> files and then disappear. The extension <strong>learns</strong> exported functions while the file is open and keeps them for completions, hovers, signature help, and auto-import—even after the temp file is deleted.</p>\n<hr />\n<h2 id=\"why-it-exists\"><a class=\"anchor\" href=\"#why-it-exists\" aria-hidden=\"true\">#</a>Why it exists</h2>\n<p>Typical BECS flow:</p>\n<ol>\n<li>You open a session script in VS Code.</li>\n<li>You jump to a library/include; BECS dumps a temporary <code>.bc</code> path.</li>\n<li>You close the temp buffer; the file may be deleted from disk.</li>\n<li>Without memory, completions for that library vanish.</li>\n</ol>\n<p>With library memory enabled, step 4 no longer loses the API surface.</p>\n<p>Storage: VS Code <strong>extension global state</strong> key <code>baanc.libraryMemory.v1</code> (survives reloads).</p>\n<hr />\n<h2 id=\"how-learning-works\"><a class=\"anchor\" href=\"#how-learning-works\" aria-hidden=\"true\">#</a>How learning works</h2>\n<p>When a <code>baanc</code> document is opened or edited (debounced), the extension:</p>\n<ol>\n<li>Derives a <strong>script name</strong> from the URI (filename without extension).</li>\n<li>Parses <code>function</code> headers (skips block-comment noise).</li>\n<li>Classifies the source as <strong>include</strong> or <strong>dll</strong> (see below).</li>\n<li>Stores functions:</li>\n</ol>\n<ul>\n<li><strong>DLL:</strong> only <code>function extern …</code> (linkable exports)</li>\n<li><strong>Include:</strong> non-static functions (includes expose callable helpers more broadly)</li>\n</ul>\n<ol>\n<li>Updates <code>lastSeen</code> and optional <code>sourceHint</code> (filesystem path when available).</li>\n<li>Prunes by LRU when over <code>baanc.libraryMemory.maxLibraries</code>.</li>\n<li>Caps functions per library with <code>baanc.libraryMemory.maxFunctionsPerLibrary</code>.</li>\n</ol>\n<p>Empty parses do <strong>not</strong> wipe a previously good memory (protects mid-edit stubs and incomplete BECS buffers).</p>\n<p>Disable entirely with <code>baanc.libraryMemory.enabled: false</code>.</p>\n<hr />\n<h2 id=\"include-vs-dll-import-forms\"><a class=\"anchor\" href=\"#include-vs-dll-import-forms\" aria-hidden=\"true\">#</a>Include vs DLL import forms</h2>\n<p>Baan/Infor uses two different import styles:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Kind</th>\n<th>Typical source</th>\n<th>Import written by the extension</th>\n</tr></thead><tbody>\n<tr>\n<td><strong>include</strong></td>\n<td>Include scripts such as <code>itxadv0000</code></td>\n<td><code>#include &quot;itxadv0000&quot;</code></td>\n</tr>\n<tr>\n<td><strong>dll</strong></td>\n<td>Compiled DLL objects such as <code>tccomdll0200</code></td>\n<td><code>#pragma used dll &quot;otccomdll0200&quot;</code></td>\n</tr>\n</tbody></table></div>\n<p>Object names for DLLs commonly use a leading <code>o</code> (<code>otccomdll0200</code>). The extension normalizes this when generating the pragma.</p>\n<h3 id=\"automatic-classification-heuristics\"><a class=\"anchor\" href=\"#automatic-classification-heuristics\" aria-hidden=\"true\">#</a>Automatic classification heuristics</h3>\n<p><code>detectImportKind</code> (simplified):</p>\n<ol>\n<li>Name contains <code>dll</code> → <strong>dll</strong></li>\n<li>Classic include pattern: leading <code>i</code> + package-like name (e.g. <code>itxadv0000</code>), excluding session-like codes → <strong>include</strong></li>\n<li>Content heuristics:</li>\n</ol>\n<ul>\n<li>No <code>function extern</code>, but several <code>#define</code> / <code>prototype</code> → <strong>include</strong></li>\n<li>Has <code>function extern</code> → <strong>dll</strong></li>\n</ul>\n<ol>\n<li>Fallback → <strong>include</strong></li>\n</ol>\n<p>If classification is wrong for your naming scheme, open <strong>Baan C: Manage Memorized Libraries…</strong> and switch the kind (can be locked so later learns do not flip it back, depending on manager actions).</p>\n<hr />\n<h2 id=\"completions-and-documentation\"><a class=\"anchor\" href=\"#completions-and-documentation\" aria-hidden=\"true\">#</a>Completions and documentation</h2>\n<p>Memorized exports appear with detail labels similar to:</p>\n<ul>\n<li><code>include · itxadv0000</code></li>\n<li><code>dll · otccomdll0200</code></li>\n</ul>\n<p>Hover and signature help use the stored function header when available.</p>\n<hr />\n<h2 id=\"auto-import-on-completion\"><a class=\"anchor\" href=\"#auto-import-on-completion\" aria-hidden=\"true\">#</a>Auto-import on completion</h2>\n<p>When <code>baanc.libraryMemory.autoImportOnCompletion</code> is <code>true</code> (default):</p>\n<ol>\n<li>You accept a completion that comes from a memorized library.</li>\n<li>If the document does not already import that library, the extension inserts:</li>\n</ol>\n<p>``<code>baanc    #include &quot;itxadv0000&quot;    </code>``</p>\n<p>or</p>\n<p>``<code>baanc    #pragma used dll &quot;otccomdll0200&quot;    </code>``</p>\n<ol>\n<li>Insertion prefers a clean location near existing includes/pragmas (top of file, after last <code>#include</code> or <code>#pragma</code> as appropriate).</li>\n</ol>\n<p>Duplicate detection is tolerant of <code>o</code> prefix variants and path/extension noise on includes.</p>\n<hr />\n<h2 id=\"import-hints-and-quick-fix\"><a class=\"anchor\" href=\"#import-hints-and-quick-fix\" aria-hidden=\"true\">#</a>Import hints and Quick Fix</h2>\n<p>When <code>baanc.libraryMemory.showImportHints</code> is <code>true</code>:</p>\n<ul>\n<li>Calls that match a memorized export without a matching import get an <strong>Information</strong> diagnostic.</li>\n<li><strong>Quick Fix</strong> (<code>Ctrl+.</code> / <code>Cmd+.</code>) inserts the correct import.</li>\n</ul>\n<p>Diagnostic codes (internal):</p>\n<ul>\n<li><code>missing-library-import</code></li>\n<li><code>missing-builtin-library-import</code> (for mapped builtins)</li>\n</ul>\n<hr />\n<h2 id=\"builtin-auto-import-conservative\"><a class=\"anchor\" href=\"#builtin-auto-import-conservative\" aria-hidden=\"true\">#</a>Builtin auto-import (conservative)</h2>\n<p>Separate from library memory, some built-ins may declare an optional DLL:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Role</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.autoImport.builtinsOnCompletion</code></td>\n<td>Insert <code>#pragma used dll</code> on completion accept when mapping exists</td>\n</tr>\n<tr>\n<td><code>baanc.autoImport.builtinImportHints</code></td>\n<td>Soft hints when such a builtin is used without the pragma</td>\n</tr>\n</tbody></table></div>\n<p>The default mapping tables are <strong>intentionally sparse</strong>. The extension does <strong>not</strong> invent package DLL names for arbitrary APIs, because Infor LN installations differ. Prefer opening real DLL sources so library memory learns the truth.</p>\n<hr />\n<h2 id=\"managing-memory\"><a class=\"anchor\" href=\"#managing-memory\" aria-hidden=\"true\">#</a>Managing memory</h2>\n<h3 id=\"command-manage-memorized-libraries\"><a class=\"anchor\" href=\"#command-manage-memorized-libraries\" aria-hidden=\"true\">#</a>Command: Manage Memorized Libraries…</h3>\n<p>Quick Pick lists each library with:</p>\n<ul>\n<li>Import target and kind tag (<code>include</code> / <code>dll</code>)</li>\n<li>Function count</li>\n<li>Age (<code>lastSeen</code>)</li>\n<li>Generated import statement and optional source path</li>\n</ul>\n<p>Actions typically include:</p>\n<ul>\n<li>Open details / list functions</li>\n<li>Switch import kind</li>\n<li>Remove one library</li>\n<li>Clear all</li>\n</ul>\n<h3 id=\"command-clear-memorized-libraries\"><a class=\"anchor\" href=\"#command-clear-memorized-libraries\" aria-hidden=\"true\">#</a>Command: Clear Memorized Libraries</h3>\n<p>Modal confirmation, then wipes the entire store and refreshes diagnostics on open Baan documents.</p>\n<h3 id=\"command-add-library-import\"><a class=\"anchor\" href=\"#command-add-library-import\" aria-hidden=\"true\">#</a>Command: Add Library Import</h3>\n<ul>\n<li>Cursor on a memorized symbol → insert that library’s import</li>\n<li>Otherwise → choose style and name manually</li>\n</ul>\n<hr />\n<h2 id=\"recommended-becs-workflow\"><a class=\"anchor\" href=\"#recommended-becs-workflow\" aria-hidden=\"true\">#</a>Recommended BECS workflow</h2>\n<ol>\n<li>Keep <code>baanc.libraryMemory.enabled</code> and <code>autoImportOnCompletion</code> on (defaults).</li>\n<li>When you need a library API, open the library/include from BECS once.</li>\n<li>Wait a moment (learn is debounced ~400 ms) or edit/save so the document is processed.</li>\n<li>Return to your session script; type the function name and accept the completion.</li>\n<li>Confirm the auto-inserted <code>#include</code> or <code>#pragma used dll</code> at the top.</li>\n<li>If kind is wrong, fix it once in <strong>Manage Memorized Libraries…</strong>.</li>\n</ol>\n<p>Optional hygiene:</p>\n<ul>\n<li>Raise <code>maxLibraries</code> if you jump across many packages in one day.</li>\n<li>Clear memory after finishing a large unrelated project to reduce stale completions.</li>\n</ul>\n<hr />\n<h2 id=\"settings-summary\"><a class=\"anchor\" href=\"#settings-summary\" aria-hidden=\"true\">#</a>Settings summary</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Default</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.libraryMemory.enabled</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.maxLibraries</code></td>\n<td><code>40</code></td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.maxFunctionsPerLibrary</code></td>\n<td><code>200</code></td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.autoImportOnCompletion</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.showImportHints</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>baanc.autoImport.builtinsOnCompletion</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>baanc.autoImport.builtinImportHints</code></td>\n<td><code>true</code></td>\n</tr>\n</tbody></table></div>\n<p>Full descriptions: <a href=\"#/configuration\" data-route=\"configuration\">Configuration</a>.</p>\n<hr />\n<h2 id=\"limitations\"><a class=\"anchor\" href=\"#limitations\" aria-hidden=\"true\">#</a>Limitations</h2>\n<ul>\n<li>Memory is <strong>not</strong> a full project indexer; it only knows libraries you actually opened (or previously learned).</li>\n<li>Classification heuristics can mis-tag unusual names — use the manager to override.</li>\n<li>Cross-file <strong>rename</strong> / <strong>find all references</strong> still operate on the current file only.</li>\n<li>Untitled buffers without a usable name are not learned.</li>\n<li>Empty or incomplete temp buffers will not overwrite a good prior extract.</li>\n</ul>","toc":[{"id":"why-it-exists","text":"Why it exists","level":2},{"id":"how-learning-works","text":"How learning works","level":2},{"id":"include-vs-dll-import-forms","text":"Include vs DLL import forms","level":2},{"id":"automatic-classification-heuristics","text":"Automatic classification heuristics","level":3},{"id":"completions-and-documentation","text":"Completions and documentation","level":2},{"id":"auto-import-on-completion","text":"Auto-import on completion","level":2},{"id":"import-hints-and-quick-fix","text":"Import hints and Quick Fix","level":2},{"id":"builtin-auto-import-conservative","text":"Builtin auto-import (conservative)","level":2},{"id":"managing-memory","text":"Managing memory","level":2},{"id":"command-manage-memorized-libraries","text":"Command: Manage Memorized Libraries…","level":3},{"id":"command-clear-memorized-libraries","text":"Command: Clear Memorized Libraries","level":3},{"id":"command-add-library-import","text":"Command: Add Library Import","level":3},{"id":"recommended-becs-workflow","text":"Recommended BECS workflow","level":2},{"id":"settings-summary","text":"Settings summary","level":2},{"id":"limitations","text":"Limitations","level":2}],"plain":"Library memory\nLibrary memory is designed for **BECS** and other workflows where library or include sources open as temporary `.bc` files and then disappear. The extension **learns** exported functions while the file is open and keeps them for completions, hovers, signature help, and auto-import—even after the temp file is deleted.\nWhy it exists\nTypical BECS flow:\nYou open a session script in VS Code.\nYou jump to a library/include; BECS dumps a temporary `.bc` path.\nYou close the temp buffer; the file may be deleted from disk.\nWithout memory, completions for that library vanish.\nWith library memory enabled, step 4 no longer loses the API surface.\nStorage: VS Code **extension global state** key `baanc.libraryMemory.v1` (survives reloads).\nHow learning works\nWhen a `baanc` document is opened or edited (debounced), the extension:\nDerives a **script name** from the URI (filename without extension).\nParses `function` headers (skips block-comment noise).\nClassifies the source as **include** or **dll** (see below).\nStores functions:\n**DLL:** only `function extern …` (linkable exports)\n**Include:** non-static functions (includes expose callable helpers more broadly)\nUpdates `lastSeen` and optional `sourceHint` (filesystem path when available).\nPrunes by LRU when over `baanc.libraryMemory.maxLibraries`.\nCaps functions per library with `baanc.libraryMemory.maxFunctionsPerLibrary`.\nEmpty parses do **not** wipe a previously good memory (protects mid-edit stubs and incomplete BECS buffers).\nDisable entirely with `baanc.libraryMemory.enabled: false`.\nInclude vs DLL import forms\nBaan/Infor uses two different import styles:\nObject names for DLLs commonly use a leading `o` (`otccomdll0200`). The extension normalizes this when generating the pragma.\nAutomatic classification heuristics\n`detectImportKind` (simplified):\nName contains `dll` → **dll**\nClassic include pattern: leading `i` + package-like name (e.g. `itxadv0000`), excluding session-like codes → **include**\nContent heuristics:\nNo `function extern`, but several `#define` / `prototype` → **include**\nHas `function extern` → **dll**\nFallback → **include**\nIf classification is wrong for your naming scheme, open **Baan C: Manage Memorized Libraries…** and switch the kind (can be locked so later learns do not flip it back, depending on manager actions).\nCompletions and documentation\nMemorized exports appear with detail labels similar to:\n`include · itxadv0000`\n`dll · otccomdll0200`\nHover and signature help use the stored function header when available.\nAuto-import on completion\nWhen `baanc.libraryMemory.autoImportOnCompletion` is `true` (default):\nYou accept a completion that comes from a memorized library.\nIf the document does not already import that library, the extension inserts:\n```baanc    #include \"itxadv0000\"    ```\nor\n```baanc    #pragma used dll \"otccomdll0200\"    ```\nInsertion prefers a clean location near existing includes/pragmas (top of file, after last `#include` or `#pragma` as appropriate).\nDuplicate detection is tolerant of `o` prefix variants and path/extension noise on includes.\nImport hints and Quick Fix\nWhen `baanc.libraryMemory.showImportHints` is `true`:\nCalls that match a memorized export without a matching import get an **Information** diagnostic.\n**Quick Fix** (`Ctrl+.` / `Cmd+.`) inserts the correct import.\nDiagnostic codes (internal):\n`missing-library-import`\n`missing-builtin-library-import` (for mapped builtins)\nBuiltin auto-import (conservative)\nSeparate from library memory, some built-ins may declare an optional DLL:\nThe default mapping tables are **intentionally sparse**. The extension does **not** invent package DLL names for arbitrary APIs, because Infor LN installations differ. Prefer opening real DLL sources so library memory learns the truth.\nManaging memory\nCommand: Manage Memorized Libraries…\nQuick Pick lists each library with:\nImport target and kind tag (`include` / `dll`)\nFunction count\nAge (`lastSeen`)\nGenerated import statement and optional source path\nActions typically include:\nOpen details / list functions\nSwitch import kind\nRemove one library\nClear all\nCommand: Clear Memorized Libraries\nModal confirmation, then wipes the entire store and refreshes diagnostics on open Baan documents.\nCommand: Add Library Import\nCursor on a memorized symbol → insert that library’s import\nOtherwise → choose style and name manually\nRecommended BECS workflow\nKeep `baanc.libraryMemory.enabled` and `autoImportOnCompletion` on (defaults).\nWhen you need a library API, open the library/include from BECS once.\nWait a moment (learn is debounced ~400 ms) or edit/save so the document is processed.\nReturn to your session script; type the function name and accept the completion.\nConfirm the auto-inserted `#include` or `#pragma used dll` at the top.\nIf kind is wrong, fix it once in **Manage Memorized Libraries…**.\nOptional hygiene:\nRaise `maxLibraries` if you jump across many packages in one day.\nClear memory after finishing a large unrelated project to reduce stale completions.\nSettings summary\nFull descriptions: [Configuration](./configuration.md).\nLimitations\nMemory is **not** a full project indexer; it only knows libraries you actually opened (or previously learned).\nClassification heuristics can mis-tag unusual names — use the manager to override.\nCross-file **rename** / **find all references** still operate on the current file only.\nUntitled buffers without a usable name are not learned.\nEmpty or incomplete temp buffers will not overwrite a good prior extract."},"development":{"id":"development","title":"Development","group":"Contribute","icon":"code","html":"<h1 id=\"development\"><a class=\"anchor\" href=\"#development\" aria-hidden=\"true\">#</a>Development</h1>\n<p>Guide for building, debugging, packaging, and navigating the <strong>Baan C VSCode</strong> codebase.</p>\n<hr />\n<h2 id=\"prerequisites\"><a class=\"anchor\" href=\"#prerequisites\" aria-hidden=\"true\">#</a>Prerequisites</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Tool</th>\n<th>Notes</th>\n</tr></thead><tbody>\n<tr>\n<td><strong>Node.js</strong></td>\n<td>LTS recommended (for <code>npm</code> / <code>npx</code>)</td>\n</tr>\n<tr>\n<td><strong>npm</strong></td>\n<td>Ships with Node</td>\n</tr>\n<tr>\n<td><strong>VS Code</strong></td>\n<td><code>^1.125.0</code> for Extension Development Host</td>\n</tr>\n<tr>\n<td><strong>@vscode/vsce</strong></td>\n<td>Only needed to package <code>.vsix</code> (<code>npx</code> is enough)</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"clone-and-install\"><a class=\"anchor\" href=\"#clone-and-install\" aria-hidden=\"true\">#</a>Clone and install</h2>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">git clone https://github.com/GABRYCA/baan-c-vscode.git\ncd baan-c-vscode\nnpm install</code></pre></div>\n<hr />\n<h2 id=\"project-layout\"><a class=\"anchor\" href=\"#project-layout\" aria-hidden=\"true\">#</a>Project layout</h2>\n<div class=\"code-block\" data-lang=\"text\"><div class=\"code-head\"><span class=\"code-lang\">text</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-text\">baan-c-support/          # repository root (name may vary locally)\n├── package.json         # extension manifest, contributes, scripts\n├── esbuild.js           # bundles src → dist/extension.js\n├── language-configuration.json\n├── syntaxes/\n│   └── baanc.tmLanguage.json\n├── snippets/\n│   └── baanc.json\n├── icons/               # marketplace + language icons\n├── src/\n│   ├── extension.js     # activation, providers, formatter, diagnostics\n│   ├── builtins.js      # ~980+ API + error constants\n│   ├── libraryMemory.js # learn / store / auto-import / manager UI\n│   └── test/            # tests / smoke helpers\n├── dist/\n│   └── extension.js     # bundled entry (runtime main)\n├── docs/                # markdown sources + generated index.html site\n├── scripts/\n│   └── build-docs.js    # builds docs/index.html from docs/*.md\n├── CHANGELOG.md\n├── README.md\n└── LICENSE</code></pre></div>\n<h3 id=\"runtime-entry\"><a class=\"anchor\" href=\"#runtime-entry\" aria-hidden=\"true\">#</a>Runtime entry</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Field</th>\n<th>Value</th>\n</tr></thead><tbody>\n<tr>\n<td><code>package.json</code> → <code>main</code></td>\n<td><code>./dist/extension.js</code></td>\n</tr>\n<tr>\n<td>Source entry</td>\n<td><code>src/extension.js</code></td>\n</tr>\n<tr>\n<td>Activation</td>\n<td><code>onLanguage:baanc</code></td>\n</tr>\n</tbody></table></div>\n<h3 id=\"source-modules\"><a class=\"anchor\" href=\"#source-modules\" aria-hidden=\"true\">#</a>Source modules</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>File</th>\n<th>Responsibility</th>\n</tr></thead><tbody>\n<tr>\n<td><code>src/extension.js</code></td>\n<td><code>activate</code> / <code>deactivate</code>; completions, hover, definition, references, rename, highlights, folding, symbols, signature help, formatting, diagnostics, code actions, commands</td>\n</tr>\n<tr>\n<td><code>src/builtins.js</code></td>\n<td><code>BUILTIN_FUNCTIONS</code>, <code>ERROR_CONSTANTS</code>, lookup maps, signature parsing</td>\n</tr>\n<tr>\n<td><code>src/libraryMemory.js</code></td>\n<td>Persistent library store, import edits, manager Quick Pick, builtin DLL resolve hooks</td>\n</tr>\n<tr>\n<td><code>src/docsViewer.js</code></td>\n<td>Webview host for the single-file documentation site</td>\n</tr>\n</tbody></table></div>\n<p>There is <strong>no</strong> separate language server process; all providers run in the extension host.</p>\n<h3 id=\"documentation-site\"><a class=\"anchor\" href=\"#documentation-site\" aria-hidden=\"true\">#</a>Documentation site</h3>\n<p>Markdown under <code>docs/*.md</code> is the source of truth. The professional SPA lives at <code>docs/index.html</code> (sidebar, search, light/dark theme). Regenerate after editing guides:</p>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">npm run docs:build</code></pre></div>\n<p>Open via <strong>Baan C: Open Documentation</strong> in the Command Palette, or open <code>docs/index.html</code> in a browser.</p>\n<hr />\n<h2 id=\"scripts\"><a class=\"anchor\" href=\"#scripts\" aria-hidden=\"true\">#</a>Scripts</h2>\n<p>Defined in <code>package.json</code>:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Script</th>\n<th>Command</th>\n<th>Purpose</th>\n</tr></thead><tbody>\n<tr>\n<td><code>compile</code></td>\n<td><code>node esbuild.js</code></td>\n<td>One-shot development bundle (with sourcemap)</td>\n</tr>\n<tr>\n<td><code>watch</code></td>\n<td><code>node esbuild.js --watch</code></td>\n<td>Rebuild on change</td>\n</tr>\n<tr>\n<td><code>package</code></td>\n<td><code>node esbuild.js --production</code></td>\n<td>Minified production bundle</td>\n</tr>\n<tr>\n<td><code>docs:build</code></td>\n<td><code>node scripts/build-docs.js</code></td>\n<td>Rebuild single-file docs site (<code>docs/index.html</code>)</td>\n</tr>\n<tr>\n<td><code>vscode:prepublish</code></td>\n<td>production esbuild + docs build</td>\n<td>Runs automatically before <code>vsce package</code> / publish</td>\n</tr>\n<tr>\n<td><code>lint</code></td>\n<td><code>eslint src</code></td>\n<td>Lint source</td>\n</tr>\n</tbody></table></div>\n<h3 id=\"esbuild-options\"><a class=\"anchor\" href=\"#esbuild-options\" aria-hidden=\"true\">#</a>esbuild options</h3>\n<p><code>esbuild.js</code> builds:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Option</th>\n<th>Value</th>\n</tr></thead><tbody>\n<tr>\n<td>Entry</td>\n<td><code>src/extension.js</code></td>\n</tr>\n<tr>\n<td>Outfile</td>\n<td><code>dist/extension.js</code></td>\n</tr>\n<tr>\n<td>Format</td>\n<td>CommonJS</td>\n</tr>\n<tr>\n<td>Platform</td>\n<td><code>node</code></td>\n</tr>\n<tr>\n<td>External</td>\n<td><code>vscode</code></td>\n</tr>\n<tr>\n<td>Production</td>\n<td>minify on, sourcemap off</td>\n</tr>\n<tr>\n<td>Development</td>\n<td>minify off, sourcemap on</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"debug-in-extension-development-host\"><a class=\"anchor\" href=\"#debug-in-extension-development-host\" aria-hidden=\"true\">#</a>Debug in Extension Development Host</h2>\n<ol>\n<li>Open the repository folder in VS Code.</li>\n<li>Run <code>npm run compile</code> (or <code>npm run watch</code> in a terminal).</li>\n<li>Press <strong>F5</strong> or run the <strong>Run Extension</strong> launch configuration (<code>.vscode/launch.json</code>).</li>\n<li>A new <strong>Extension Development Host</strong> window opens with the extension loaded from the workspace.</li>\n<li>Open a <code>.bc</code> file and exercise features.</li>\n<li>Set breakpoints in <code>src/*.js</code> (sourcemaps map into the bundle in non-production builds).</li>\n<li>Reload the Extension Development Host (<code>Ctrl+R</code> / <code>Cmd+R</code>) after rebuilds if needed.</li>\n</ol>\n<p>Launch config (simplified):</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;name&quot;: &quot;Run Extension&quot;,\n  &quot;type&quot;: &quot;extensionHost&quot;,\n  &quot;request&quot;: &quot;launch&quot;,\n  &quot;args&quot;: [&quot;--extensionDevelopmentPath=${workspaceFolder}&quot;]\n}</code></pre></div>\n<hr />\n<h2 id=\"lint\"><a class=\"anchor\" href=\"#lint\" aria-hidden=\"true\">#</a>Lint</h2>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">npm run lint</code></pre></div>\n<p>ESLint config: <code>eslint.config.mjs</code> (flat config). Scope: <code>src/</code>.</p>\n<hr />\n<h2 id=\"package-a-vsix\"><a class=\"anchor\" href=\"#package-a-vsix\" aria-hidden=\"true\">#</a>Package a VSIX</h2>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">npm install\nnpx @vscode/vsce package</code></pre></div>\n<p>This will:</p>\n<ol>\n<li>Run <code>vscode:prepublish</code> → production esbuild</li>\n<li>Package files according to <code>.vscodeignore</code></li>\n<li>Emit something like <code>baan-c-vscode-1.0.6.vsix</code> in the project root</li>\n</ol>\n<p>Install locally:</p>\n<ol>\n<li>Command Palette → <strong>Extensions: Install from VSIX…</strong></li>\n<li>Select the generated file</li>\n</ol>\n<h3 id=\"what-is-excluded-from-the-package\"><a class=\"anchor\" href=\"#what-is-excluded-from-the-package\" aria-hidden=\"true\">#</a>What is excluded from the package</h3>\n<p><code>.vscodeignore</code> omits (among other things):</p>\n<ul>\n<li><code>src/**</code> (sources; only <code>dist/</code> is shipped)</li>\n<li><code>node_modules/**</code></li>\n<li><code>.vscode/**</code></li>\n<li>maps, TypeScript, eslint config, esbuild script, quickstart notes</li>\n</ul>\n<p>Shipped essentials: <code>package.json</code>, <code>dist/extension.js</code>, <code>syntaxes/</code>, <code>snippets/</code>, <code>language-configuration.json</code>, <code>icons/</code>, README/CHANGELOG/LICENSE as applicable.</p>\n<hr />\n<h2 id=\"publish-maintainers\"><a class=\"anchor\" href=\"#publish-maintainers\" aria-hidden=\"true\">#</a>Publish (maintainers)</h2>\n<p>Typical flow with <code>vsce</code> / Azure DevOps publisher account:</p>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\"># bump version in package.json, update CHANGELOG.md\nnpm run package          # or rely on prepublish\nnpx @vscode/vsce publish</code></pre></div>\n<p>Publisher id in manifest: <code>AnonymousGCA</code>.   Extension name: <code>baan-c-vscode</code>.   Marketplace item: <code>AnonymousGCA.baan-c-vscode</code>.</p>\n<p>Always update <a href=\"../CHANGELOG.md\" class=\"ext-link\">CHANGELOG.md</a> before a release.</p>\n<hr />\n<h2 id=\"adding-features-pointers\"><a class=\"anchor\" href=\"#adding-features-pointers\" aria-hidden=\"true\">#</a>Adding features (pointers)</h2>\n<h3 id=\"new-builtin-completions\"><a class=\"anchor\" href=\"#new-builtin-completions\" aria-hidden=\"true\">#</a>New builtin completions</h3>\n<p>Edit <code>src/builtins.js</code> — append to <code>BUILTIN_FUNCTIONS</code>:</p>\n<div class=\"code-block\" data-lang=\"js\"><div class=\"code-head\"><span class=\"code-lang\">js</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-js\">{\n  name: 'my.api.call',\n  detail: 'long · short summary',\n  doc: '```baanc\\nlong my.api.call(...)\\n```\\nDescription.',\n  insert: 'my.api.call(${1:arg})$0'\n  // optional: dll: 'osome.object'  // only if truly required &amp; known\n}</code></pre></div>\n<h3 id=\"new-snippets\"><a class=\"anchor\" href=\"#new-snippets\" aria-hidden=\"true\">#</a>New snippets</h3>\n<p>Edit <code>snippets/baanc.json</code> — VS Code snippet schema (<code>prefix</code>, <code>body</code>, <code>description</code>).</p>\n<h3 id=\"new-settings-commands\"><a class=\"anchor\" href=\"#new-settings-commands\" aria-hidden=\"true\">#</a>New settings / commands</h3>\n<ol>\n<li>Declare under <code>contributes.configuration</code> / <code>contributes.commands</code> in <code>package.json</code>.</li>\n<li>Wire handlers in <code>src/extension.js</code> <code>activate()</code>.</li>\n<li>Document in <code>docs/configuration.md</code> / <code>docs/commands.md</code> and CHANGELOG.</li>\n</ol>\n<h3 id=\"grammar-language-config\"><a class=\"anchor\" href=\"#grammar-language-config\" aria-hidden=\"true\">#</a>Grammar / language config</h3>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>File</th>\n<th>Change when…</th>\n</tr></thead><tbody>\n<tr>\n<td><code>syntaxes/baanc.tmLanguage.json</code></td>\n<td>New highlight scopes / patterns</td>\n</tr>\n<tr>\n<td><code>language-configuration.json</code></td>\n<td>Comments, indent, folding markers, word pattern</td>\n</tr>\n</tbody></table></div>\n<h3 id=\"library-memory-behavior\"><a class=\"anchor\" href=\"#library-memory-behavior\" aria-hidden=\"true\">#</a>Library memory behavior</h3>\n<p>All learning, import edits, and manager UI live in <code>src/libraryMemory.js</code>. Keep import classification conservative; prefer manager overrides over aggressive guessing.</p>\n<hr />\n<h2 id=\"versioning\"><a class=\"anchor\" href=\"#versioning\" aria-hidden=\"true\">#</a>Versioning</h2>\n<p>Current version is read from <code>package.json</code> (<code>version</code> field). Documentation hub (<code>docs/README.md</code>) should stay aligned after releases.</p>\n<p>Suggested release checklist:</p>\n<ul>\n<li>[ ] <code>CHANGELOG.md</code> entry with date</li>\n<li>[ ] Version bump in <code>package.json</code></li>\n<li>[ ] <code>npm run lint</code></li>\n<li>[ ] Manual smoke test in Extension Development Host</li>\n<li>[ ] <code>npx @vscode/vsce package</code> and install smoke</li>\n<li>[ ] Publish (if applicable)</li>\n<li>[ ] Update docs version badge/table if present</li>\n</ul>\n<hr />\n<h2 id=\"tests\"><a class=\"anchor\" href=\"#tests\" aria-hidden=\"true\">#</a>Tests</h2>\n<p>Lightweight helpers live under <code>src/test/</code> (e.g. smoke for library memory). Expand coverage as features grow; there is no heavy CI suite required for basic packaging.</p>\n<hr />\n<h2 id=\"related-docs\"><a class=\"anchor\" href=\"#related-docs\" aria-hidden=\"true\">#</a>Related docs</h2>\n<ul>\n<li><a href=\"#/features\" data-route=\"features\">Features</a></li>\n<li><a href=\"#/configuration\" data-route=\"configuration\">Configuration</a></li>\n<li><a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a></li>\n<li><a href=\"#/troubleshooting\" data-route=\"troubleshooting\">Troubleshooting</a></li>\n</ul>","toc":[{"id":"prerequisites","text":"Prerequisites","level":2},{"id":"clone-and-install","text":"Clone and install","level":2},{"id":"project-layout","text":"Project layout","level":2},{"id":"runtime-entry","text":"Runtime entry","level":3},{"id":"source-modules","text":"Source modules","level":3},{"id":"documentation-site","text":"Documentation site","level":3},{"id":"scripts","text":"Scripts","level":2},{"id":"esbuild-options","text":"esbuild options","level":3},{"id":"debug-in-extension-development-host","text":"Debug in Extension Development Host","level":2},{"id":"lint","text":"Lint","level":2},{"id":"package-a-vsix","text":"Package a VSIX","level":2},{"id":"what-is-excluded-from-the-package","text":"What is excluded from the package","level":3},{"id":"publish-maintainers","text":"Publish (maintainers)","level":2},{"id":"adding-features-pointers","text":"Adding features (pointers)","level":2},{"id":"new-builtin-completions","text":"New builtin completions","level":3},{"id":"new-snippets","text":"New snippets","level":3},{"id":"new-settings-commands","text":"New settings / commands","level":3},{"id":"grammar-language-config","text":"Grammar / language config","level":3},{"id":"library-memory-behavior","text":"Library memory behavior","level":3},{"id":"versioning","text":"Versioning","level":2},{"id":"tests","text":"Tests","level":2},{"id":"related-docs","text":"Related docs","level":2}],"plain":"Development\nGuide for building, debugging, packaging, and navigating the **Baan C VSCode** codebase.\nPrerequisites\nClone and install\ngit clone https://github.com/GABRYCA/baan-c-vscode.git\ncd baan-c-vscode\nnpm install\nProject layout\nbaan-c-support/          # repository root (name may vary locally)\n├── package.json         # extension manifest, contributes, scripts\n├── esbuild.js           # bundles src → dist/extension.js\n├── language-configuration.json\n├── syntaxes/\n│   └── baanc.tmLanguage.json\n├── snippets/\n│   └── baanc.json\n├── icons/               # marketplace + language icons\n├── src/\n│   ├── extension.js     # activation, providers, formatter, diagnostics\n│   ├── builtins.js      # ~980+ API + error constants\n│   ├── libraryMemory.js # learn / store / auto-import / manager UI\n│   └── test/            # tests / smoke helpers\n├── dist/\n│   └── extension.js     # bundled entry (runtime main)\n├── docs/                # markdown sources + generated index.html site\n├── scripts/\n│   └── build-docs.js    # builds docs/index.html from docs/*.md\n├── CHANGELOG.md\n├── README.md\n└── LICENSE\nRuntime entry\nSource modules\nThere is **no** separate language server process; all providers run in the extension host.\nDocumentation site\nMarkdown under `docs/*.md` is the source of truth. The professional SPA lives at `docs/index.html` (sidebar, search, light/dark theme). Regenerate after editing guides:\nnpm run docs:build\nOpen via **Baan C: Open Documentation** in the Command Palette, or open `docs/index.html` in a browser.\nScripts\nDefined in `package.json`:\nesbuild options\n`esbuild.js` builds:\nDebug in Extension Development Host\nOpen the repository folder in VS Code.\nRun `npm run compile` (or `npm run watch` in a terminal).\nPress **F5** or run the **Run Extension** launch configuration (`.vscode/launch.json`).\nA new **Extension Development Host** window opens with the extension loaded from the workspace.\nOpen a `.bc` file and exercise features.\nSet breakpoints in `src/*.js` (sourcemaps map into the bundle in non-production builds).\nReload the Extension Development Host (`Ctrl+R` / `Cmd+R`) after rebuilds if needed.\nLaunch config (simplified):\n{\n  \"name\": \"Run Extension\",\n  \"type\": \"extensionHost\",\n  \"request\": \"launch\",\n  \"args\": [\"--extensionDevelopmentPath=${workspaceFolder}\"]\n}\nLint\nnpm run lint\nESLint config: `eslint.config.mjs` (flat config). Scope: `src/`.\nPackage a VSIX\nnpm install\nnpx @vscode/vsce package\nThis will:\nRun `vscode:prepublish` → production esbuild\nPackage files according to `.vscodeignore`\nEmit something like `baan-c-vscode-1.0.6.vsix` in the project root\nInstall locally:\nCommand Palette → **Extensions: Install from VSIX…**\nSelect the generated file\nWhat is excluded from the package\n`.vscodeignore` omits (among other things):\n`src/**` (sources; only `dist/` is shipped)\n`node_modules/**`\n`.vscode/**`\nmaps, TypeScript, eslint config, esbuild script, quickstart notes\nShipped essentials: `package.json`, `dist/extension.js`, `syntaxes/`, `snippets/`, `language-configuration.json`, `icons/`, README/CHANGELOG/LICENSE as applicable.\nPublish (maintainers)\nTypical flow with `vsce` / Azure DevOps publisher account:\n# bump version in package.json, update CHANGELOG.md\nnpm run package          # or rely on prepublish\nnpx @vscode/vsce publish\nPublisher id in manifest: `AnonymousGCA`.   Extension name: `baan-c-vscode`.   Marketplace item: `AnonymousGCA.baan-c-vscode`.\nAlways update [CHANGELOG.md](../CHANGELOG.md) before a release.\nAdding features (pointers)\nNew builtin completions\nEdit `src/builtins.js` — append to `BUILTIN_FUNCTIONS`:\n{\n  name: 'my.api.call',\n  detail: 'long · short summary',\n  doc: '```baanc\\nlong my.api.call(...)\\n```\\nDescription.',\n  insert: 'my.api.call(${1:arg})$0'\n  // optional: dll: 'osome.object'  // only if truly required & known\n}\nNew snippets\nEdit `snippets/baanc.json` — VS Code snippet schema (`prefix`, `body`, `description`).\nNew settings / commands\nDeclare under `contributes.configuration` / `contributes.commands` in `package.json`.\nWire handlers in `src/extension.js` `activate()`.\nDocument in `docs/configuration.md` / `docs/commands.md` and CHANGELOG.\nGrammar / language config\nLibrary memory behavior\nAll learning, import edits, and manager UI live in `src/libraryMemory.js`. Keep import classification conservative; prefer manager overrides over aggressive guessing.\nVersioning\nCurrent version is read from `package.json` (`version` field). Documentation hub (`docs/README.md`) should stay aligned after releases.\nSuggested release checklist:\n[ ] `CHANGELOG.md` entry with date\n[ ] Version bump in `package.json`\n[ ] `npm run lint`\n[ ] Manual smoke test in Extension Development Host\n[ ] `npx @vscode/vsce package` and install smoke\n[ ] Publish (if applicable)\n[ ] Update docs version badge/table if present\nTests\nLightweight helpers live under `src/test/` (e.g. smoke for library memory). Expand coverage as features grow; there is no heavy CI suite required for basic packaging.\nRelated docs\n[Features](./features.md)\n[Configuration](./configuration.md)\n[Library memory](./library-memory.md)\n[Troubleshooting](./troubleshooting.md)"},"troubleshooting":{"id":"troubleshooting","title":"Troubleshooting","group":"Help","icon":"help","html":"<h1 id=\"troubleshooting\"><a class=\"anchor\" href=\"#troubleshooting\" aria-hidden=\"true\">#</a>Troubleshooting</h1>\n<p>Common issues, known limitations, and how to recover.</p>\n<hr />\n<h2 id=\"extension-does-not-activate\"><a class=\"anchor\" href=\"#extension-does-not-activate\" aria-hidden=\"true\">#</a>Extension does not activate</h2>\n<p><strong>Symptoms:</strong> no highlighting, no Baan completions, language mode wrong.</p>\n<p><strong>Checks:</strong></p>\n<ol>\n<li>File extension is <code>.bc</code>, <code>.cl</code>, <code>.bcl</code>, or <code>.script</code> — or language mode is manually set to <strong>Baan C</strong>.</li>\n<li>VS Code version ≥ <strong>1.125.0</strong>.</li>\n<li>Extension is enabled (Extensions view → Baan C VSCode → not disabled for this workspace).</li>\n<li>Reload window: Command Palette → <strong>Developer: Reload Window</strong>.</li>\n</ol>\n<p>Activation event is <code>onLanguage:baanc</code> only — the extension does not load until a Baan document is involved.</p>\n<hr />\n<h2 id=\"ln-still-opens-the-old-editor-not-vs-code\"><a class=\"anchor\" href=\"#ln-still-opens-the-old-editor-not-vs-code\" aria-hidden=\"true\">#</a>LN still opens the old editor (not VS Code)</h2>\n<p><strong>Checks:</strong></p>\n<ol>\n<li>VS Code is installed where LN expects it — typically <code>C:\\apps\\VSCODE\\Code.exe</code> (see <a href=\"#/getting-started#install-visual-studio-code\" data-route=\"getting-started\">Getting started</a>).</li>\n<li>Your LN user has <strong>Defaults → Development Parameters = VSCODE</strong> (see <a href=\"#/getting-started#set-vs-code-as-the-default-editor-in-ln\" data-route=\"getting-started\">Set VS Code as the default editor in LN</a>).</li>\n<li>If <strong>VSCODE</strong> is missing from the zoom list, create the development-parameter entry, save it, then select it on your user and save again.</li>\n<li>Log out/in of LNUI (or restart the session) after changing Development Parameters.</li>\n<li>Confirm with your LN administrator that the <strong>VSCODE</strong> parameter points at the correct <code>Code.exe</code> path for your site.</li>\n</ol>\n<hr />\n<h2 id=\"completions-missing-builtins-or-errors\"><a class=\"anchor\" href=\"#completions-missing-builtins-or-errors\" aria-hidden=\"true\">#</a>Completions missing builtins or errors</h2>\n<ol>\n<li>Confirm settings:</li>\n</ol>\n<p>``<code>json    {      &quot;baanc.completion.includeBuiltins&quot;: true,      &quot;baanc.completion.includeErrors&quot;: true    }    </code>``</p>\n<ol>\n<li>Ensure you are not inside a comment or string (quick suggestions are off there by default).</li>\n<li>Trigger manually: <code>Ctrl+Space</code> / <code>Ctrl+Space</code> (macOS: <code>Ctrl+Space</code>).</li>\n<li>If only <strong>library</strong> APIs are missing, open the library <code>.bc</code> once so <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a> can learn them.</li>\n</ol>\n<hr />\n<h2 id=\"snippet-inserts-define-or-odd-duplication\"><a class=\"anchor\" href=\"#snippet-inserts-define-or-odd-duplication\" aria-hidden=\"true\">#</a>Snippet inserts <code>##define</code> or odd <code>#</code> duplication</h2>\n<p>This was fixed in <strong>1.0.2</strong>. Preprocessor completions replace a partially typed <code>#…</code> prefix.</p>\n<p>If you still see doubles:</p>\n<ul>\n<li>Update to the latest extension version.</li>\n<li>Prefer snippet prefixes (<code>define</code>, <code>#define</code>) from the extension, not outdated user snippets that hardcode an extra <code>#</code>.</li>\n</ul>\n<hr />\n<h2 id=\"dotted-4gl-sections-stop-completing-after-typing-.\"><a class=\"anchor\" href=\"#dotted-4gl-sections-stop-completing-after-typing-.\" aria-hidden=\"true\">#</a>Dotted 4GL sections stop completing after typing <code>.</code></h2>\n<p>Fixed in <strong>1.0.2</strong> for cases like <code>before.</code>. Update if you are on an older build.   4GL names are registered as single completion units so the dotted form keeps matching.</p>\n<hr />\n<h2 id=\"format-does-not-align-sql-the-way-i-expect\"><a class=\"anchor\" href=\"#format-does-not-align-sql-the-way-i-expect\" aria-hidden=\"true\">#</a>Format does not align SQL the way I expect</h2>\n<ul>\n<li>Use <strong>Baan C: Format Document</strong> or <code>Shift+Alt+F</code> (not only generic formatters from other extensions).</li>\n<li>Ensure the language id is <code>baanc</code>.</li>\n<li>Check <code>baanc.indentSize</code> matches your <code>editor.tabSize</code> for <code>[baanc]</code>.</li>\n<li>Clause alignment targets standard embedded SQL keywords (<code>select</code>, <code>from</code>, <code>where</code>, <code>and</code>, <code>or</code>, <code>order by</code>, …). Highly unusual layouts may need a second manual pass.</li>\n</ul>\n<hr />\n<h2 id=\"diagnostics-false-positives-in-comments-or-macros\"><a class=\"anchor\" href=\"#diagnostics-false-positives-in-comments-or-macros\" aria-hidden=\"true\">#</a>Diagnostics false positives in comments or macros</h2>\n<ul>\n<li>Keep <code>baanc.diagnostics.strictComments: true</code> so <code>|</code> and <code>/* */</code> are ignored for block analysis.</li>\n<li>Advanced macros that open/close blocks across files can confuse structural analysis (known limitation).</li>\n<li>Temporarily disable with <code>baanc.diagnostics.enabled: false</code> if needed for a specific file.</li>\n</ul>\n<hr />\n<h2 id=\"naming-hints-are-noisy\"><a class=\"anchor\" href=\"#naming-hints-are-noisy\" aria-hidden=\"true\">#</a>Naming hints are noisy</h2>\n<p>Naming diagnostics are <strong>Hint</strong> severity by design.</p>\n<div class=\"code-block\" data-lang=\"json\"><div class=\"code-head\"><span class=\"code-lang\">json</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-json\">{\n  &quot;baanc.diagnostics.namingConventions&quot;: false,\n  &quot;baanc.diagnostics.namingArgPrefixes&quot;: false\n}</code></pre></div>\n<p>Or leave conventions on and keep <code>namingArgPrefixes</code> off (default) to avoid <code>i.</code>/<code>o.</code>/<code>io.</code> noise.</p>\n<hr />\n<h2 id=\"rename-find-references-missed-other-files\"><a class=\"anchor\" href=\"#rename-find-references-missed-other-files\" aria-hidden=\"true\">#</a>Rename / Find References missed other files</h2>\n<p><strong>Expected.</strong> These features operate on the <strong>current file only</strong>. There is no workspace-wide symbol index.</p>\n<p>For cross-script APIs:</p>\n<ul>\n<li>Use Library memory + completions for discovery.</li>\n<li>Use VS Code workspace search (<code>Ctrl+Shift+F</code>) for text-level multi-file search.</li>\n</ul>\n<hr />\n<h2 id=\"auto-import-inserted-the-wrong-form-include-vs-pragma\"><a class=\"anchor\" href=\"#auto-import-inserted-the-wrong-form-include-vs-pragma\" aria-hidden=\"true\">#</a>Auto-import inserted the wrong form (<code>#include</code> vs <code>#pragma</code>)</h2>\n<ol>\n<li>Open <strong>Baan C: Manage Memorized Libraries…</strong></li>\n<li>Select the library and switch import kind.</li>\n<li>Remove a bad entry and re-open the source file so it is re-learned with a clearer name (<code>*dll*</code> → pragma; classic <code>i…</code> includes → <code>#include</code>).</li>\n</ol>\n<p>Heuristics are documented in <a href=\"#/library-memory\" data-route=\"library-memory\">Library memory</a>.</p>\n<hr />\n<h2 id=\"auto-import-did-not-run\"><a class=\"anchor\" href=\"#auto-import-did-not-run\" aria-hidden=\"true\">#</a>Auto-import did not run</h2>\n<p>Check:</p>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Setting</th>\n<th>Should be</th>\n</tr></thead><tbody>\n<tr>\n<td><code>baanc.libraryMemory.enabled</code></td>\n<td><code>true</code></td>\n</tr>\n<tr>\n<td><code>baanc.libraryMemory.autoImportOnCompletion</code></td>\n<td><code>true</code> (for memorized APIs)</td>\n</tr>\n<tr>\n<td><code>baanc.autoImport.builtinsOnCompletion</code></td>\n<td><code>true</code> (only for <strong>mapped</strong> builtins)</td>\n</tr>\n</tbody></table></div>\n<p>Also:</p>\n<ul>\n<li>The library must already be memorized (open it once).</li>\n<li>Accept the <strong>memorized</strong> completion item, not a plain word-based suggestion.</li>\n<li>Import may already be present under an alternate <code>o</code> / path form (treated as present).</li>\n</ul>\n<hr />\n<h2 id=\"library-memory-empty-or-stale\"><a class=\"anchor\" href=\"#library-memory-empty-or-stale\" aria-hidden=\"true\">#</a>Library memory empty or stale</h2>\n<ol>\n<li>Open the library/include <code>.bc</code> again and wait briefly (learn is debounced).</li>\n<li>Confirm language id is <code>baanc</code> and scheme is <code>file</code> or <code>untitled</code> with a usable name.</li>\n<li><strong>Manage Memorized Libraries…</strong> to inspect what is stored.</li>\n<li><strong>Clear Memorized Libraries</strong> if the store is polluted, then re-open sources.</li>\n</ol>\n<p>Memory is global to the VS Code profile — not per workspace folder.</p>\n<hr />\n<h2 id=\"builtin-pragma-inserted-for-a-function-that-does-not-need-a-dll\"><a class=\"anchor\" href=\"#builtin-pragma-inserted-for-a-function-that-does-not-need-a-dll\" aria-hidden=\"true\">#</a>Builtin pragma inserted for a function that does not need a DLL</h2>\n<p>Builtin DLL mappings are meant to be rare. If one is wrong for your LN install:</p>\n<ul>\n<li>Turn off <code>baanc.autoImport.builtinsOnCompletion</code> and <code>baanc.autoImport.builtinImportHints</code>.</li>\n<li>Or delete the inserted pragma manually; prefer library memory for real DLL sources from your environment.</li>\n</ul>\n<hr />\n<h2 id=\"extension-development-host-shows-old-code\"><a class=\"anchor\" href=\"#extension-development-host-shows-old-code\" aria-hidden=\"true\">#</a>Extension Development Host shows old code</h2>\n<div class=\"code-block\" data-lang=\"bash\"><div class=\"code-head\"><span class=\"code-lang\">bash</span><button type=\"button\" class=\"copy-btn\" aria-label=\"Copy code\">Copy</button></div><pre><code class=\"language-bash\">npm run compile\n# or leave npm run watch running</code></pre></div>\n<p>Then reload the Extension Development Host window. Ensure you are not packaging/running a stale <code>.vsix</code> while developing from source.</p>\n<hr />\n<h2 id=\"packaging-install-from-vsix-fails\"><a class=\"anchor\" href=\"#packaging-install-from-vsix-fails\" aria-hidden=\"true\">#</a>Packaging / install from VSIX fails</h2>\n<ol>\n<li><code>npm install</code> then <code>npx @vscode/vsce package</code> from the repo root.</li>\n<li>Confirm <code>dist/extension.js</code> exists after prepublish.</li>\n<li>Install via <strong>Extensions: Install from VSIX…</strong> (not by unzipping).</li>\n<li>If an older version is stuck, uninstall it first, then install the new VSIX.</li>\n</ol>\n<hr />\n<h2 id=\"known-limitations-summary\"><a class=\"anchor\" href=\"#known-limitations-summary\" aria-hidden=\"true\">#</a>Known limitations (summary)</h2>\n<div class=\"table-wrap\"><table>\n<thead><tr>\n<th>Limitation</th>\n<th>Notes</th>\n</tr></thead><tbody>\n<tr>\n<td>Single-file references/rename</td>\n<td>No workspace symbol database</td>\n</tr>\n<tr>\n<td>Macro-heavy multi-file blocks</td>\n<td>Structural diagnostics may mis-fire</td>\n</tr>\n<tr>\n<td>Import kind heuristics</td>\n<td>Override in Manage Memorized Libraries</td>\n</tr>\n<tr>\n<td>Builtin DLL map sparse</td>\n<td>By design — no aggressive guessing</td>\n</tr>\n<tr>\n<td>No external LSP</td>\n<td>All logic runs in the extension host</td>\n</tr>\n<tr>\n<td>BECS temp names</td>\n<td>Unusual names may need manual import / kind fix</td>\n</tr>\n</tbody></table></div>\n<hr />\n<h2 id=\"getting-help\"><a class=\"anchor\" href=\"#getting-help\" aria-hidden=\"true\">#</a>Getting help</h2>\n<ul>\n<li>Review <a href=\"#/features\" data-route=\"features\">Features</a> and <a href=\"#/configuration\" data-route=\"configuration\">Configuration</a></li>\n<li>Check <a href=\"../CHANGELOG.md\" class=\"ext-link\">CHANGELOG.md</a> for behavior changes by version</li>\n<li>Open an issue on the repository: https://github.com/GABRYCA/baan-c-vscode</li>\n</ul>\n<p>When filing a bug, include:</p>\n<ul>\n<li>Extension version (<code>package.json</code> / marketplace version)</li>\n<li>VS Code version</li>\n<li>Minimal <code>.bc</code> sample (sanitized)</li>\n<li>Relevant <code>baanc.*</code> settings</li>\n<li>Whether BECS / temp files are involved</li>\n</ul>","toc":[{"id":"extension-does-not-activate","text":"Extension does not activate","level":2},{"id":"ln-still-opens-the-old-editor-not-vs-code","text":"LN still opens the old editor (not VS Code)","level":2},{"id":"completions-missing-builtins-or-errors","text":"Completions missing builtins or errors","level":2},{"id":"snippet-inserts-define-or-odd-duplication","text":"Snippet inserts ##define or odd # duplication","level":2},{"id":"dotted-4gl-sections-stop-completing-after-typing-.","text":"Dotted 4GL sections stop completing after typing .","level":2},{"id":"format-does-not-align-sql-the-way-i-expect","text":"Format does not align SQL the way I expect","level":2},{"id":"diagnostics-false-positives-in-comments-or-macros","text":"Diagnostics false positives in comments or macros","level":2},{"id":"naming-hints-are-noisy","text":"Naming hints are noisy","level":2},{"id":"rename-find-references-missed-other-files","text":"Rename / Find References missed other files","level":2},{"id":"auto-import-inserted-the-wrong-form-include-vs-pragma","text":"Auto-import inserted the wrong form (#include vs #pragma)","level":2},{"id":"auto-import-did-not-run","text":"Auto-import did not run","level":2},{"id":"library-memory-empty-or-stale","text":"Library memory empty or stale","level":2},{"id":"builtin-pragma-inserted-for-a-function-that-does-not-need-a-dll","text":"Builtin pragma inserted for a function that does not need a DLL","level":2},{"id":"extension-development-host-shows-old-code","text":"Extension Development Host shows old code","level":2},{"id":"packaging-install-from-vsix-fails","text":"Packaging / install from VSIX fails","level":2},{"id":"known-limitations-summary","text":"Known limitations (summary)","level":2},{"id":"getting-help","text":"Getting help","level":2}],"plain":"Troubleshooting\nCommon issues, known limitations, and how to recover.\nExtension does not activate\n**Symptoms:** no highlighting, no Baan completions, language mode wrong.\n**Checks:**\nFile extension is `.bc`, `.cl`, `.bcl`, or `.script` — or language mode is manually set to **Baan C**.\nVS Code version ≥ **1.125.0**.\nExtension is enabled (Extensions view → Baan C VSCode → not disabled for this workspace).\nReload window: Command Palette → **Developer: Reload Window**.\nActivation event is `onLanguage:baanc` only — the extension does not load until a Baan document is involved.\nLN still opens the old editor (not VS Code)\n**Checks:**\nVS Code is installed where LN expects it — typically `C:\\apps\\VSCODE\\Code.exe` (see [Getting started](./getting-started.md#install-visual-studio-code)).\nYour LN user has **Defaults → Development Parameters = VSCODE** (see [Set VS Code as the default editor in LN](./getting-started.md#set-vs-code-as-the-default-editor-in-ln)).\nIf **VSCODE** is missing from the zoom list, create the development-parameter entry, save it, then select it on your user and save again.\nLog out/in of LNUI (or restart the session) after changing Development Parameters.\nConfirm with your LN administrator that the **VSCODE** parameter points at the correct `Code.exe` path for your site.\nCompletions missing builtins or errors\nConfirm settings:\n```json    {      \"baanc.completion.includeBuiltins\": true,      \"baanc.completion.includeErrors\": true    }    ```\nEnsure you are not inside a comment or string (quick suggestions are off there by default).\nTrigger manually: `Ctrl+Space` / `Ctrl+Space` (macOS: `Ctrl+Space`).\nIf only **library** APIs are missing, open the library `.bc` once so [Library memory](./library-memory.md) can learn them.\nSnippet inserts `##define` or odd `#` duplication\nThis was fixed in **1.0.2**. Preprocessor completions replace a partially typed `#…` prefix.\nIf you still see doubles:\nUpdate to the latest extension version.\nPrefer snippet prefixes (`define`, `#define`) from the extension, not outdated user snippets that hardcode an extra `#`.\nDotted 4GL sections stop completing after typing `.`\nFixed in **1.0.2** for cases like `before.`. Update if you are on an older build.   4GL names are registered as single completion units so the dotted form keeps matching.\nFormat does not align SQL the way I expect\nUse **Baan C: Format Document** or `Shift+Alt+F` (not only generic formatters from other extensions).\nEnsure the language id is `baanc`.\nCheck `baanc.indentSize` matches your `editor.tabSize` for `[baanc]`.\nClause alignment targets standard embedded SQL keywords (`select`, `from`, `where`, `and`, `or`, `order by`, …). Highly unusual layouts may need a second manual pass.\nDiagnostics false positives in comments or macros\nKeep `baanc.diagnostics.strictComments: true` so `|` and `/* */` are ignored for block analysis.\nAdvanced macros that open/close blocks across files can confuse structural analysis (known limitation).\nTemporarily disable with `baanc.diagnostics.enabled: false` if needed for a specific file.\nNaming hints are noisy\nNaming diagnostics are **Hint** severity by design.\n{\n  \"baanc.diagnostics.namingConventions\": false,\n  \"baanc.diagnostics.namingArgPrefixes\": false\n}\nOr leave conventions on and keep `namingArgPrefixes` off (default) to avoid `i.`/`o.`/`io.` noise.\nRename / Find References missed other files\n**Expected.** These features operate on the **current file only**. There is no workspace-wide symbol index.\nFor cross-script APIs:\nUse Library memory + completions for discovery.\nUse VS Code workspace search (`Ctrl+Shift+F`) for text-level multi-file search.\nAuto-import inserted the wrong form (`#include` vs `#pragma`)\nOpen **Baan C: Manage Memorized Libraries…**\nSelect the library and switch import kind.\nRemove a bad entry and re-open the source file so it is re-learned with a clearer name (`*dll*` → pragma; classic `i…` includes → `#include`).\nHeuristics are documented in [Library memory](./library-memory.md).\nAuto-import did not run\nCheck:\nAlso:\nThe library must already be memorized (open it once).\nAccept the **memorized** completion item, not a plain word-based suggestion.\nImport may already be present under an alternate `o` / path form (treated as present).\nLibrary memory empty or stale\nOpen the library/include `.bc` again and wait briefly (learn is debounced).\nConfirm language id is `baanc` and scheme is `file` or `untitled` with a usable name.\n**Manage Memorized Libraries…** to inspect what is stored.\n**Clear Memorized Libraries** if the store is polluted, then re-open sources.\nMemory is global to the VS Code profile — not per workspace folder.\nBuiltin pragma inserted for a function that does not need a DLL\nBuiltin DLL mappings are meant to be rare. If one is wrong for your LN install:\nTurn off `baanc.autoImport.builtinsOnCompletion` and `baanc.autoImport.builtinImportHints`.\nOr delete the inserted pragma manually; prefer library memory for real DLL sources from your environment.\nExtension Development Host shows old code\nnpm run compile\n# or leave npm run watch running\nThen reload the Extension Development Host window. Ensure you are not packaging/running a stale `.vsix` while developing from source.\nPackaging / install from VSIX fails\n`npm install` then `npx @vscode/vsce package` from the repo root.\nConfirm `dist/extension.js` exists after prepublish.\nInstall via **Extensions: Install from VSIX…** (not by unzipping).\nIf an older version is stuck, uninstall it first, then install the new VSIX.\nKnown limitations (summary)\nGetting help\nReview [Features](./features.md) and [Configuration](./configuration.md)\nCheck [CHANGELOG.md](../CHANGELOG.md) for behavior changes by version\nOpen an issue on the repository: https://github.com/GABRYCA/baan-c-vscode\nWhen filing a bug, include:\nExtension version (`package.json` / marketplace version)\nVS Code version\nMinimal `.bc` sample (sanitized)\nRelevant `baanc.*` settings\nWhether BECS / temp files are involved"}};
+  var ORDER = ["overview","getting-started","features","configuration","commands","snippets","library-memory","development","troubleshooting"];
+
+  var article = document.getElementById('article');
+  var tocLinks = document.getElementById('toc-links');
+  var breadcrumbs = document.getElementById('breadcrumbs');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  var searchModal = document.getElementById('search-modal');
+  var searchInput = document.getElementById('search-input');
+  var searchResults = document.getElementById('search-results');
+  var currentId = '';
+  var activeHit = -1;
+
+  // Theme (never throw — a failure here must not block content rendering)
+  function getPreferredTheme() {
+    try {
+      var stored = localStorage.getItem('baanc-docs-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch (e) {}
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
+      }
+    } catch (e2) {}
+    return 'dark';
+  }
+  function applyTheme(theme) {
+    try {
+      document.documentElement.setAttribute('data-theme', theme || 'dark');
+      localStorage.setItem('baanc-docs-theme', theme || 'dark');
+    } catch (e) {
+      try { document.documentElement.setAttribute('data-theme', theme || 'dark'); } catch (e2) {}
+    }
+  }
+  applyTheme(getPreferredTheme());
+  var themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+    });
+  }
+
+  // Sidebar mobile
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.hidden = false;
+    overlay.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.hidden = true;
+  }
+  document.getElementById('menu-btn').addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  /**
+   * VS Code webviews do not reliably fire hashchange or honor location.hash
+   * navigation. We keep an in-memory route and call renderPage() directly.
+   */
+  var routeState = { id: 'overview', anchor: '' };
+
+  function parseRouteString(raw) {
+    var routePart = 'overview';
+    var anchor = '';
+    if (!raw) {
+      return { id: 'overview', anchor: '' };
+    }
+    var full = String(raw).replace(/^#/, '');
+    if (full.charAt(0) === '/') {
+      full = full.slice(1);
+    }
+    // forms: "features", "features#section", "/features#section"
+    var hashPos = full.indexOf('#');
+    if (hashPos >= 0) {
+      routePart = full.slice(0, hashPos) || 'overview';
+      anchor = full.slice(hashPos + 1);
+    } else {
+      routePart = full.split('?')[0] || 'overview';
+    }
+    // strip accidental leading slashes (avoid /…/ regex in this template literal)
+    while (routePart.charAt(0) === '/') {
+      routePart = routePart.slice(1);
+    }
+    if (!PAGES[routePart]) {
+      // bare heading id on current page
+      if (document.getElementById(routePart)) {
+        return { id: routeState.id || 'overview', anchor: routePart };
+      }
+      routePart = 'overview';
+    }
+    return { id: routePart, anchor: anchor };
+  }
+
+  function parseHash() {
+    try {
+      return parseRouteString(location.hash || '');
+    } catch (e) {
+      return { id: routeState.id || 'overview', anchor: '' };
+    }
+  }
+
+  function setHashQuiet(id, anchor) {
+    var next = '#/' + id + (anchor ? '#' + anchor : '');
+    try {
+      if (history && history.replaceState) {
+        history.replaceState(null, '', next);
+      } else {
+        location.hash = next;
+      }
+    } catch (e) {
+      // Webview may block history API — ignore; routeState is source of truth
+    }
+  }
+
+  /** Navigate to a page (and optional heading). Works in browser and VS Code webview. */
+  function navigate(id, anchor, opts) {
+    opts = opts || {};
+    if (!PAGES[id]) {
+      id = 'overview';
+    }
+    routeState = { id: id, anchor: anchor || '' };
+    if (!opts.skipHash) {
+      setHashQuiet(id, anchor);
+    }
+    renderPage(id, anchor);
+  }
+
+  function setActiveNav(id) {
+    document.querySelectorAll('.nav-link').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-route') === id);
+    });
+  }
+
+  function renderToc(page) {
+    tocLinks.innerHTML = '';
+    if (!page.toc || !page.toc.length) {
+      tocLinks.innerHTML = '<div class="search-empty" style="padding:0">No sections</div>';
+      return;
+    }
+    page.toc.forEach(function (item) {
+      var a = document.createElement('a');
+      a.href = '#/' + page.id + '#' + item.id;
+      a.setAttribute('data-route', page.id);
+      a.setAttribute('data-anchor', item.id);
+      a.textContent = item.text;
+      a.className = 'depth-' + item.level;
+      a.dataset.toc = item.id;
+      tocLinks.appendChild(a);
+    });
+  }
+
+  function renderPager(id) {
+    var idx = ORDER.indexOf(id);
+    var prev = idx > 0 ? PAGES[ORDER[idx - 1]] : null;
+    var next = idx < ORDER.length - 1 ? PAGES[ORDER[idx + 1]] : null;
+    var html = '<nav class="pager" aria-label="Page navigation">';
+    if (prev) {
+      html += '<a class="prev" href="#/' + prev.id + '" data-route="' + prev.id + '"><span class="label">← Previous</span><span class="title">' + escapeHtml(prev.title) + '</span></a>';
+    } else {
+      html += '<span class="disabled"></span>';
+    }
+    if (next) {
+      html += '<a class="next" href="#/' + next.id + '" data-route="' + next.id + '"><span class="label">Next →</span><span class="title">' + escapeHtml(next.title) + '</span></a>';
+    } else {
+      html += '<span class="disabled"></span>';
+    }
+    html += '</nav>';
+    return html;
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function wireCopyButtons(root) {
+    root.querySelectorAll('.copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pre = btn.closest('.code-block').querySelector('code');
+        var text = pre ? pre.textContent : '';
+        function done() {
+          btn.textContent = 'Copied';
+          btn.classList.add('copied');
+          setTimeout(function () {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+          }, 1500);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () {
+            fallbackCopy(text); done();
+          });
+        } else {
+          fallbackCopy(text); done();
+        }
+      });
+    });
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function afterPaint(fn) {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(fn);
+    } else {
+      setTimeout(fn, 0);
+    }
+  }
+
+  function renderPage(id, anchor) {
+    var page = PAGES[id] || PAGES.overview;
+    if (!page) {
+      if (article) article.innerHTML = '<p>Page not found.</p>';
+      return;
+    }
+    currentId = page.id;
+    try {
+      document.title = page.title + ' · Baan C VSCode Docs';
+    } catch (e) {}
+    if (breadcrumbs) {
+      breadcrumbs.innerHTML = '<span>Docs</span> / <strong>' + escapeHtml(page.title) + '</strong>';
+    }
+    setActiveNav(page.id);
+    try { renderToc(page); } catch (e) {}
+
+    if (!article) {
+      return;
+    }
+    // Content first — never let post-render hooks wipe a successful paint
+    article.innerHTML =
+      '<div class="page-meta"><span class="page-badge">' + escapeHtml(page.group) + '</span></div>' +
+      (page.html || '') +
+      renderPager(page.id);
+
+    try { wireCopyButtons(article); } catch (e) {}
+    try { closeSidebar(); } catch (e) {}
+    try { setupTocSpy(); } catch (e) {}
+
+    afterPaint(function () {
+      try {
+        if (anchor) {
+          var el = document.getElementById(anchor);
+          if (el) {
+            el.scrollIntoView();
+            return;
+          }
+        }
+        window.scrollTo(0, 0);
+      } catch (e) {}
+    });
+  }
+
+  // TOC spy
+  var tocObserver = null;
+  function setupTocSpy() {
+    if (tocObserver) tocObserver.disconnect();
+    var headings = article.querySelectorAll('h2[id], h3[id]');
+    if (!headings.length) return;
+    tocObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        tocLinks.querySelectorAll('a').forEach(function (a) {
+          a.classList.toggle('active', a.dataset.toc === entry.target.id);
+        });
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+    headings.forEach(function (h) { tocObserver.observe(h); });
+  }
+
+  function onRoute() {
+    var r = parseHash();
+    routeState = r;
+    renderPage(r.id, r.anchor);
+  }
+
+  /**
+   * Capture all internal navigation. Do not rely on hashchange — VS Code webviews
+   * often swallow or ignore hash-only navigations on <a href="#/...">.
+   */
+  document.addEventListener('click', function (e) {
+    // Ignore modified clicks (new tab, etc.)
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    var a = e.target.closest && e.target.closest('a');
+    if (!a || a.target === '_blank') {
+      return;
+    }
+
+    var routeAttr = a.getAttribute('data-route');
+    var anchorAttr = a.getAttribute('data-anchor') || '';
+    if (routeAttr && PAGES[routeAttr]) {
+      e.preventDefault();
+      e.stopPropagation();
+      navigate(routeAttr, anchorAttr);
+      return;
+    }
+
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#') {
+      return;
+    }
+
+    // External http(s) — let webview / browser handle (or open)
+    if (href.indexOf('http://') === 0 || href.indexOf('https://') === 0 || href.indexOf('mailto:') === 0) {
+      return;
+    }
+
+    // SPA routes: #/page, #/page#section, /#/page
+    if (href.charAt(0) === '#' || href.indexOf('#/') >= 0) {
+      var parsed = parseRouteString(href.indexOf('#') >= 0 ? href.slice(href.indexOf('#')) : href);
+      if (PAGES[parsed.id] || parsed.anchor) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (parsed.anchor && parsed.id === currentId && document.getElementById(parsed.anchor)) {
+          navigate(parsed.id, parsed.anchor);
+        } else if (PAGES[parsed.id]) {
+          navigate(parsed.id, parsed.anchor);
+        } else if (parsed.anchor && document.getElementById(parsed.anchor)) {
+          navigate(currentId || 'overview', parsed.anchor);
+        }
+      }
+      return;
+    }
+
+    // Relative ./foo.md style (rewritten at build) — already data-route usually
+    // In-page heading only
+    if (href.charAt(0) === '#' && href.charAt(1) !== '/') {
+      var hid = href.slice(1);
+      if (document.getElementById(hid)) {
+        e.preventDefault();
+        navigate(currentId || 'overview', hid);
+      }
+    }
+  }, true);
+
+  // Browser-only fallback when user uses back/forward
+  window.addEventListener('hashchange', function () {
+    var r = parseHash();
+    if (r.id !== routeState.id || r.anchor !== routeState.anchor) {
+      routeState = r;
+      renderPage(r.id, r.anchor);
+    }
+  });
+
+  // VS Code webview host may post navigate messages
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || msg.type !== 'navigate') return;
+    if (msg.route && PAGES[msg.route]) {
+      navigate(msg.route, msg.anchor || '');
+    }
+  });
+
+  // Search
+  function openSearch() {
+    searchModal.classList.add('open');
+    searchInput.value = '';
+    searchResults.innerHTML = '<div class="search-empty">Type to search across all pages…</div>';
+    activeHit = -1;
+    setTimeout(function () { searchInput.focus(); }, 10);
+  }
+  function closeSearch() {
+    searchModal.classList.remove('open');
+    searchInput.blur();
+  }
+  document.getElementById('open-search').addEventListener('click', openSearch);
+  searchModal.addEventListener('click', function (e) {
+    if (e.target === searchModal) closeSearch();
+  });
+
+  function searchDocs(q) {
+    q = q.trim().toLowerCase();
+    if (!q) {
+      searchResults.innerHTML = '<div class="search-empty">Type to search across all pages…</div>';
+      activeHit = -1;
+      return;
+    }
+    var hits = [];
+    ORDER.forEach(function (id) {
+      var page = PAGES[id];
+      var plain = page.plain || '';
+      var lines = plain.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var idx = line.toLowerCase().indexOf(q);
+        if (idx >= 0) {
+          hits.push({ id: page.id, title: page.title, line: line, idx: idx });
+          if (hits.filter(function (h) { return h.id === page.id; }).length >= 3) break;
+        }
+      }
+      // also match title
+      if (page.title.toLowerCase().indexOf(q) >= 0 && !hits.some(function (h) { return h.id === page.id && h.line === page.title; })) {
+        hits.unshift({ id: page.id, title: page.title, line: page.title + ' — open page', idx: 0 });
+      }
+    });
+    hits = hits.slice(0, 20);
+    if (!hits.length) {
+      searchResults.innerHTML = '<div class="search-empty">No results for “' + escapeHtml(q) + '”</div>';
+      activeHit = -1;
+      return;
+    }
+    searchResults.innerHTML = hits.map(function (h, i) {
+      var line = h.line || '';
+      var low = line.toLowerCase();
+      var qi = low.indexOf(q);
+      var snip;
+      if (qi >= 0) {
+        snip = escapeHtml(line.slice(0, qi)) +
+          '<mark>' + escapeHtml(line.slice(qi, qi + q.length)) + '</mark>' +
+          escapeHtml(line.slice(qi + q.length));
+      } else {
+        snip = escapeHtml(line);
+      }
+      return '<button type="button" class="search-hit" data-route="' + h.id + '" data-idx="' + i + '">' +
+        '<div class="hit-page">' + escapeHtml(h.title) + '</div>' +
+        '<div class="hit-snippet">' + snip + '</div></button>';
+    }).join('');
+    activeHit = 0;
+    highlightHit();
+  }
+
+  function highlightHit() {
+    var nodes = searchResults.querySelectorAll('.search-hit');
+    nodes.forEach(function (n, i) {
+      n.classList.toggle('active', i === activeHit);
+    });
+    if (nodes[activeHit]) nodes[activeHit].scrollIntoView({ block: 'nearest' });
+  }
+
+  searchInput.addEventListener('input', function () {
+    searchDocs(searchInput.value);
+  });
+
+  searchResults.addEventListener('click', function (e) {
+    var hit = e.target.closest('.search-hit');
+    if (!hit) return;
+    navigate(hit.getAttribute('data-route'));
+    closeSearch();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var isMod = e.ctrlKey || e.metaKey;
+    if (isMod && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (searchModal.classList.contains('open')) closeSearch();
+      else openSearch();
+      return;
+    }
+    if (e.key === 'Escape') {
+      if (searchModal.classList.contains('open')) closeSearch();
+      else closeSidebar();
+      return;
+    }
+    if (!searchModal.classList.contains('open')) return;
+    var nodes = searchResults.querySelectorAll('.search-hit');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!nodes.length) return;
+      activeHit = Math.min(nodes.length - 1, activeHit + 1);
+      highlightHit();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!nodes.length) return;
+      activeHit = Math.max(0, activeHit - 1);
+      highlightHit();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nodes[activeHit]) {
+        navigate(nodes[activeHit].getAttribute('data-route'));
+        closeSearch();
+      }
+    }
+  });
+
+  // Update kbd hint for Mac
+  if ((navigator.platform || '').indexOf('Mac') >= 0 || (navigator.platform || '').indexOf('iPhone') >= 0 || (navigator.platform || '').indexOf('iPad') >= 0) {
+    document.querySelectorAll('.search-trigger kbd').forEach(function (k) {
+      k.textContent = '⌘ K';
+    });
+  }
+
+  // Boot — prefer explicit start route injected by webview host, else hash, else overview
+  var bootRoute = (typeof window.__BAANC_DOCS_START__ === 'string' && window.__BAANC_DOCS_START__)
+    ? window.__BAANC_DOCS_START__
+    : '';
+  if (bootRoute && PAGES[bootRoute]) {
+    navigate(bootRoute, '', { skipHash: false });
+  } else if (location.hash && location.hash !== '#') {
+    onRoute();
+  } else {
+    navigate('overview');
+  }
+})();
+  </script>
+</body>
+</html>

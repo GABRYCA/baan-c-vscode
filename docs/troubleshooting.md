@@ -19,6 +19,18 @@ Activation event is `onLanguage:baanc` only — the extension does not load unti
 
 ---
 
+## LN still opens the old editor (not VS Code)
+
+**Checks:**
+
+1. VS Code is installed where LN expects it — typically `C:\apps\VSCODE\Code.exe` (see [Getting started](./getting-started.md#install-visual-studio-code)).
+2. Your LN user has **Defaults → Development Parameters = VSCODE** (see [Set VS Code as the default editor in LN](./getting-started.md#set-vs-code-as-the-default-editor-in-ln)).
+3. If **VSCODE** is missing from the zoom list, create the development-parameter entry, save it, then select it on your user and save again.
+4. Log out/in of LNUI (or restart the session) after changing Development Parameters.
+5. Confirm with your LN administrator that the **VSCODE** parameter points at the correct `Code.exe` path for your site.
+
+---
+
 ## Completions missing builtins or errors
 
 1. Confirm settings:

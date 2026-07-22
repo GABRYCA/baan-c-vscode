@@ -16,6 +16,7 @@ Most are limited to Baan C editors (`editorLangId == baanc`). Library memory man
 | **Baan C: Manage Memorized Libraries…** | `baanc.manageLibraryMemory` | always | Inspect, change import kind, remove libraries/functions, or clear all |
 | **Baan C: Clear Memorized Libraries** | `baanc.clearLibraryMemory` | always | Wipe all remembered library/include exports (confirmation required) |
 | **Baan C: Add Library Import (#include / #pragma used dll)** | `baanc.addLibraryImport` | Baan editor | Insert the right import for the symbol under the cursor, or pick style + name |
+| **Baan C: Open Documentation** | `baanc.openDocumentation` | always | Open the professional in-editor documentation (sidebar, search, all guides) |
 
 ---
 

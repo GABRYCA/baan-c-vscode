@@ -2,6 +2,10 @@
 
 Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visual Studio Code.
 
+> **Preferred reading experience:** open the single-file docs site  
+> [`docs/index.html`](./index.html) in a browser, or run **Baan C: Open Documentation**  
+> from the Command Palette. Rebuild with `npm run docs:build` after editing these `.md` sources.
+
 | | |
 | --- | --- |
 | **Extension ID** | `AnonymousGCA.baan-c-vscode` |
@@ -61,10 +65,11 @@ You can also set the language mode manually: **Command Palette → “Change Lan
 
 ## Quick links for users
 
-1. Install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) or from a `.vsix` (see [Getting started](./getting-started.md)).
-2. Open a `.bc` file — highlighting, completions, and diagnostics start immediately.
-3. Format with `Shift+Alt+F` (Windows/Linux) or `Shift+Option+F` (macOS).
-4. For BECS workflows, open library/include files once so **Library memory** can learn them — see [Library memory](./library-memory.md).
+1. Install [Visual Studio Code](./getting-started.md#install-visual-studio-code) (path `C:\apps\VSCODE` for LN) and set **Development Parameters = VSCODE** in LN — see [Getting started](./getting-started.md).
+2. Install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) or from a `.vsix`.
+3. Open a `.bc` file — highlighting, completions, and diagnostics start immediately.
+4. Format with `Shift+Alt+F` (Windows/Linux) or `Shift+Option+F` (macOS).
+5. For BECS workflows, open library/include files once so **Library memory** can learn them — see [Library memory](./library-memory.md).
 
 ---
 

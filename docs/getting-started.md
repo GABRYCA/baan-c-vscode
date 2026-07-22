@@ -1,18 +1,87 @@
 # Getting started
 
-This guide covers installing **Baan C VSCode**, opening scripts, and the essentials you need on day one.
+This guide covers installing **Visual Studio Code**, connecting it to **Infor LN**, installing **Baan C VSCode**, opening scripts, and the essentials you need on day one.
 
 ---
 
 ## Requirements
 
-- **Visual Studio Code** 1.125.0 or newer (or a compatible fork such as Cursor that supports VS Code extensions)
-- No Infor LN runtime is required for editor features (highlighting, format, completions, etc.)
+Before you use the extension, make sure you have:
+
+- **Visual Studio Code** 1.125.0 or newer (see [Install Visual Studio Code](#install-visual-studio-code) below)
+- **Infor LN** user defaults with **Development Parameters** set to **VSCODE** (see [Set VS Code as the default editor in LN](#set-vs-code-as-the-default-editor-in-ln))
+- No Infor LN runtime is required for *editor* features alone (highlighting, format, completions, etc.)
 - Optional: access to library/include `.bc` sources if you want [Library memory](./library-memory.md) to learn project APIs
 
 ---
 
-## Install from the Marketplace
+## Install Visual Studio Code
+
+If VS Code is not on your PC yet, install it first. These steps match the AlteaIn internal guide (custom path used with LN / BECS).
+
+1. Download the installer from the official site:  
+   **https://code.visualstudio.com/**
+2. Run the installer and follow the wizard until you reach the **installation path** step.
+3. **Important (company / LN setup):** choose a **custom** install path:
+
+   ```text
+   C:\apps\VSCODE
+   ```
+
+   Do **not** leave the default user-profile path if your LN environment expects `C:\apps\VSCODE`.
+4. Finish the installation.
+5. Verify the folder exists and contains **`Code.exe`** (and the usual VS Code files), for example:
+
+   ```text
+   C:\apps\VSCODE\Code.exe
+   ```
+
+6. Start VS Code once (from the Start menu or by running `Code.exe`) to complete first-run setup.
+
+> **Tip:** If your IT department already deploys VS Code to `C:\apps\VSCODE`, skip the installer and open that copy instead.
+
+---
+
+## Set VS Code as the default editor in LN
+
+Infor LN must open sources in VS Code (not the legacy editor). Configure this on **your LN user** via **LNUI**.
+
+### Select VSCODE in User Data
+
+1. Open **LNUI**.
+2. Go to:  
+   **Tools → User Management → General User Data → User Data** (session).
+3. Search for **your user** and open it (use the **→** / open button).
+4. On the top bar, open the **Defaults** tab.
+5. Find **Development Parameters**.
+6. Click the **Zoom / lens** icon, select **VSCODE**, then click **OK**.
+7. **Save** the user record.
+
+You should now have:
+
+> User Data → Defaults → Development Parameters = **VSCODE**
+
+### If VSCODE is not in the list
+
+Create the development-parameter entry first, then select it:
+
+1. Still in **User Data**, on the relevant parameters area, click **New**.
+2. In **Edit**, define the **VSCODE** development parameter so it points at your VS Code install (typically under `C:\apps\VSCODE` / `Code.exe`, as required by your site).
+3. **Save** the new parameter.
+4. Return to **Defaults → Development Parameters**, select the new **VSCODE** entry, click **OK**.
+5. **Save** your user again.
+
+Exact field labels can vary slightly by LN version; if **New** fields are unclear, ask your LN administrator for the site-standard **VSCODE** development-parameter definition.
+
+### Check that LN opens VS Code
+
+1. From LN / BECS, open any script or library for edit.
+2. The file should open in **Visual Studio Code** (not the old built-in editor).
+3. If it still opens elsewhere, re-check Development Parameters and that `C:\apps\VSCODE\Code.exe` exists.
+
+---
+
+## Install the Baan C extension from the Marketplace
 
 1. Open VS Code.
 2. Open **Extensions** (`Ctrl+Shift+X` / `Cmd+Shift+X`).
