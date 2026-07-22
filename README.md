@@ -4,7 +4,9 @@ Complete language support for Baan C and Infor LN (3GL and 4GL) inside Visual St
 
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
 
-**Full documentation:** [docs/README.md](./docs/README.md)
+**Full documentation:** [docs/README.md](./docs/README.md)  
+As well as here: [Github Pages](https://gabryca.github.io/baan-c-vscode)  
+Which's essentially an hosted page of: [docs/index.html](./docs/index.html)
 
 | Guide | Description |
 | --- | --- |
