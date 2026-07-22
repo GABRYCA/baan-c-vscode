@@ -6,8 +6,8 @@ Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?item
 
 ## Features
 
-- **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more. Dotted domain names like `txamg.type.long` are not mis-colored as type keywords.
-- **Code Formatting**: Automatic document formatting (`Shift + Alt + F` or on-save). Perfectly indents conditional blocks, loops, embedded SQL branches (`selectdo`, `selectempty`), and multi-line arguments.
+- **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more.
+- **Code Formatting**: Automatic document formatting (`Shift + Alt + F` or on-save). Perfectly indents conditional blocks, loops, embedded SQL branches (`selectdo`, `selectempty`), and multi-line arguments. Embedded SQL clauses (`select` / `from` / `where` / `and` / …) are aligned so operands share the same column.
 - **Block Diagnostics**: Real-time linting that catches structural errors like unmatched `endif`, `endwhile`, or `endselect` statements.
 - **Naming Convention Hints**: Soft (Hint-level) suggestions based on Infor LN design principles — lowercase, dots as separators (`my.beautiful.function`), avoid single-letter / `temp` names. Quick Fix can rename across the file. Toggle with `baanc.diagnostics.namingConventions`.
 - **Built-in Completions**: 980+ API functions with snippet inserts and hover docs — `db.*`, `dal.*`, strings, dates, SQL, reports, XML/JSON, **HTTP client**, **cURL**, SOAP, digests, BLOBs, dialogs, RDI/dictionary, parallel processing, and more.
@@ -20,8 +20,8 @@ Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?item
 - **Document Highlights**: Occurrences of the symbol under the cursor are highlighted while editing.
 - **Code Folding**: Fold `if`/`while`/`for`/`select`/`function` blocks, preprocessor regions, and 4GL sections.
 - **Document Symbols (Outline)**: Navigate functions, domains, tables, and 4GL sections in the Outline view.
-- **Snippets**: Shortcuts like `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, `domain`, and more.
-- **Insert Templates**: Command Palette / context menu — transaction+select and full select skeletons.
+- **Snippets**: Shortcuts like `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, `domain`, and more. Select snippets insert `table.*` (not bare `*`) with linked table name placeholders and column-aligned clauses.
+- **Insert Templates**: Command Palette / context menu — transaction+select and full select skeletons (same `table.*` + aligned clause style).
 - **Library Memory (BECS-friendly)**: When you open a library or include `.bc` file, the extension remembers its functions even after BECS closes and deletes the temp file. Those functions appear in completions in other scripts.
 - **IntelliJ-style Auto-Import (include vs pragma)**: Accepting a completion inserts the **correct** import form when missing:
   - Include scripts (e.g. `itxadv0000`) → `#include "itxadv0000"`
@@ -78,6 +78,18 @@ This extension contributes the following settings that can be tweaked in VS Code
 - Open VSCode and do `Ctrl+Shift+P` then `Extensions: Install from vsix`, select the file and click `Install`
 
 ## Release Notes
+
+## [1.0.6] - 22-07-2026
+
+### Changed
+
+- Select snippets (`select`, `selectf`, `txselect`) and insert templates now use `table.*` instead of bare `*`, with linked table placeholders and clause operands aligned on the same column:
+  ```
+  select  table.*
+  from    table
+  where   table.field
+  ```
+- Document formatter (`Shift + Alt + F` / Format Document / format-on-save) aligns embedded SQL clause keywords (`select`, `from`, `where`, `and`, `or`, `order by`, …) so operands share one column.
 
 ## [1.0.5] - 21-07-2026
 

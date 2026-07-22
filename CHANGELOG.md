@@ -4,6 +4,18 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.6] - 22-07-2026
+
+### Changed
+
+- Select snippets (`select`, `selectf`, `txselect`) and insert templates now use `table.*` instead of bare `*`, with linked table placeholders and clause operands aligned on the same column:
+  ```
+  select  table.*
+  from    table
+  where   table.field
+  ```
+- Document formatter (`Shift + Alt + F` / Format Document / format-on-save) aligns embedded SQL clause keywords (`select`, `from`, `where`, `and`, `or`, `order by`, …) so operands share one column.
+
 ## [1.0.5] - 21-07-2026
 
 ### Added

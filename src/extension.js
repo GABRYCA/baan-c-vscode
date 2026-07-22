@@ -604,7 +604,7 @@ function activate(context) {
           },
           {
             label: 'select-endselect',
-            body: 'select ${1:*}\nfrom ${2:table}\nwhere ${3:cond}\nselectdo\n\t$0\nendselect'
+            body: 'select  ${1:table}.*\nfrom    ${1:table}\nwhere   ${1:table}.${2:field}\nselectdo\n\t$0\nendselect'
           },
           {
             label: 'include-file',
@@ -1264,13 +1264,13 @@ function activate(context) {
         [
           'db.retry.point()',
           'long ${1:ret} = 0',
-          'select ${2:*}',
-          'from ${3:table}',
+          'select  ${2:table}.*',
+          'from    ${2:table}',
           'for update',
-          'where ${4:condition}',
+          'where   ${2:table}.${3:field}',
           'selectdo',
           '\t$0',
-          '\t${1:ret} = db.update(${5:table.id}, db.retry)',
+          '\t${1:ret} = db.update(${4:table.id}, db.retry)',
           'selectempty',
           '\t| no records',
           'endselect',
@@ -1290,9 +1290,9 @@ function activate(context) {
       }
       const snippet = new vscode.SnippetString(
         [
-          'select ${1:*}',
-          'from ${2:table}',
-          'where ${3:condition}',
+          'select  ${1:table}.*',
+          'from    ${1:table}',
+          'where   ${1:table}.${2:field}',
           'selectdo',
           '\t$0',
           'selectempty',
@@ -1970,6 +1970,25 @@ function firstParamColumn(raw, fallback) {
 }
 
 /**
+ * Relative column where SQL clause operands start (after indent).
+ * Pads keywords so `select` / `from` / `where` / `and` values share one column:
+ *
+ *   select  table.*
+ *   from    table
+ *   where   table.field
+ *   and     table.other
+ */
+const SQL_CLAUSE_ALIGN_WIDTH = 8;
+
+/**
+ * Multi-word SQL keywords first, then single-word (longest match wins).
+ * Includes `select` for operand alignment only.
+ */
+const SQL_CLAUSE_ALIGN_RE =
+  /^(as\s+set\s+with|for\s+update|with\s+retry|group\s+by|order\s+by|inner\s+join|left\s+join|right\s+join|cross\s+join|select|from|where|having|union|join|and|or)\b/i;
+
+/**
+ * Continuation / clause keywords inside a select header (not the opening `select`).
  * @param {string} lower
  */
 function isSqlClauseKeyword(lower) {
@@ -1984,6 +2003,28 @@ function isSqlClauseKeyword(lower) {
     /^(inner|left|right|cross)\s+join\b/.test(lower) ||
     /^join\b/.test(lower)
   );
+}
+
+/**
+ * Align SQL clause keyword and operand onto a shared column.
+ * Leaves non-clause lines unchanged. Keyword-only lines (e.g. `for update`) stay as-is.
+ * Does not rewrite `selectdo` / `selectempty` / etc. (`select\b` won't match them).
+ *
+ * @param {string} trimmed
+ * @returns {string}
+ */
+function formatSqlClauseAligned(trimmed) {
+  const m = trimmed.match(SQL_CLAUSE_ALIGN_RE);
+  if (!m) {
+    return trimmed;
+  }
+  const keyword = trimmed.slice(0, m[0].length);
+  const rest = trimmed.slice(m[0].length).replace(/^\s+/, '');
+  if (!rest) {
+    return keyword;
+  }
+  const pad = Math.max(1, SQL_CLAUSE_ALIGN_WIDTH - keyword.length);
+  return keyword + ' '.repeat(pad) + rest;
 }
 
 /**
@@ -2121,7 +2162,8 @@ function formatDocument(document, indentSize) {
 
     if (inSelectHeader && isSqlClauseKeyword(lower)) {
       current = selectBaseLevel;
-      const expected = indentStr.repeat(current) + trimmed;
+      const aligned = formatSqlClauseAligned(trimmed);
+      const expected = indentStr.repeat(current) + aligned;
       if (raw !== expected) {
         edits.push(vscode.TextEdit.replace(line.range, expected));
       }
@@ -2223,7 +2265,16 @@ function formatDocument(document, indentSize) {
       }
     }
 
-    const expected = indentStr.repeat(current) + trimmed;
+    let lineText = trimmed;
+    if (
+      inSelectHeader &&
+      (/^select\b/.test(lower) || isSqlClauseKeyword(lower)) &&
+      !/^(selectdo|selectempty|selecteos|selecterror|selectbind)\b/.test(lower)
+    ) {
+      lineText = formatSqlClauseAligned(trimmed);
+    }
+
+    const expected = indentStr.repeat(current) + lineText;
     if (raw !== expected) {
       edits.push(vscode.TextEdit.replace(line.range, expected));
     }

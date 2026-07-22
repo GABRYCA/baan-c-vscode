@@ -2,7 +2,7 @@
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
   "description": "Complete language support for Baan C / Infor LN (3GL and 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, 980+ built-in completions, library memory with IntelliJ-style auto-import, signature help, references, rename, folding, hovers, symbols, and more",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
