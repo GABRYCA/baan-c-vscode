@@ -2,7 +2,22 @@
 
 Complete language support for Baan C and Infor LN (3GL and 4GL) inside Visual Studio Code.
 
-Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
+**Marketplace:** https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
+
+**Full documentation:** [docs/README.md](./docs/README.md)
+
+| Guide | Description |
+| --- | --- |
+| [Getting started](./docs/getting-started.md) | Install, open files, first steps |
+| [Features](./docs/features.md) | Highlighting, format, diagnostics, navigation, completions |
+| [Configuration](./docs/configuration.md) | All `baanc.*` settings |
+| [Commands](./docs/commands.md) | Command Palette & templates |
+| [Snippets](./docs/snippets.md) | Prefix catalog |
+| [Library memory](./docs/library-memory.md) | BECS-friendly memory & auto-import |
+| [Development](./docs/development.md) | Build, debug, package |
+| [Troubleshooting](./docs/troubleshooting.md) | FAQ & known limits |
+
+---
 
 ## Features
 
@@ -29,28 +44,34 @@ Available on VSCode Marketplace: https://marketplace.visualstudio.com/items?item
   Soft Information hints + Quick Fix cover calls that already exist without the import. You can toggle include/DLL kind in **Manage Memorized Libraries**. Optional builtin DLL mappings stay conservative (never aggressive guessing across LN installations).
 - **Manage Memorized Libraries**: Command Palette actions to inspect, switch import kind (`#include` ↔ `#pragma used dll`), remove individual libraries/functions, or clear all.
 
+---
+
 ## Extension Settings
 
-This extension contributes the following settings that can be tweaked in VS Code settings:
+See **[docs/configuration.md](./docs/configuration.md)** for the full reference. Summary:
 
-* `baanc.indentSize`: Number of spaces per indent level when formatting (Default: `4`).
-* `baanc.formatOnSave`: Automatically format the document on save (Default: `false`).
-* `baanc.diagnostics.enabled`: Enable block-matching and structural diagnostics (Default: `true`).
-* `baanc.diagnostics.strictComments`: Ignore pipe `|` and block `/* */` comments when analyzing code blocks (Default: `true`).
-* `baanc.diagnostics.namingConventions`: Hint when identifiers do not follow Baan naming conventions (Default: `true`).
-* `baanc.diagnostics.namingArgPrefixes`: Also hint when function args lack `i.`/`o.`/`io.` prefixes (Default: `false`).
-* `baanc.completion.includeSql`: Include SQL / embedded-select keywords in autocomplete.
-* `baanc.completion.includePreprocessor`: Include preprocessor directives in autocomplete.
-* `baanc.completion.include4gl`: Include common 4GL section names in autocomplete.
-* `baanc.completion.includeBuiltins`: Include built-in API functions in autocomplete (Default: `true`).
-* `baanc.completion.includeErrors`: Include database/ES error constants (`ELOCKED`, …) in autocomplete (Default: `true`).
-* `baanc.libraryMemory.enabled`: Remember functions from opened library/include `.bc` files (Default: `true`).
-* `baanc.libraryMemory.maxLibraries`: Cap on memorized libraries; least-recently used are pruned (Default: `40`).
-* `baanc.libraryMemory.maxFunctionsPerLibrary`: Cap on functions stored per library (Default: `200`).
-* `baanc.libraryMemory.autoImportOnCompletion`: Auto-insert `#include "…"` or `#pragma used dll "…"` (whichever fits the memorized source) on completion accept (Default: `true`).
-* `baanc.libraryMemory.showImportHints`: Information hints + Quick Fix for missing `#include` / `#pragma used dll` (Default: `true`).
-* `baanc.autoImport.builtinsOnCompletion`: Auto-insert `#pragma used dll` for builtins that have an explicit optional DLL mapping (Default: `true`).
-* `baanc.autoImport.builtinImportHints`: Soft hints for those same mapped builtins when used without the pragma (Default: `true`).
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `baanc.indentSize` | `4` | Spaces per indent when formatting |
+| `baanc.formatOnSave` | `false` | Format on save |
+| `baanc.diagnostics.enabled` | `true` | Block-matching diagnostics |
+| `baanc.diagnostics.strictComments` | `true` | Ignore comments when analyzing blocks |
+| `baanc.diagnostics.namingConventions` | `true` | Naming style hints |
+| `baanc.diagnostics.namingArgPrefixes` | `false` | `i.`/`o.`/`io.` arg hints |
+| `baanc.completion.includeSql` | `true` | SQL keywords in completions |
+| `baanc.completion.includePreprocessor` | `true` | Preprocessor in completions |
+| `baanc.completion.include4gl` | `true` | 4GL section names |
+| `baanc.completion.includeBuiltins` | `true` | Built-in APIs |
+| `baanc.completion.includeErrors` | `true` | Error constants |
+| `baanc.libraryMemory.enabled` | `true` | Remember opened libraries |
+| `baanc.libraryMemory.maxLibraries` | `40` | LRU library cap |
+| `baanc.libraryMemory.maxFunctionsPerLibrary` | `200` | Per-library function cap |
+| `baanc.libraryMemory.autoImportOnCompletion` | `true` | Auto `#include` / `#pragma used dll` |
+| `baanc.libraryMemory.showImportHints` | `true` | Missing-import hints + Quick Fix |
+| `baanc.autoImport.builtinsOnCompletion` | `true` | Mapped-builtin pragma on accept |
+| `baanc.autoImport.builtinImportHints` | `true` | Soft hints for mapped builtins |
+
+---
 
 ## Commands
 
@@ -64,6 +85,33 @@ This extension contributes the following settings that can be tweaked in VS Code
 | `Baan C: Clear Memorized Libraries` | Wipe all remembered library/include exports |
 | `Baan C: Add Library Import (#include / #pragma used dll)` | Insert the right import for the symbol under the cursor (or choose style + name) |
 
+Details: [docs/commands.md](./docs/commands.md).
+
+---
+
+## Supported files
+
+| Extension | Language id |
+| --- | --- |
+| `.bc`, `.cl`, `.bcl`, `.script` | `baanc` |
+
+---
+
+## Building
+
+```bash
+npm install
+npm run compile              # development bundle → dist/extension.js
+npm run watch                # rebuild on change
+npx @vscode/vsce package     # production build + .vsix
+```
+
+Then in VS Code: **Extensions: Install from VSIX…** and select the generated `.vsix`.
+
+Full contributor guide: [docs/development.md](./docs/development.md).
+
+---
+
 ## Known Issues
 
 - Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files.
@@ -71,83 +119,33 @@ This extension contributes the following settings that can be tweaked in VS Code
 - Library memory classifies sources as include vs DLL by name/content heuristics (`*dll*` → pragma; classic `i…` includes like `itxadv0000` → `#include`). Use **Manage Memorized Libraries** to override if a name is ambiguous. Unusual temp names may need a manual import.
 - Builtin auto-import only runs for APIs with an explicit optional DLL mapping (core bshell functions never force a pragma).
 
-## Building:
+More: [docs/troubleshooting.md](./docs/troubleshooting.md).
 
-- Run: `npx @vscode/vsce package`
-- Locate the built extension on the root folder (with the `.vsix` extension).
-- Open VSCode and do `Ctrl+Shift+P` then `Extensions: Install from vsix`, select the file and click `Install`
+---
 
 ## Release Notes
 
-## [1.0.6] - 22-07-2026
+See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
-### Changed
+### [1.0.6] - 22-07-2026
 
-- Select snippets (`select`, `selectf`, `txselect`) and insert templates now use `table.*` instead of bare `*`, with linked table placeholders and clause operands aligned on the same column:
-  ```
-  select  table.*
-  from    table
-  where   table.field
-  ```
-- Document formatter (`Shift + Alt + F` / Format Document / format-on-save) aligns embedded SQL clause keywords (`select`, `from`, `where`, `and`, `or`, `order by`, …) so operands share one column.
+- Select snippets and insert templates use `table.*` with linked placeholders and aligned clauses.
+- Document formatter aligns embedded SQL clause keywords so operands share one column.
 
-## [1.0.5] - 21-07-2026
+### [1.0.5] - 21-07-2026
 
-### Added
+- Library memory for BECS / temp `.bc` workflows; include vs DLL auto-import; manage/clear commands.
 
-- **Library memory** for BECS / temp `.bc` workflows: functions from opened libraries and includes are remembered after the file is closed and deleted.
-- Completions, hovers, and signature help for memorized exports (`include · itxadv0000` / `dll · otccomdll0200`).
-- **Better auto-import** that distinguishes import forms:
-  - Include scripts → `#include "itxadv0000"`
-  - Compiled DLLs → `#pragma used dll "otccomdll0200"`
-  Information hints + Quick Fix for existing calls; toggle kind in Manage Memorized Libraries.
-- Conservative **builtin auto-import** for APIs with an explicit optional DLL mapping only (no aggressive guessing across LN installs).
-- Commands: Manage Memorized Libraries…, Clear Memorized Libraries, Add Library Import (`#include` / `#pragma used dll`).
-- Settings: `baanc.libraryMemory.*`, `baanc.autoImport.builtinsOnCompletion`, `baanc.autoImport.builtinImportHints`.
+### [1.0.4] - 18-07-2026
 
-## [1.0.4] - 18-07-2026
+- 980+ builtins, error constants, signature help, references/rename/highlights, folding, templates.
 
-### Added
+### [1.0.3] – [1.0.1](./CHANGELOG.md)
 
-- Large expansion of built-in API completions (HTTP client, cURL, SOAP, digests, BLOBs, programmable dialogs/charts, RDI/dictionary, parallel processing, keyfields, selection helpers, images, composite sessions, random, varargs, and more) — 980+ functions.
-- Database / ES error constant completions and hovers (`ELOCKED`, `EDUPL`, `ENOREC`, `EREFERENCE`, …) via `baanc.completion.includeErrors`.
-- Signature help (parameter hints) for built-ins and local functions.
-- Find All References, Rename Symbol, and Document Highlights for identifiers in the current file.
-- Improved Go to Definition for tables, domains, and typed variables (in addition to functions).
-- Folding ranges for control blocks, functions, preprocessor regions, and 4GL sections.
-- Hover for local function definitions and richer builtin signature text.
-- Commands: Insert Select Template, Insert Transaction + Select Template.
-- New snippets: `txselect`, `dalgs`, `httpget`, `curlget`, `sqlpf`, `qext`, `funcex`, `elocked`, and more.
+Earlier releases: naming hints, initial language support — see changelog.
 
-## [1.0.3] - 17-07-2026
+---
 
-### Added
+## License
 
-- Naming convention hints (Infor LN style: lowercase, dots, expressive names) at Hint severity, with Quick Fix rename.
-- Optional argument-prefix hints (`i.` / `o.` / `io.`) via `baanc.diagnostics.namingArgPrefixes` (default off).
-- Built-in API completions and hovers (`db.*`, `strip$`, `message`, dates, DAL, form helpers, math, …).
-- Setting `baanc.completion.includeBuiltins`.
-
-### Fixed
-
-- Primitive type keywords no longer highlight the trailing segment of domains/names like `txamg.type.long`.
-- `TODO`/`FIXME`/`NOTE`/`XXX`/`HACK` in comments stay comment-colored instead of keyword/red.
-
-## [1.0.2] - 16-07-2026
-
-### Added
-
-- Partially typing the name of a `table` already declared within the file automatically suggests it.
-- Partially typing the name of a `function` already declared within the file automatically suggests it.
-- Upgraded minimum engine version to `1.125.0` as well as `devDepencies: @types/vscode`.
-- Upgraded `esbuild` and `eslint` to the latest version.
-- Minor internal changes.
-
-### Fixed
-
-- Fixed an issue with `#` snippets that were duplicating the `#`.
-- Fixed an issue were adding a dot after snippets like `before.` stopped showing them.
-
-## [1.0.1] - 15-07-2026
-
-- Initial release
+[MIT](./LICENSE)
