@@ -5,7 +5,7 @@ on:
     branches: ["master"]
     paths:
       - 'docs/**/*.md'
-      - 'script/**'
+      - 'scripts/**'
       - 'package*.json'
 
   workflow_dispatch:

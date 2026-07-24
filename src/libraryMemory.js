@@ -493,7 +493,7 @@ function formatImportDoc(lib) {
  * @param {import('vscode').Uri} uri
  */
 function scriptNameFromUri(uri) {
-  let base = '';
+  let base;
   if (uri.scheme === 'file') {
     base = path.basename(uri.fsPath);
   } else {
