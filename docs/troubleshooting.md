@@ -181,7 +181,7 @@ Then reload the Extension Development Host window. Ensure you are not packaging/
 
 | Limitation | Notes |
 | --- | --- |
-| Single-file references/rename | No workspace symbol database |
+| References/rename are single-file | Workspace Symbols (`Ctrl+T`) search all *open* Baan files, but there is no persistent workspace index |
 | Macro-heavy multi-file blocks | Structural diagnostics may mis-fire |
 | Import kind heuristics | Override in Manage Memorized Libraries |
 | Builtin DLL map sparse | By design — no aggressive guessing |

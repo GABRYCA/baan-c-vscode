@@ -9,7 +9,7 @@ Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visua
 | | |
 | --- | --- |
 | **Extension ID** | `AnonymousGCA.baan-c-vscode` |
-| **Version** | 1.0.7 |
+| **Version** | 1.0.8 |
 | **License** | [MIT](../LICENSE) |
 | **Marketplace** | [Baan C VSCode](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) |
 | **Repository** | [GABRYCA/baan-c-vscode](https://github.com/GABRYCA/baan-c-vscode) |
@@ -22,9 +22,10 @@ Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visua
 - Syntax highlighting for Baan C / Infor LN (keywords, SQL, 4GL sections, types, preprocessor)
 - Document formatting with SQL clause alignment
 - Block and naming diagnostics (Hint-level naming, structural errors)
-- 980+ built-in API completions with hovers and signature help
+- 1,120+ built-in API completions with hovers and signature help
 - Database / ES error constants (`ELOCKED`, `EDUPL`, …)
-- Go to Definition, Find References, Rename, Outline, folding
+- Go to Definition, Find References, Rename, Outline, **workspace symbols**, folding
+- Status bar quick actions (format, diagnostics, templates, library memory, docs)
 - Snippets and insert templates for selects, transactions, 4GL, HTTP, DAL
 - **Library memory** for BECS temp-file workflows with IntelliJ-style auto-import  
   (`#include` vs `#pragma used dll`)

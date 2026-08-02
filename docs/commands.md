@@ -43,10 +43,27 @@ These are provided by the extension’s language providers (not custom command I
 | Peek Definition | `Alt+F12` | `Option+F12` |
 | Find All References | `Shift+F12` | `Shift+F12` |
 | Rename Symbol | `F2` | `F2` |
+| Go to Symbol in File (Outline) | `Ctrl+Shift+O` | `Cmd+Shift+O` |
+| Go to Symbol in Workspace | `Ctrl+T` | `Cmd+T` |
 | Trigger Suggest | `Ctrl+Space` | `Ctrl+Space` |
 | Trigger Parameter Hints | `Ctrl+Shift+Space` | `Cmd+Shift+Space` |
 | Quick Fix | `Ctrl+.` | `Cmd+.` |
 | Fold / Unfold | `Ctrl+Shift+[` / `]` | `Cmd+Option+[` / `]` |
+
+---
+
+## Status bar
+
+While a Baan C editor is active, a **Baan C** item appears on the right side of the status bar. Clicking it opens a Quick Pick with the most used actions:
+
+- Format Document
+- Run Diagnostics
+- Insert Select Template
+- Insert Transaction + Select Template
+- Manage Memorized Libraries…
+- Open Documentation
+
+The underlying command is `baanc.showQuickActions` (not shown in the Command Palette — it is status-bar only).
 
 ---
 

@@ -94,7 +94,8 @@ Defined in `package.json`:
 | `package` | `node esbuild.js --production` | Minified production bundle |
 | `docs:build` | `node scripts/build-docs.js` | Rebuild single-file docs site (`docs/index.html`) |
 | `vscode:prepublish` | production esbuild + docs build | Runs automatically before `vsce package` / publish |
-| `lint` | `eslint src` | Lint source |
+| `lint` | `eslint src scripts` | Lint source and build scripts |
+| `test` | `node src/test/libraryMemory.smoke.js` | Smoke test for library memory |
 
 ### esbuild options
 
@@ -139,9 +140,11 @@ Launch config (simplified):
 
 ```bash
 npm run lint
+npm test
 ```
 
-ESLint config: `eslint.config.mjs` (flat config). Scope: `src/`.
+ESLint config: `eslint.config.mjs` (flat config, ESLint 10). Scope: `src/` and `scripts/`.  
+`npm test` runs the lightweight library-memory smoke test under `src/test/`.
 
 ---
 

@@ -41,22 +41,42 @@ function escapeHtml(s) {
 }
 
 /**
- * Inline markdown: links, code, bold, italic, strikethrough
+ * Inline markdown: links, code, bold, italic
  * @param {string} text
  */
 function renderInline(text) {
-  // Protect code spans first
+  // Protect code spans first so markdown inside them is never touched
   /** @type {string[]} */
   const codes = [];
   let s = text.replace(/`([^`]+)`/g, (_, code) => {
     const i = codes.length;
     codes.push(`<code>${escapeHtml(code)}</code>`);
-    return `\u0000C${i}\u0000`;
+    return `\uE000C${i}\uE000`;
   });
+
+  // Everything that generates HTML (images, links, bold, italic) is stashed as
+  // a token placeholder so the surrounding plain text can be HTML-escaped
+  // safely, then restored afterwards. Raw `<`, `>`, `&` in prose therefore
+  // never leak through to the output.
+  /** @type {string[]} */
+  const tokens = [];
+  const stash = html => {
+    const i = tokens.length;
+    tokens.push(html);
+    return `\uE000T${i}\uE000`;
+  };
+
+  // Emphasis applied to link labels (which are stashed before the global pass)
+  const applyEmphasis = label =>
+    label
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+      .replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>')
+      .replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
 
   // Images ![alt](url)
   s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
-    return `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" />`;
+    return stash(`<img src="${escapeHtml(url.trim())}" alt="${escapeHtml(alt)}" loading="lazy" />`);
   });
 
   // Links [text](url) — rewrite sibling .md links to SPA routes
@@ -68,35 +88,48 @@ function renderInline(text) {
       hash = h.slice(hashIdx);
       h = h.slice(0, hashIdx);
     }
+    // label may carry its own emphasis/code spans
+    const labelHtml = applyEmphasis(escapeHtml(label));
+    let linkHtml;
     // ../LICENSE, ../CHANGELOG.md → keep as external-ish text or relative
     if (h.startsWith('http://') || h.startsWith('https://') || h.startsWith('mailto:')) {
-      return `<a href="${escapeHtml(h + hash)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-    }
-    const base = path.posix.basename(h.replace(/\\/g, '/'));
-    if (base.endsWith('.md')) {
-      const page = PAGES.find(p => p.file === base || p.file === h.replace(/^\.\//, ''));
-      if (page) {
-        return `<a href="#/${page.id}${hash}" data-route="${page.id}">${label}</a>`;
+      linkHtml = `<a href="${escapeHtml(h + hash)}" target="_blank" rel="noopener noreferrer">${labelHtml}</a>`;
+    } else {
+      const base = path.posix.basename(h.replace(/\\/g, '/'));
+      if (base.endsWith('.md')) {
+        const page = PAGES.find(p => p.file === base || p.file === h.replace(/^\.\//, ''));
+        if (page) {
+          linkHtml = `<a href="#/${page.id}${hash}" data-route="${page.id}">${labelHtml}</a>`;
+        } else {
+          // CHANGELOG etc.
+          linkHtml = `<a href="${escapeHtml(h)}" class="ext-link">${labelHtml}</a>`;
+        }
+      } else if (h === '' && hash) {
+        linkHtml = `<a href="${escapeHtml(hash)}">${labelHtml}</a>`;
+      } else {
+        linkHtml = `<a href="${escapeHtml(h + hash)}">${labelHtml}</a>`;
       }
-      // CHANGELOG etc.
-      return `<a href="${escapeHtml(h)}" class="ext-link">${label}</a>`;
     }
-    if (h === '' && hash) {
-      return `<a href="${escapeHtml(hash)}">${label}</a>`;
-    }
-    return `<a href="${escapeHtml(h + hash)}">${label}</a>`;
+    return stash(linkHtml);
   });
 
+  // Escape the remaining plain text (code spans, images and links are already
+  // replaced by placeholders at this point)
+  s = escapeHtml(s);
+
   // Bold **text** or __text__
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, (_, t) => stash(`<strong>${t}</strong>`));
+  s = s.replace(/__([^_]+)__/g, (_, t) => stash(`<strong>${t}</strong>`));
 
   // Italic *text* or _text_ (avoid mid-word underscores roughly)
-  s = s.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>');
-  s = s.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
+  s = s.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, (_, t) => stash(`<em>${t}</em>`));
+  s = s.replace(/(?<!\w)_([^_]+)_(?!\w)/g, (_, t) => stash(`<em>${t}</em>`));
 
-  // Restore code
-  s = s.replace(/\u0000C(\d+)\u0000/g, (_, i) => codes[Number(i)]);
+  // Restore stashed HTML (links, images, bold, italic)…
+  s = s.replace(/\uE000T(\d+)\uE000/g, (_, i) => tokens[Number(i)]);
+
+  // …then restore code spans, including any referenced inside link labels
+  s = s.replace(/\uE000C(\d+)\uE000/g, (_, i) => codes[Number(i)]);
 
   return s;
 }
@@ -115,8 +148,48 @@ function slugify(text) {
 }
 
 /**
+ * Split a markdown table row into cells. Unlike a naive `split('|')`, this
+ * respects backtick code spans (`` `a|b` `` stays one cell) and backslash-
+ * escaped pipes (`\|` → literal pipe, backslash removed).
+ * @param {string} line
+ * @returns {string[]}
+ */
+function splitTableRow(line) {
+  let s = line.trim();
+  // strip the common leading/trailing pipe
+  if (s.startsWith('|')) {
+    s = s.slice(1);
+  }
+  if (s.endsWith('|') && !s.endsWith('\\|')) {
+    s = s.slice(0, -1);
+  }
+  const cells = [];
+  let cur = '';
+  let inCode = false;
+  for (let j = 0; j < s.length; j++) {
+    const ch = s[j];
+    if (ch === '`' && s[j - 1] !== '\\') {
+      inCode = !inCode;
+      cur += ch;
+    } else if (ch === '|' && !inCode) {
+      if (s[j - 1] === '\\') {
+        // escaped pipe: consume the backslash, keep the pipe
+        cur = cur.slice(0, -1) + '|';
+      } else {
+        cells.push(cur);
+        cur = '';
+      }
+    } else {
+      cur += ch;
+    }
+  }
+  cells.push(cur);
+  return cells;
+}
+
+/**
  * @param {string} md
- * @returns {{ html: string, toc: { id: string, text: string, level: number }[], plain: string }}
+ * @returns {{ html: string, toc: { id: string, text: string, level: number }[], plainIndex: { t: string, a: string }[] }}
  */
 function mdToHtml(md) {
   // Normalize line endings
@@ -127,11 +200,18 @@ function mdToHtml(md) {
   const toc = [];
   /** @type {string[]} */
   const plainParts = [];
+  /** @type {string[]} */
+  const plainAnchors = [];
+  /** @type {Set<string>} */
+  const usedIds = new Set();
+  let curAnchor = '';
   let i = 0;
   let inCode = false;
   /** @type {string[]} */
   let codeBuf = [];
   let codeLang = '';
+  let fenceChar = '';
+  let fenceLen = 0;
   let inTable = false;
   /** @type {string[][]} */
   let tableRows = [];
@@ -142,6 +222,15 @@ function mdToHtml(md) {
   let inBlockquote = false;
   /** @type {string[]} */
   let bqBuf = [];
+
+  // Record a piece of plain text for the client-side search index, tagged with
+  // the anchor of the nearest preceding heading so search hits can deep-link.
+  const pushPlain = (text, anchor) => {
+    for (const line of text.split('\n')) {
+      plainParts.push(line);
+      plainAnchors.push(anchor || '');
+    }
+  };
 
   const flushList = () => {
     if (!listType || listItems.length === 0) {
@@ -182,6 +271,15 @@ function mdToHtml(md) {
       out.push('</tr>');
     }
     out.push('</tbody></table></div>');
+    // make table text searchable
+    for (const r of [header, ...rows]) {
+      for (const c of r) {
+        const cell = (c || '').trim();
+        if (cell) {
+          pushPlain(cell, curAnchor);
+        }
+      }
+    }
     inTable = false;
     tableRows = [];
   };
@@ -190,7 +288,9 @@ function mdToHtml(md) {
     if (!inBlockquote) {
       return;
     }
-    out.push(`<blockquote>${renderInline(bqBuf.join(' '))}</blockquote>`);
+    const text = bqBuf.join(' ');
+    out.push(`<blockquote>${renderInline(text)}</blockquote>`);
+    pushPlain(text, curAnchor);
     inBlockquote = false;
     bqBuf = [];
   };
@@ -207,26 +307,37 @@ function mdToHtml(md) {
         `<button type="button" class="copy-btn" aria-label="Copy code">Copy</button></div>` +
         `<pre><code class="language-${escapeHtml(lang)}">${escapeHtml(code)}</code></pre></div>`
     );
-    plainParts.push(code);
+    pushPlain(code, curAnchor);
     inCode = false;
     codeBuf = [];
     codeLang = '';
+    fenceChar = '';
+    fenceLen = 0;
   };
 
   while (i < lines.length) {
     const line = lines[i];
 
-    // Fenced code
-    const fence = line.match(/^```(\w*)\s*$/);
+    // Fenced code — CommonMark-style: 3+ backticks or tildes, optional info string
+    const fence = line.match(/^(`{3,}|~{3,})[ \t]*(.*)$/);
     if (fence) {
+      const ch = fence[1][0];
+      const len = fence[1].length;
       if (inCode) {
-        flushCode();
+        // a closing fence must use the same character and be at least as long
+        if (ch === fenceChar && len >= fenceLen) {
+          flushCode();
+        } else {
+          codeBuf.push(line);
+        }
       } else {
         flushList();
         flushTable();
         flushBq();
         inCode = true;
-        codeLang = fence[1] || '';
+        fenceChar = ch;
+        fenceLen = len;
+        codeLang = fence[2].trim().split(/\s+/)[0] || '';
         codeBuf = [];
       }
       i++;
@@ -242,11 +353,7 @@ function mdToHtml(md) {
     if (/^\s*\|/.test(line) && line.includes('|')) {
       flushList();
       flushBq();
-      const cells = line
-        .replace(/^\s*\|/, '')
-        .replace(/\|\s*$/, '')
-        .split('|')
-        .map(c => c.trim());
+      const cells = splitTableRow(line).map(c => c.trim());
       // separator
       if (cells.every(c => /^:?-+:?$/.test(c))) {
         i++;
@@ -292,13 +399,21 @@ function mdToHtml(md) {
       const raw = h[2].trim();
       // strip trailing # anchors sometimes used in md
       const text = raw.replace(/\s+#+\s*$/, '');
-      const id = slugify(text);
+      // unique anchor id — duplicate headings get -2, -3, … suffixes
+      let id = slugify(text) || 'section';
+      const idBase = id;
+      let n = 2;
+      while (usedIds.has(id)) {
+        id = `${idBase}-${n++}`;
+      }
+      usedIds.add(id);
+      curAnchor = id;
       const inline = renderInline(text);
       if (level >= 2 && level <= 3) {
         toc.push({ id, text: text.replace(/[*_`]/g, ''), level });
       }
       out.push(`<h${level} id="${id}"><a class="anchor" href="#${id}" aria-hidden="true">#</a>${inline}</h${level}>`);
-      plainParts.push(text);
+      pushPlain(text, id);
       i++;
       continue;
     }
@@ -312,7 +427,7 @@ function mdToHtml(md) {
       }
       listType = 'ul';
       listItems.push(ul[1]);
-      plainParts.push(ul[1]);
+      pushPlain(ul[1], curAnchor);
       i++;
       continue;
     }
@@ -326,7 +441,7 @@ function mdToHtml(md) {
       }
       listType = 'ol';
       listItems.push(ol[1]);
-      plainParts.push(ol[1]);
+      pushPlain(ol[1], curAnchor);
       i++;
       continue;
     }
@@ -355,7 +470,7 @@ function mdToHtml(md) {
       if (
         /^\s*$/.test(n) ||
         /^#{1,6}\s/.test(n) ||
-        /^```/.test(n) ||
+        /^(`{3,}|~{3,})/.test(n) ||
         /^\s*\|/.test(n) ||
         /^>\s?/.test(n) ||
         /^\s*[-*+]\s+/.test(n) ||
@@ -369,7 +484,7 @@ function mdToHtml(md) {
     }
     const ptext = para.join(' ').trim();
     out.push(`<p>${renderInline(ptext)}</p>`);
-    plainParts.push(ptext);
+    pushPlain(ptext, curAnchor);
   }
 
   flushCode();
@@ -380,13 +495,13 @@ function mdToHtml(md) {
   return {
     html: out.join('\n'),
     toc,
-    plain: plainParts.join('\n')
+    plainIndex: plainParts.map((text, i) => ({ t: text, a: plainAnchors[i] || '' }))
   };
 }
 
 // ── Build pages ──────────────────────────────────────────────────────────────
 
-/** @type {Record<string, { id: string, title: string, group: string, icon: string, html: string, toc: { id: string, text: string, level: number }[], plain: string }>} */
+/** @type {Record<string, { id: string, title: string, group: string, icon: string, html: string, toc: { id: string, text: string, level: number }[], plainIndex: { t: string, a: string }[] }>} */
 const pageData = {};
 
 for (const meta of PAGES) {
@@ -396,7 +511,7 @@ for (const meta of PAGES) {
     process.exit(1);
   }
   const md = fs.readFileSync(filePath, 'utf8');
-  const { html, toc, plain } = mdToHtml(md);
+  const { html, toc, plainIndex } = mdToHtml(md);
   pageData[meta.id] = {
     id: meta.id,
     title: meta.title,
@@ -404,7 +519,7 @@ for (const meta of PAGES) {
     icon: meta.icon,
     html,
     toc,
-    plain
+    plainIndex
   };
 }
 
@@ -1520,14 +1635,6 @@ ${navHtml}
     }
 
     // Relative ./foo.md style (rewritten at build) — already data-route usually
-    // In-page heading only
-    if (href.charAt(0) === '#' && href.charAt(1) !== '/') {
-      var hid = href.slice(1);
-      if (document.getElementById(hid)) {
-        e.preventDefault();
-        navigate(currentId || 'overview', hid);
-      }
-    }
   }, true);
 
   // Browser-only fallback when user uses back/forward
@@ -1575,19 +1682,17 @@ ${navHtml}
     var hits = [];
     ORDER.forEach(function (id) {
       var page = PAGES[id];
-      var plain = page.plain || '';
-      var lines = plain.split('\\n');
+      var lines = page.plainIndex || [];
       for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        var idx = line.toLowerCase().indexOf(q);
-        if (idx >= 0) {
-          hits.push({ id: page.id, title: page.title, line: line, idx: idx });
+        var line = lines[i].t || '';
+        if (line.toLowerCase().indexOf(q) >= 0) {
+          hits.push({ id: page.id, title: page.title, line: line, anchor: lines[i].a || '' });
           if (hits.filter(function (h) { return h.id === page.id; }).length >= 3) break;
         }
       }
       // also match title
       if (page.title.toLowerCase().indexOf(q) >= 0 && !hits.some(function (h) { return h.id === page.id && h.line === page.title; })) {
-        hits.unshift({ id: page.id, title: page.title, line: page.title + ' — open page', idx: 0 });
+        hits.unshift({ id: page.id, title: page.title, line: page.title + ' — open page', anchor: '' });
       }
     });
     hits = hits.slice(0, 20);
@@ -1608,7 +1713,7 @@ ${navHtml}
       } else {
         snip = escapeHtml(line);
       }
-      return '<button type="button" class="search-hit" data-route="' + h.id + '" data-idx="' + i + '">' +
+      return '<button type="button" class="search-hit" data-route="' + h.id + '" data-anchor="' + escapeHtml(h.anchor) + '" data-idx="' + i + '">' +
         '<div class="hit-page">' + escapeHtml(h.title) + '</div>' +
         '<div class="hit-snippet">' + snip + '</div></button>';
     }).join('');
@@ -1631,7 +1736,7 @@ ${navHtml}
   searchResults.addEventListener('click', function (e) {
     var hit = e.target.closest('.search-hit');
     if (!hit) return;
-    navigate(hit.getAttribute('data-route'));
+    navigate(hit.getAttribute('data-route'), hit.getAttribute('data-anchor') || '');
     closeSearch();
   });
 
@@ -1663,7 +1768,7 @@ ${navHtml}
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (nodes[activeHit]) {
-        navigate(nodes[activeHit].getAttribute('data-route'));
+        navigate(nodes[activeHit].getAttribute('data-route'), nodes[activeHit].getAttribute('data-anchor') || '');
         closeSearch();
       }
     }

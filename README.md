@@ -25,9 +25,9 @@ Which's essentially an hosted page of: [docs/index.html](./docs/index.html)
 
 - **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more.
 - **Code Formatting**: Automatic document formatting (`Shift + Alt + F` or on-save). Perfectly indents conditional blocks, loops, embedded SQL branches (`selectdo`, `selectempty`), and multi-line arguments. Embedded SQL clauses (`select` / `from` / `where` / `and` / …) are aligned so operands share the same column.
-- **Block Diagnostics**: Real-time linting that catches structural errors like unmatched `endif`, `endwhile`, or `endselect` statements.
+- **Block Diagnostics**: Real-time linting that catches structural errors like unmatched `endif`, `endwhile`, or `endselect` statements. **Quick Fixes** correct common idiom slips: `for … by` → `step` and stray `while … do` (Baan C has no `do` keyword).
 - **Naming Convention Hints**: Soft (Hint-level) suggestions based on Infor LN design principles — lowercase, dots as separators (`my.beautiful.function`), avoid single-letter / `temp` names. Quick Fix can rename across the file. Toggle with `baanc.diagnostics.namingConventions`.
-- **Built-in Completions**: 980+ API functions with snippet inserts and hover docs — `db.*`, `dal.*`, strings, dates, SQL, reports, XML/JSON, **HTTP client**, **cURL**, SOAP, digests, BLOBs, dialogs, RDI/dictionary, parallel processing, and more.
+- **Built-in Completions**: 1,120+ API functions with snippet inserts and hover docs — `db.*`, `dal.*`, strings, dates, SQL, reports, XML/JSON, **HTTP client**, **cURL**, SOAP, digests, BLOBs, dialogs, RDI/dictionary, parallel processing, **eMessage Connector** (`cmf.*`), **Chart Manager** (`chm.*`), and more.
 - **Error Constants**: Completions and hovers for common ES/DB codes (`ELOCKED`, `EDUPL`, `ENOREC`, `EREFERENCE`, …).
 - **Signature Help**: Parameter hints while typing function calls (`Ctrl+Shift+Space`) for builtins and local functions.
 - **Hover Documentation**: Hover over keywords, API functions, error codes, and local functions for definitions and usage notes.
@@ -37,8 +37,10 @@ Which's essentially an hosted page of: [docs/index.html](./docs/index.html)
 - **Document Highlights**: Occurrences of the symbol under the cursor are highlighted while editing.
 - **Code Folding**: Fold `if`/`while`/`for`/`select`/`function` blocks, preprocessor regions, and 4GL sections.
 - **Document Symbols (Outline)**: Navigate functions, domains, tables, and 4GL sections in the Outline view.
+- **Workspace Symbols**: Search functions, domains, tables, and 4GL sections across **all open Baan C files** with **Go to Symbol in Workspace** (`Ctrl+T`), in addition to the per-file Outline (`Ctrl+Shift+O`).
 - **Snippets**: Shortcuts like `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, `domain`, and more. Select snippets insert `table.*` (not bare `*`) with linked table name placeholders and column-aligned clauses.
 - **Insert Templates**: Command Palette / context menu — transaction+select and full select skeletons (same `table.*` + aligned clause style).
+- **Status Bar Quick Actions**: While a Baan C file is active, a **Baan C** item appears in the status bar — click it for a Quick Pick of the most used commands (Format Document, Run Diagnostics, insert templates, Manage Memorized Libraries, Open Documentation).
 - **Library Memory (BECS-friendly)**: When you open a library or include `.bc` file, the extension remembers its functions even after BECS closes and deletes the temp file. Those functions appear in completions in other scripts.
 - **IntelliJ-style Auto-Import (include vs pragma)**: Accepting a completion inserts the **correct** import form when missing:
   - Include scripts (e.g. `itxadv0000`) → `#include "itxadv0000"`
@@ -117,7 +119,7 @@ Full contributor guide: [docs/development.md](./docs/development.md).
 ## Known Issues
 
 - Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files.
-- Find References / Rename operate on the **current file** only (not a full workspace index).
+- Find References / Rename operate on the **current file** only. **Workspace Symbols** (`Ctrl+T`) search across all *open* Baan files, but there is no persistent workspace index.
 - Library memory classifies sources as include vs DLL by name/content heuristics (`*dll*` → pragma; classic `i…` includes like `itxadv0000` → `#include`). Use **Manage Memorized Libraries** to override if a name is ambiguous. Unusual temp names may need a manual import.
 - Builtin auto-import only runs for APIs with an explicit optional DLL mapping (core bshell functions never force a pragma).
 
@@ -129,7 +131,16 @@ More: [docs/troubleshooting.md](./docs/troubleshooting.md).
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
-## [1.0.7] - 23-07-2026
+## [1.0.8] - 02-08-2026
+
+- **Workspace symbols**: search symbols across all open Baan files with Go to Symbol in Workspace (`Ctrl+T`).
+- **Status bar quick actions**: click the **Baan C** status bar item for a Quick Pick of the most used commands.
+- **Quick Fixes** for `for … by` → `step` and stray `while … do`.
+- **~140 more builtins** (1,125 total): eMessage Connector (`cmf.*`), Chart Manager (`chm.*`), ARTM (`artm.*`).
+- **Docs site generator hardened**: HTML escaping, table pipes inside code spans, CommonMark fences, unique anchors, deep-linked search results.
+- **Tooling**: ESLint modernized (`@stylistic/semi`, lint covers `scripts/`), `npm test` script, `npm audit` clean.
+
+### [1.0.7] - 23-07-2026
 
 - Added `Baan C: Open documentation` command to open the extension documentation.
 - Added `/docs` folder with .md documentation for commands, development, troubleshooting and more.

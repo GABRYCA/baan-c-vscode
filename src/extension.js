@@ -714,138 +714,53 @@ function activate(context) {
 
   const symbolProvider = vscode.languages.registerDocumentSymbolProvider(selector, {
     provideDocumentSymbols(document) {
-      /** @type {vscode.DocumentSymbol[]} */
-      const symbols = [];
-      const functionRe =
-        /^\s*function(?:\s+(?:extern|static))?(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
-      const domainRe = /^\s*domain\s+([\w.]+)\s+([A-Za-z_][\w.]*)/i;
-      const tableRe = /^\s*table\s+(t[\w.]+)/i;
-      const sectionRe =
-        /^\s*((?:declaration|before\.program|after\.program|on\.error|main\.table\.io|functions)\s*:|(?:field|form|group|choice|zoom\.from)\.[\w.*]+\s*:)/i;
-      const externRe =
-        /^\s*extern\s+(?:long|double|boolean|string|domain\s+[\w.]+)\s+([A-Za-z_][\w.]*)/i;
-      const labelRe = /^\s*([A-Za-z][\w.]*)\s*:\s*$/;
-
-      for (let i = 0; i < document.lineCount; i++) {
-        const line = document.lineAt(i);
-        const text = stripLineComment(line.text);
-        if (!text.trim() || isBlockCommentOnly(text)) {
-          continue;
-        }
-
-        let m = functionRe.exec(text);
-        if (m) {
-          const name = m[1];
-          const start = i;
-          let end = i;
-          let depth = 0;
-          let seenBrace = false;
-          for (let j = i; j < document.lineCount; j++) {
-            const t = stripLineComment(document.lineAt(j).text);
-            for (const ch of t) {
-              if (ch === '{') {
-                depth++;
-                seenBrace = true;
-              } else if (ch === '}') {
-                depth--;
-              }
-            }
-            if (seenBrace && depth <= 0) {
-              end = j;
-              break;
-            }
-          }
-          const range = new vscode.Range(start, 0, end, document.lineAt(end).text.length);
-          const sel = new vscode.Range(i, m.index, i, m.index + m[0].length);
-          symbols.push(
-            new vscode.DocumentSymbol(
-              name,
-              'function',
-              vscode.SymbolKind.Function,
-              range,
-              sel
-            )
-          );
-          continue;
-        }
-
-        m = tableRe.exec(text);
-        if (m) {
-          const range = line.range;
-          symbols.push(
-            new vscode.DocumentSymbol(
-              m[1],
-              'table',
-              vscode.SymbolKind.Struct,
-              range,
-              range
-            )
-          );
-          continue;
-        }
-
-        m = domainRe.exec(text);
-        if (m) {
-          const range = line.range;
-          symbols.push(
-            new vscode.DocumentSymbol(
-              m[2],
-              `domain ${m[1]}`,
-              vscode.SymbolKind.Variable,
-              range,
-              range
-            )
-          );
-          continue;
-        }
-
-        m = externRe.exec(text);
-        if (m) {
-          const range = line.range;
-          symbols.push(
-            new vscode.DocumentSymbol(
-              m[1],
-              'extern',
-              vscode.SymbolKind.Variable,
-              range,
-              range
-            )
-          );
-          continue;
-        }
-
-        m = sectionRe.exec(text);
-        if (m) {
-          const range = line.range;
-          symbols.push(
-            new vscode.DocumentSymbol(
-              m[1].replace(/:$/, ''),
-              '4GL section',
-              vscode.SymbolKind.Namespace,
-              range,
-              range
-            )
-          );
-          continue;
-        }
-
-        m = labelRe.exec(text);
-        if (m && !/^(case|default)$/i.test(m[1])) {
-          const range = line.range;
-          symbols.push(
-            new vscode.DocumentSymbol(
-              m[1],
-              'label',
-              vscode.SymbolKind.Key,
-              range,
-              range
-            )
-          );
-        }
-      }
-      return symbols;
+      return collectDocumentSymbols(document).map(
+        s =>
+          new vscode.DocumentSymbol(
+            s.name,
+            s.detail,
+            s.kind,
+            s.range,
+            s.selection
+          )
+      );
     }
   });
+
+  /**
+   * Workspace symbols across every open Baan C document (`Ctrl+T` / `Cmd+T`).
+   * Built from the same scan as the Outline so the two stay consistent.
+   */
+  const workspaceSymbolProvider =
+    vscode.languages.registerWorkspaceSymbolProvider({
+      provideWorkspaceSymbols(query) {
+        const q = query.trim().toLowerCase();
+        /** @type {vscode.SymbolInformation[]} */
+        const symbols = [];
+        for (const doc of vscode.workspace.textDocuments) {
+          if (doc.languageId !== 'baanc') {
+            continue;
+          }
+          const container = path.basename(
+            doc.uri.fsPath || doc.uri.path || doc.fileName || doc.uri.toString()
+          );
+          for (const s of collectDocumentSymbols(doc)) {
+            if (q && !s.name.toLowerCase().includes(q)) {
+              continue;
+            }
+            symbols.push(
+              new vscode.SymbolInformation(
+                s.name,
+                s.kind,
+                container,
+                new vscode.Location(doc.uri, s.range)
+              )
+            );
+          }
+        }
+        return symbols;
+      }
+    });
 
   const definitionProvider = vscode.languages.registerDefinitionProvider(selector, {
     provideDefinition(document, position) {
@@ -1192,6 +1107,38 @@ function activate(context) {
             continue;
           }
 
+          // Language-idiom fixes: `for ... by` → `step`, stray `do` after while
+          if (code === 'for-by' || code === 'while-do') {
+            const lineNr = d.range.start.line;
+            const text = stripLineComment(document.lineAt(lineNr).text);
+            const wordRe = code === 'for-by' ? /\bby\b/ : /\bdo\b/;
+            const m = wordRe.exec(text);
+            if (m) {
+              const wordRange = new vscode.Range(
+                lineNr,
+                m.index,
+                lineNr,
+                m.index + m[0].length
+              );
+              const action = new vscode.CodeAction(
+                code === 'for-by'
+                  ? "Replace 'by' with 'step'"
+                  : "Remove 'do' (Baan C while has no 'do')",
+                vscode.CodeActionKind.QuickFix
+              );
+              action.diagnostics = [d];
+              action.isPreferred = true;
+              action.edit = new vscode.WorkspaceEdit();
+              if (code === 'for-by') {
+                action.edit.replace(document.uri, wordRange, 'step');
+              } else {
+                action.edit.delete(document.uri, wordRange);
+              }
+              actions.push(action);
+            }
+            continue;
+          }
+
           if (
             code !== NAMING_CODE.case &&
             code !== NAMING_CODE.separator &&
@@ -1236,7 +1183,72 @@ function activate(context) {
 
   registerDocsCommands(context);
 
+  // Status bar indicator: visible while a Baan C document is active,
+  // click to jump to the most common actions.
+  const statusBarItem = vscode.window.createStatusBarItem(
+    'baanc.status',
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.name = 'Baan C';
+  statusBarItem.text = '$(symbol-misc) Baan C';
+  statusBarItem.tooltip = 'Baan C / Infor LN — click for quick actions';
+  statusBarItem.command = 'baanc.showQuickActions';
+  const updateStatusBar = () => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && editor.document.languageId === 'baanc') {
+      statusBarItem.show();
+    } else {
+      statusBarItem.hide();
+    }
+  };
+  updateStatusBar();
   context.subscriptions.push(
+    statusBarItem,
+    vscode.window.onDidChangeActiveTextEditor(updateStatusBar)
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('baanc.showQuickActions', async () => {
+      const pick = await vscode.window.showQuickPick(
+        [
+          {
+            label: '$(wand) Format Document',
+            description: 'baanc.formatDocument',
+            command: 'baanc.formatDocument'
+          },
+          {
+            label: '$(check-all) Run Diagnostics',
+            description: 'baanc.runDiagnostics',
+            command: 'baanc.runDiagnostics'
+          },
+          {
+            label: '$(list-selection) Insert Select Template',
+            description: 'baanc.insertSelectTemplate',
+            command: 'baanc.insertSelectTemplate'
+          },
+          {
+            label: '$(database) Insert Transaction + Select Template',
+            description: 'baanc.insertTransactionTemplate',
+            command: 'baanc.insertTransactionTemplate'
+          },
+          {
+            label: '$(library) Manage Memorized Libraries…',
+            description: 'baanc.manageLibraryMemory',
+            command: 'baanc.manageLibraryMemory'
+          },
+          {
+            label: '$(book) Open Documentation',
+            description: 'baanc.openDocumentation',
+            command: 'baanc.openDocumentation'
+          }
+        ],
+        { title: 'Baan C', placeHolder: 'Choose an action' }
+      );
+      if (pick) {
+        vscode.commands.executeCommand(pick.command);
+      }
+    }),
     vscode.commands.registerCommand('baanc.formatDocument', async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== 'baanc') {
@@ -1430,6 +1442,7 @@ function activate(context) {
     completionProvider,
     hoverProvider,
     symbolProvider,
+    workspaceSymbolProvider,
     definitionProvider,
     signatureHelpProvider,
     referenceProvider,
@@ -1884,6 +1897,135 @@ function collectDocumentCompletions(document) {
     functions: [...functions],
     variables: [...variables]
   };
+}
+
+/**
+ * Scan a document for navigable symbols. Shared by the Outline
+ * (document symbols) and the workspace symbol provider (`Ctrl+T`),
+ * so the two views always stay consistent.
+ *
+ * @param {vscode.TextDocument} document
+ * @returns {Array<{ name: string, detail: string, kind: vscode.SymbolKind, range: vscode.Range, selection: vscode.Range }>}
+ */
+function collectDocumentSymbols(document) {
+  /** @type {Array<{ name: string, detail: string, kind: vscode.SymbolKind, range: vscode.Range, selection: vscode.Range }>} */
+  const symbols = [];
+  const functionRe =
+    /^\s*function(?:\s+(?:extern|static))?(?:\s+(?:long|double|string|void|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
+  const domainRe = /^\s*domain\s+([\w.]+)\s+([A-Za-z_][\w.]*)/i;
+  const tableRe = /^\s*table\s+(t[\w.]+)/i;
+  const sectionRe =
+    /^\s*((?:declaration|before\.program|after\.program|on\.error|main\.table\.io|functions)\s*:|(?:field|form|group|choice|zoom\.from)\.[\w.*]+\s*:)/i;
+  const externRe =
+    /^\s*extern\s+(?:long|double|boolean|string|domain\s+[\w.]+)\s+([A-Za-z_][\w.]*)/i;
+  const labelRe = /^\s*([A-Za-z][\w.]*)\s*:\s*$/;
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const line = document.lineAt(i);
+    const text = stripLineComment(line.text);
+    if (!text.trim() || isBlockCommentOnly(text)) {
+      continue;
+    }
+
+    let m = functionRe.exec(text);
+    if (m) {
+      const name = m[1];
+      const start = i;
+      let end = i;
+      let depth = 0;
+      let seenBrace = false;
+      for (let j = i; j < document.lineCount; j++) {
+        const t = stripLineComment(document.lineAt(j).text);
+        for (const ch of t) {
+          if (ch === '{') {
+            depth++;
+            seenBrace = true;
+          } else if (ch === '}') {
+            depth--;
+          }
+        }
+        if (seenBrace && depth <= 0) {
+          end = j;
+          break;
+        }
+      }
+      const range = new vscode.Range(start, 0, end, document.lineAt(end).text.length);
+      const sel = new vscode.Range(i, m.index, i, m.index + m[0].length);
+      symbols.push({
+        name,
+        detail: 'function',
+        kind: vscode.SymbolKind.Function,
+        range,
+        selection: sel
+      });
+      continue;
+    }
+
+    m = tableRe.exec(text);
+    if (m) {
+      const range = line.range;
+      symbols.push({
+        name: m[1],
+        detail: 'table',
+        kind: vscode.SymbolKind.Struct,
+        range,
+        selection: range
+      });
+      continue;
+    }
+
+    m = domainRe.exec(text);
+    if (m) {
+      const range = line.range;
+      symbols.push({
+        name: m[2],
+        detail: `domain ${m[1]}`,
+        kind: vscode.SymbolKind.Variable,
+        range,
+        selection: range
+      });
+      continue;
+    }
+
+    m = externRe.exec(text);
+    if (m) {
+      const range = line.range;
+      symbols.push({
+        name: m[1],
+        detail: 'extern',
+        kind: vscode.SymbolKind.Variable,
+        range,
+        selection: range
+      });
+      continue;
+    }
+
+    m = sectionRe.exec(text);
+    if (m) {
+      const range = line.range;
+      symbols.push({
+        name: m[1].replace(/:$/, ''),
+        detail: '4GL section',
+        kind: vscode.SymbolKind.Namespace,
+        range,
+        selection: range
+      });
+      continue;
+    }
+
+    m = labelRe.exec(text);
+    if (m && !/^(case|default)$/i.test(m[1])) {
+      const range = line.range;
+      symbols.push({
+        name: m[1],
+        detail: 'label',
+        kind: vscode.SymbolKind.Key,
+        range,
+        selection: range
+      });
+    }
+  }
+  return symbols;
 }
 
 /**
@@ -2499,7 +2641,8 @@ function runDiagnostics(document, collection, cfg, libraryMemory) {
           document,
           i,
           'Baan C WHILE has no "do" keyword: use "while <cond> ... endwhile"',
-          vscode.DiagnosticSeverity.Warning
+          vscode.DiagnosticSeverity.Warning,
+          'while-do'
         )
       );
     }
@@ -2509,7 +2652,8 @@ function runDiagnostics(document, collection, cfg, libraryMemory) {
           document,
           i,
           'Use "step" instead of "by" in Baan C FOR loops',
-          vscode.DiagnosticSeverity.Warning
+          vscode.DiagnosticSeverity.Warning,
+          'for-by'
         )
       );
     }
@@ -2708,12 +2852,16 @@ function findTop(stack, pred) {
  * @param {number} line
  * @param {string} message
  * @param {vscode.DiagnosticSeverity} severity
+ * @param {string} [code] optional diagnostic code (used by quick fixes)
  */
-function diag(document, line, message, severity) {
+function diag(document, line, message, severity, code) {
   const text = document.lineAt(Math.min(line, document.lineCount - 1)).text;
   const range = new vscode.Range(line, 0, line, text.length);
   const d = new vscode.Diagnostic(range, message, severity);
   d.source = 'baanc';
+  if (code) {
+    d.code = code;
+  }
   return d;
 }
 

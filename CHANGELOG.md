@@ -4,6 +4,32 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.8] - 02-08-2026
+
+### Added
+
+- **Workspace symbols**: symbols from all open Baan C files are now searchable with **Go to Symbol in Workspace** (`Ctrl+T`), in addition to the per-file Outline (`Ctrl+Shift+O`).
+- **Status bar quick actions**: a **Baan C** item appears in the status bar while a Baan file is active and opens a Quick Pick with the most useful commands (Format Document, Run Diagnostics, insert templates, manage libraries, open documentation).
+- **Quick Fixes** for two common language-idiom warnings:
+  - `for … by` → **Replace 'by' with 'step'** (`for` loops use `step`)
+  - `while … do` → **Remove 'do'** (Baan C `while` has no `do` keyword)
+- **~140 more built-in API completions** from the official Baan C docs: the full **eMessage Connector** family (`cmf.*`, ~100 functions), **Chart Manager** (`chm.*`, ~35 functions) and **ARTM** (`artm.*`) — total is now 1,125 builtins.
+
+### Changed
+
+- **Docs site generator** (`scripts/build-docs.js`) hardened:
+  - Prose is now HTML-escaped (raw `<`, `>`, `&` can no longer leak through).
+  - Table cells respect code spans and escaped pipes (`\|`) — fixes a broken row in the Configuration guide.
+  - CommonMark-style code fences: 3+ backticks **or** tildes, info strings with spaces, and correct closing rules (same character, at least as long).
+  - Duplicate headings get unique anchor ids (`usage`, `usage-2`, …).
+  - Search results now deep-link to the nearest section anchor, and tables/blockquotes are searchable.
+  - Removed dead code in the client-side router and search.
+
+### Fixed
+
+- ESLint setup modernized: deprecated core formatting rule (`semi`) replaced with `@stylistic/semi`; lint scope extended to `scripts/`; `npm audit` clean.
+- `npm test` script added (runs the library-memory smoke test).
+
 ## [1.0.7] - 23-07-2026
 
 ### Added

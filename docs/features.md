@@ -85,6 +85,11 @@ Catches unmatched or mis-nested block keywords, for example:
 
 With `baanc.diagnostics.strictComments` (default `true`), `|` and `/* */` comments are ignored when analyzing structure.
 
+Two common idiom slips get a dedicated warning **with Quick Fix**:
+
+- `for … by …` → warning “Use `step` instead of `by` in Baan C FOR loops”, Quick Fix **Replace 'by' with 'step'**.
+- `while … do` → warning “Baan C WHILE has no `do` keyword”, Quick Fix **Remove 'do'** (the loop must end with `endwhile`).
+
 ### Naming conventions (Hint severity only)
 
 `baanc.diagnostics.namingConventions` (default `true`).
@@ -119,7 +124,7 @@ Completion items can include:
 
 | Source | Setting | Notes |
 | --- | --- | --- |
-| Built-in APIs (~980+) | `baanc.completion.includeBuiltins` | `db.*`, `dal.*`, strings, dates, HTTP, cURL, SOAP, XML/JSON, dialogs, RDI, parallel, … |
+| Built-in APIs (~1,120+) | `baanc.completion.includeBuiltins` | `db.*`, `dal.*`, strings, dates, HTTP, cURL, SOAP, XML/JSON, dialogs, RDI, parallel, eMessage (`cmf.*`), Chart Manager (`chm.*`), … |
 | Error constants | `baanc.completion.includeErrors` | `ELOCKED`, `EDUPL`, `ENOREC`, … |
 | SQL keywords | `baanc.completion.includeSql` | Embedded select / join / where, … |
 | Preprocessor | `baanc.completion.includePreprocessor` | `#include`, `#define`, … (avoids `##define` duplication) |
@@ -161,10 +166,11 @@ Hover shows context for:
 | **Find All References** | `Shift+F12` | Identifier uses in the **current file** |
 | **Rename Symbol** | `F2` | Rename in the **current file**; guards against renaming builtins/keywords |
 | **Document Highlights** | automatic | Occurrences of the symbol under the cursor |
-| **Document Symbols (Outline)** | Outline view | Functions, domains, tables, 4GL sections |
+| **Document Symbols (Outline)** | `Ctrl+Shift+O` | Functions, domains, tables, 4GL sections in the **current file** |
+| **Workspace Symbols** | `Ctrl+T` | Functions, domains, tables, 4GL sections across **all open Baan files** |
 | **Code Folding** | editor folding | Control blocks, functions, preprocessor regions, 4GL sections |
 
-> **Note:** References and rename are **single-file**, not a full workspace index. Cross-file discovery for libraries is handled via Library memory completions/imports, not via a global rename index.
+> **Note:** References, rename, and document symbols are **single-file**. **Workspace Symbols** (`Ctrl+T`) searches across all *open* Baan files, but there is no persistent workspace index. Cross-file discovery for libraries is handled via Library memory completions/imports, not via a global rename index.
 
 ---
 

@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import stylistic from "@stylistic/eslint-plugin";
 
 export default [
     js.configs.recommended,
@@ -13,14 +14,23 @@ export default [
                 process: "readonly",
                 console: "readonly",
                 setTimeout: "readonly",
-                clearTimeout: "readonly"
+                clearTimeout: "readonly",
+                setInterval: "readonly",
+                clearInterval: "readonly",
+                Buffer: "readonly",
+                __dirname: "readonly",
+                __filename: "readonly"
             }
+        },
+        plugins: {
+            "@stylistic": stylistic
         },
         rules: {
             "curly": "warn",
             "eqeqeq": "warn",
             "no-throw-literal": "warn",
-            "semi": "warn",
+            "semi": "off",
+            "@stylistic/semi": "warn",
             "no-unused-vars": "warn"
         },
     }
