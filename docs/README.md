@@ -9,7 +9,7 @@ Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visua
 | | |
 | --- | --- |
 | **Extension ID** | `AnonymousGCA.baan-c-vscode` |
-| **Version** | 1.0.8 |
+| **Version** | 1.0.9 |
 | **License** | [MIT](../LICENSE) |
 | **Marketplace** | [Baan C VSCode](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) |
 | **Repository** | [GABRYCA/baan-c-vscode](https://github.com/GABRYCA/baan-c-vscode) |

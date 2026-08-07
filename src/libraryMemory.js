@@ -637,7 +637,7 @@ function stripPipeComment(line) {
   let inString = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"' && (i === 0 || line[i - 1] !== '\\')) {
+    if (ch === '"') {
       inString = !inString;
       continue;
     }

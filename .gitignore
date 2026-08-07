@@ -5,3 +5,5 @@ node_modules
 *.vsix
 AlteaIn Baan C VSCode Extension v00.pdf
 AlteaIn Baan C VSCode Extension v00.docx
+tmp-vsix/
+tmp-vsix7/

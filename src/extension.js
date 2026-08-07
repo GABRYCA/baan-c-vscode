@@ -1584,13 +1584,11 @@ function findCallAtPosition(document, position) {
   let argIndex = 0;
   for (let i = text.length - 1; i >= 0; i--) {
     const ch = text[i];
-    // Skip simple string literals (best-effort)
+    // Skip string literals (best-effort). Baan C has no backslash escapes,
+    // so every " simply toggles string state (embedded quotes are doubled "").
     if (ch === '"') {
       i--;
       while (i >= 0 && text[i] !== '"') {
-        if (text[i] === '\\') {
-          i--;
-        }
         i--;
       }
       continue;
@@ -2035,7 +2033,9 @@ function stripLineComment(line) {
   let inString = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"' && (i === 0 || line[i - 1] !== '\\')) {
+    // Baan C has no backslash escapes: every " toggles string state.
+    // Embedded quotes are doubled ("") and balance out by parity.
+    if (ch === '"') {
       inString = !inString;
       continue;
     }
@@ -2079,7 +2079,7 @@ function parenDelta(line) {
   let close = 0;
   for (let i = 0; i < code.length; i++) {
     const ch = code[i];
-    if (ch === '"' && (i === 0 || code[i - 1] !== '\\')) {
+    if (ch === '"') {
       inString = !inString;
       continue;
     }

@@ -131,7 +131,11 @@ More: [docs/troubleshooting.md](./docs/troubleshooting.md).
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
-## [1.0.8] - 02-08-2026
+## [1.0.9] - 07-08-2026
+
+- **Fixed string highlighting**: Baan C has no backslash escapes (embedded quotes are doubled `""`), so `\` is a plain character. It no longer eats the closing `"` and mis-colors the rest of the line, and a real `|` comment after a string is detected again. Diagnostics, formatting, signature-help, and library-memory parsing follow the same rule.
+
+### [1.0.8] - 02-08-2026
 
 - **Workspace symbols**: search symbols across all open Baan files with Go to Symbol in Workspace (`Ctrl+T`).
 - **Status bar quick actions**: click the **Baan C** status bar item for a Quick Pick of the most used commands.

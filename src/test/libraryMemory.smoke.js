@@ -62,7 +62,7 @@ function stripPipeComment(line) {
   let inString = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"' && (i === 0 || line[i - 1] !== '\\')) {
+    if (ch === '"') {
       inString = !inString;
       continue;
     }
@@ -224,5 +224,40 @@ assert.strictEqual(incFns.length, 1);
 assert.strictEqual(incFns[0].name, 'itx.helper');
 assert.strictEqual(incFns[0].isExtern, false);
 assert.strictEqual(detectImportKind('itxadv0000', includeSample), 'include');
+
+// ── string-aware comment stripping (Baan C has no backslash escapes) ─────────
+// In Baan C every `"` toggles string state and embedded quotes are doubled (""),
+// so a backslash is a plain character and must never hide a trailing `|` comment.
+assert.strictEqual(
+  stripPipeComment('msg("C:\\temp\\file.txt") | note'),
+  'msg("C:\\temp\\file.txt") '
+);
+// Backslash immediately before the closing quote still ends the string.
+assert.strictEqual(stripPipeComment('msg("a\\") | note'), 'msg("a\\") ');
+// Doubled quotes ("" = embedded quote) balance out by parity.
+assert.strictEqual(
+  stripPipeComment('"He said ""Hi"" to me" | note'),
+  '"He said ""Hi"" to me" '
+);
+// A `|` inside a string is part of the string, not a comment.
+assert.strictEqual(stripPipeComment('select "a|b" from t | note'), 'select "a|b" from t ');
+// A comment before a string removes the whole line.
+assert.strictEqual(stripPipeComment('| full comment "a\\b"'), '');
+
+// ── function extraction ───────────────────────────────────────────────────────
+const withStr = `
+| library sample
+function extern long util.concat(
+	long i.a,
+	string i.b, | inline note with "C:\\tmp\\x"
+	long i.c)
+{
+	return(0)
+}
+`;
+const strFns = extractExportedFunctions(withStr);
+assert.strictEqual(strFns.length, 1);
+assert.strictEqual(strFns[0].name, 'util.concat');
+assert.strictEqual(strFns[0].isExtern, true);
 
 console.log('libraryMemory smoke tests passed');

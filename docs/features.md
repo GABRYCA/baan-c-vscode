@@ -26,6 +26,8 @@ Colored elements include:
 
 Primitive type keywords do not incorrectly paint the trailing segment of domain-like names (e.g. `txamg.type.long`). Markers such as `TODO` / `FIXME` in comments stay comment-colored.
 
+Baan C string literals have **no backslash escapes**: a `\` inside `"…"` is a plain character, and embedded quotes are written doubled (`""`). Highlighting (and every string-aware parser — diagnostics, formatting, signature help, library-memory import detection) follows that rule, so `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment that follows a string all tokenize correctly.
+
 ---
 
 ## Language configuration

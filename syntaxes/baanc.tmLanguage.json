@@ -123,14 +123,11 @@
     "strings": {
       "patterns": [
         {
+          "comment": "Baan C strings: \"...\". Embedded quotes are doubled (\"\"), there is NO backslash escape, so a backslash is a plain literal character and must never consume the closing quote.",
           "name": "string.quoted.double.baanc",
           "begin": "\"",
           "end": "\"",
           "patterns": [
-            {
-              "name": "constant.character.escape.baanc",
-              "match": "\\\\."
-            },
             {
               "name": "constant.other.placeholder.baanc",
               "match": "%[-+#0 ]*\\d*(?:\\.\\d+)?[sdfegoxX%]"

@@ -4,6 +4,17 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.9] - 07-08-2026
+
+### Fixed
+
+- **String highlighting no longer treats `\` as an escape.** Baan C string literals have **no** backslash escapes — a `\` is a plain character, and embedded quotes are written doubled (`""`). Previously the grammar ate the backslash *and* the next character, so when a `\` sat before the closing `"` it swallowed the closing quote, the string never terminated, and everything after it was mis-colored (and a real `|` comment that followed a string was no longer detected). Now `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment after a string all color correctly.
+- **String-aware parsing aligned to the same rule.** Diagnostics/formatting (`stripLineComment`, `parenDelta`, `findCallAtPosition`), library-memory import detection (`stripPipeComment`), and the smoke test now treat every `"` as a string toggle (doubled quotes balance by parity) instead of heuristically skipping `\"`.
+
+### Changed
+
+- Smoke test (`src/test/libraryMemory.smoke.js`) extended with backslash-in-string and doubled-quote cases.
+
 ## [1.0.8] - 02-08-2026
 
 ### Added
