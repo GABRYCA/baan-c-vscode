@@ -48,8 +48,8 @@ function openDocumentation(context, route) {
   );
 
   docsPanel.iconPath = {
-    light: vscode.Uri.file(path.join(context.extensionPath, 'icons', 'baanc-light-icon.webp')),
-    dark: vscode.Uri.file(path.join(context.extensionPath, 'icons', 'baanc-dark-icon.webp'))
+    light: vscode.Uri.file(path.join(context.extensionPath, 'icons', 'baanc-light-icon.png')),
+    dark: vscode.Uri.file(path.join(context.extensionPath, 'icons', 'baanc-dark-icon.png'))
   };
 
   let html = fs.readFileSync(docsPath, 'utf8');

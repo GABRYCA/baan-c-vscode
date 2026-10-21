@@ -18,6 +18,7 @@ Based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
+- **Marketplace icon rejected**: the extension icon and the language, command, and documentation panel icons were WebP files, which the Marketplace rejects with "The provided icon is not a supported image format. Use a PNG, JPEG, BMP, or ICO image." All icons are now PNG files and `package.json` and `src/docsViewer.js` point to them.
 - **`else if` block accounting**: Baan C treats `else if ... then` as a nested if that needs its own `endif`. Diagnostics no longer report a false `Unmatched "endif"` when a nested `on case` uses this form. Verified against real Baan C DLL sources.
 - Documented the Extension Development Host exit code 134 crash observed on Windows when an installed extension such as GitHub Copilot Chat activates. The isolated launch configuration keeps the development host stable.
 

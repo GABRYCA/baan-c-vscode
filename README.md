@@ -317,6 +317,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
 - **Development tooling updated**: `@types/vscode` 1.140.0, `@types/node` 24.19.2, `esbuild` 0.28.2, and `eslint` 10.13.0. The Node types now match the Node 24 runtime used by current VSCode versions.
 - **Minimum VSCode version** raised to 1.140.0 to match the type definitions.
+- **Marketplace icon fixed**: the extension, language, command, and documentation panel icons are now PNG files instead of WebP, the format the Marketplace accepts.
 - **Debugging made deterministic**: launch configurations now compile first, map `dist/**/*.js` for source-level breakpoints, and provide an isolated mode with `--disable-extensions`.
 - **Fixed `else if` block accounting**: the form needs an additional `endif` compared with `elif`, so nested `on case` code no longer reports a false unmatched `endif`. Verified against real Baan C DLL sources.
 - **Documented the exit code 134 crash** seen when an installed extension such as Copilot Chat activates in the Extension Development Host.
