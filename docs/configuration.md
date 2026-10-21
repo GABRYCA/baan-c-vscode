@@ -15,7 +15,7 @@ Settings take effect for open Baan documents when configuration changes (diagnos
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `baanc.indentSize` | integer (1–16) | `4` | Spaces per indent level when formatting |
+| `baanc.indentSize` | integer (1-16) | `4` | Spaces per indent level when formatting |
 | `baanc.formatOnSave` | boolean | `false` | Format the document automatically on save |
 
 > Editor tab size for Baan files is also defaulted via `configurationDefaults` for `[baanc]` (`editor.tabSize`: 4). Keep `baanc.indentSize` and tab size in sync if you customize either.
@@ -52,8 +52,8 @@ Local symbols (functions, tables declared in the file) are always candidates for
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `baanc.libraryMemory.enabled` | boolean | `true` | Remember functions from opened library/include `.bc` files |
-| `baanc.libraryMemory.maxLibraries` | integer (1–200) | `40` | Max memorized libraries (LRU pruning) |
-| `baanc.libraryMemory.maxFunctionsPerLibrary` | integer (10–2000) | `200` | Cap on functions stored per library |
+| `baanc.libraryMemory.maxLibraries` | integer (1-200) | `40` | Max memorized libraries (LRU pruning) |
+| `baanc.libraryMemory.maxFunctionsPerLibrary` | integer (10-2000) | `200` | Cap on functions stored per library |
 | `baanc.libraryMemory.autoImportOnCompletion` | boolean | `true` | On accepting a memorized completion, insert `#include` or `#pragma used dll` if missing |
 | `baanc.libraryMemory.showImportHints` | boolean | `true` | Information hints + Quick Fix for calls missing the import |
 

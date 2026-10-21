@@ -2,7 +2,7 @@
   "name": "baan-c-vscode",
   "displayName": "Baan C VSCode",
   "description": "Complete language support for Baan C / Infor LN (3GL and 4GL): syntax highlighting, snippets, formatting, block diagnostics, naming hints, 1,120+ built-in completions, library memory with IntelliJ-style auto-import, signature help, references, rename, folding, hovers, symbols, and more",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "publisher": "AnonymousGCA",
   "icon": "icons/baanc-dark.webp",
   "repository": {
@@ -11,7 +11,7 @@
   },
   "license": "MIT",
   "engines": {
-    "vscode": "^1.125.0"
+    "vscode": "^1.140.0"
   },
   "categories": [
     "Programming Languages",
@@ -95,12 +95,12 @@
         "baanc.diagnostics.namingConventions": {
           "type": "boolean",
           "default": true,
-          "description": "Hint when identifiers do not follow Baan/Infor LN naming conventions (lowercase, dots, expressive names). Uses Hint severity only — not errors."
+          "description": "Hint when identifiers do not follow Baan/Infor LN naming conventions (lowercase, dots, expressive names). Uses Hint severity only, not errors."
         },
         "baanc.diagnostics.namingArgPrefixes": {
           "type": "boolean",
           "default": false,
-          "description": "Also hint when function arguments lack i./o./io. prefixes (off by default — can be noisy)"
+          "description": "Also hint when function arguments lack i./o./io. prefixes (off by default, can be noisy)"
         },
         "baanc.completion.includeSql": {
           "type": "boolean",
@@ -120,12 +120,12 @@
         "baanc.completion.includeBuiltins": {
           "type": "boolean",
           "default": true,
-          "description": "Include built-in Baan C / Infor LN API functions in completions (db.*, strip$, message, http.*, curl.*, …)"
+          "description": "Include built-in Baan C / Infor LN API functions in completions (db.*, strip$, message, http.*, curl.*, and more)"
         },
         "baanc.completion.includeErrors": {
           "type": "boolean",
           "default": true,
-          "description": "Include database / ES error constants (ELOCKED, EDUPL, ENOREC, …) in completions"
+          "description": "Include database / ES error constants (ELOCKED, EDUPL, ENOREC, and more) in completions"
         },
         "baanc.libraryMemory.enabled": {
           "type": "boolean",
@@ -149,7 +149,7 @@
         "baanc.libraryMemory.autoImportOnCompletion": {
           "type": "boolean",
           "default": true,
-          "description": "When accepting a completion from a memorized library/include, automatically insert the correct import if missing: #include \"…\" for include scripts (e.g. itxadv0000) or #pragma used dll \"…\" for DLLs (IntelliJ-style)"
+          "description": "When accepting a completion from a memorized library/include, automatically insert the correct import if missing: #include \"...\" for include scripts (e.g. itxadv0000) or #pragma used dll \"...\" for DLLs (IntelliJ-style)"
         },
         "baanc.libraryMemory.showImportHints": {
           "type": "boolean",
@@ -187,7 +187,7 @@
       },
       {
         "command": "baanc.manageLibraryMemory",
-        "title": "Baan C: Manage Memorized Libraries…"
+        "title": "Baan C: Manage Memorized Libraries..."
       },
       {
         "command": "baanc.clearLibraryMemory",
@@ -292,14 +292,14 @@
     "watch": "node esbuild.js --watch",
     "docs:build": "node scripts/build-docs.js",
     "lint": "eslint src scripts",
-    "test": "node src/test/libraryMemory.smoke.js"
+    "test": "node src/test/run-all.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^20.19.43",
-    "@types/vscode": "^1.125.0",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.7.0"
+    "@types/node": "^24.19.2",
+    "@types/vscode": "^1.140.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.13.0"
   }
 }

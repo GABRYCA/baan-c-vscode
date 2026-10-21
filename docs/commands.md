@@ -63,7 +63,7 @@ While a Baan C editor is active, a **Baan C** item appears on the right side of 
 - Manage Memorized Libraries…
 - Open Documentation
 
-The underlying command is `baanc.showQuickActions` (not shown in the Command Palette — it is status-bar only).
+The underlying command is `baanc.showQuickActions` (not shown in the Command Palette - it is status-bar only).
 
 ---
 

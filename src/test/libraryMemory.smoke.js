@@ -4,6 +4,11 @@
  */
 const assert = require('assert');
 
+/**
+ * Convert a script name to the usual `o...` DLL object name.
+ * @param {string} scriptName
+ * @returns {string}
+ */
 function toObjectName(scriptName) {
   const s = scriptName.trim();
   if (!s) {
@@ -15,6 +20,12 @@ function toObjectName(scriptName) {
   return `o${s}`;
 }
 
+/**
+ * Classify a remembered source as an include or a compiled DLL.
+ * @param {string} scriptName
+ * @param {string} [text]
+ * @returns {'include' | 'dll'}
+ */
 function detectImportKind(scriptName, text = '') {
   const base = (scriptName || '').replace(/\.(bc|cl|bcl|script)$/i, '');
   const name = base.replace(/^o/i, '');
@@ -44,6 +55,13 @@ function detectImportKind(scriptName, text = '') {
   return 'include';
 }
 
+/**
+ * Build the target used by the matching import statement.
+ * @param {'include' | 'dll'} kind
+ * @param {string} scriptName
+ * @param {string} objectName
+ * @returns {string}
+ */
 function importTargetFor(kind, scriptName, objectName) {
   if (kind === 'include') {
     return (scriptName || '').replace(/^o/i, '') || scriptName;
@@ -51,6 +69,12 @@ function importTargetFor(kind, scriptName, objectName) {
   return objectName || toObjectName(scriptName);
 }
 
+/**
+ * Render a complete import directive without a trailing newline.
+ * @param {'include' | 'dll'} kind
+ * @param {string} target
+ * @returns {string}
+ */
 function formatImportStatement(kind, target) {
   if (kind === 'include') {
     return `#include "${target}"`;
@@ -58,6 +82,11 @@ function formatImportStatement(kind, target) {
   return `#pragma used dll "${target}"`;
 }
 
+/**
+ * Remove a trailing `|` comment while ignoring pipes inside strings.
+ * @param {string} line
+ * @returns {string}
+ */
 function stripPipeComment(line) {
   let inString = false;
   for (let i = 0; i < line.length; i++) {
@@ -73,6 +102,11 @@ function stripPipeComment(line) {
   return line;
 }
 
+/**
+ * Parse a normalized `function ...` header into name and storage class.
+ * @param {string} header
+ * @returns {{ name: string, isExtern: boolean, isStatic: boolean } | null}
+ */
 function parseFunctionHeader(header) {
   const re =
     /^function(?:\s+(extern|static))?(?:\s+(?:long|double|string|void|boolean|domain\s+[\w.]+))?\s+([A-Za-z_][\w.]*)\s*\(/i;
@@ -88,6 +122,11 @@ function parseFunctionHeader(header) {
   };
 }
 
+/**
+ * Extract function headers from Baan C source, including multi-line headers.
+ * @param {string} fullText
+ * @returns {Array<{ name: string, header: string, isExtern: boolean, isStatic: boolean }>}
+ */
 function extractExportedFunctions(fullText) {
   const text = fullText.replace(/\/\*[\s\S]*?\*\//g, m =>
     m.replace(/[^\n]/g, ' ')

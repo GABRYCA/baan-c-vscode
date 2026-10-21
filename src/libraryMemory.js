@@ -49,14 +49,14 @@ const IMPORT_CODE = {
 
 /**
  * Optional DLL object names for builtins that are not always in the core
- * bshell and typically need `#pragma used dll`. Keep this list small —
+ * bshell and typically need `#pragma used dll`. Keep this list small -
  * many LN installations differ, so we only map well-known optional packages.
  * Keys are lowercase function names or prefixes ending with '.'.
  *
  * @type {Record<string, string>}
  */
 const BUILTIN_DLL_MAP = {
-  // Parallel / IDB helpers (package performance libs — often linked explicitly)
+  // Parallel / IDB helpers (package performance libs - often linked explicitly)
   // Left empty by default; prefix rules below cover optional APIs carefully.
 };
 
@@ -66,12 +66,27 @@ const BUILTIN_DLL_MAP = {
  * @type {Array<{ prefix: string, dll: string, label: string }>}
  */
 const BUILTIN_DLL_PREFIXES = [
-  // None by default — package DLLs vary per installation.
+  // None by default - package DLLs vary per installation.
   // Extension authors / users can rely on library memory for real DLL sources.
 ];
 
 /**
+ * Create the in-memory facade over the persisted library store.
+ * The store is kept in globalState so it survives reloads and deleted
+ * BECS temp files.
  * @param {import('vscode').ExtensionContext} context
+ * @returns {{
+ *   learnFromDocument: (document: import('vscode').TextDocument, opts?: object) => boolean,
+ *   findLibrariesForFunction: (name: string) => MemorizedLibrary[],
+ *   findFunction: (name: string) => ({ name: string, header: string, library: MemorizedLibrary } | null),
+ *   listLibraries: () => MemorizedLibrary[],
+ *   removeLibrary: (id: string) => boolean,
+ *   removeFunction: (libraryId: string, name: string) => boolean,
+ *   setImportKind: (id: string, kind: ImportKind) => boolean,
+ *   clearAll: () => void,
+ *   touch: (id: string) => void,
+ *   stats: { libraries: number, functions: number }
+ * }}
  */
 function createLibraryMemory(context) {
   /** @type {MemoryStore} */
@@ -102,13 +117,17 @@ function createLibraryMemory(context) {
 
   let index = buildIndex();
 
+  /** Save the current store to globalState. */
   function persist() {
     return context.globalState.update(STORAGE_KEY, store);
   }
 
   /**
+   * Extract and remember the exported functions of a Baan C document.
+   * Empty parses never overwrite a library that already has functions.
    * @param {import('vscode').TextDocument} document
    * @param {{ maxLibraries?: number, maxFunctionsPerLibrary?: number, enabled?: boolean }} [opts]
+   * @returns {boolean} True when the store changed or an entry was refreshed.
    */
   function learnFromDocument(document, opts = {}) {
     if (opts.enabled === false) {
@@ -138,7 +157,7 @@ function createLibraryMemory(context) {
     const id = scriptName.toLowerCase();
     const existing = store.libraries.find(l => l.id === id);
 
-    // Only persist real symbols — never wipe a good memory with an empty parse
+    // Only persist real symbols - never wipe a good memory with an empty parse
     // (e.g. mid-edit stub or incomplete BECS buffer).
     if (candidates.length === 0) {
       if (existing && existing.functions.length > 0) {
@@ -197,6 +216,7 @@ function createLibraryMemory(context) {
   }
 
   /**
+   * Drop least recently used libraries above the configured cap.
    * @param {number} [maxLibraries]
    */
   function prune(maxLibraries = 40) {
@@ -208,6 +228,7 @@ function createLibraryMemory(context) {
   }
 
   /**
+   * List every memorized library that exports a function name.
    * @param {string} functionName
    * @returns {MemorizedLibrary[]}
    */
@@ -219,6 +240,7 @@ function createLibraryMemory(context) {
   }
 
   /**
+   * Resolve a function to its most recently seen library.
    * @param {string} functionName
    * @returns {{ name: string, header: string, library: MemorizedLibrary } | null}
    */
@@ -263,13 +285,18 @@ function createLibraryMemory(context) {
     return true;
   }
 
-  /** @returns {MemorizedLibrary[]} */
+  /**
+   * List memorized libraries, most recently seen first.
+   * @returns {MemorizedLibrary[]}
+   */
   function listLibraries() {
     return [...store.libraries].sort((a, b) => b.lastSeen - a.lastSeen);
   }
 
   /**
+   * Remove a library from the store.
    * @param {string} id
+   * @returns {boolean} True when a library was removed.
    */
   function removeLibrary(id) {
     const before = store.libraries.length;
@@ -307,6 +334,7 @@ function createLibraryMemory(context) {
     return true;
   }
 
+  /** Remove every memorized library and persist the empty store. */
   function clearAll() {
     store = { version: 1, libraries: [] };
     index = buildIndex();
@@ -344,6 +372,7 @@ function createLibraryMemory(context) {
 }
 
 /**
+ * Load and migrate the persisted store, falling back to an empty one.
  * @param {import('vscode').ExtensionContext} context
  * @returns {MemoryStore}
  */
@@ -385,6 +414,7 @@ function ensureImportMeta(lib) {
 }
 
 /**
+ * Normalize a library import kind and fill in missing metadata.
  * @param {MemorizedLibrary} lib
  * @returns {ImportKind}
  */
@@ -440,9 +470,11 @@ function detectImportKind(scriptName, text = '') {
 }
 
 /**
+ * Build the target used inside `#include` or `#pragma used dll`.
  * @param {ImportKind} kind
  * @param {string} scriptName
  * @param {string} objectName
+ * @returns {string}
  */
 function importTargetFor(kind, scriptName, objectName) {
   if (kind === 'include') {
@@ -490,7 +522,9 @@ function formatImportDoc(lib) {
 }
 
 /**
+ * Derive the Baan script name from a file or untitled URI.
  * @param {import('vscode').Uri} uri
+ * @returns {string} Script name without extension, or an empty string.
  */
 function scriptNameFromUri(uri) {
   let base;
@@ -600,6 +634,7 @@ function extractExportedFunctions(fullText) {
 }
 
 /**
+ * Parse one `function ...` header into name, storage class, and clean text.
  * @param {string} header
  * @returns {{ name: string, header: string, isExtern: boolean, isStatic: boolean } | null}
  */
@@ -631,7 +666,9 @@ function parseFunctionHeader(header) {
 }
 
 /**
+ * Remove a trailing `|` comment without touching pipes inside strings.
  * @param {string} line
+ * @returns {string}
  */
 function stripPipeComment(line) {
   let inString = false;
@@ -697,7 +734,12 @@ function collectUsedImports(document) {
   return { dlls, includes };
 }
 
-/** @deprecated use collectUsedImports */
+/**
+ * Legacy helper that returns only the DLL names.
+ * @deprecated use collectUsedImports
+ * @param {import('vscode').TextDocument} document
+ * @returns {Set<string>}
+ */
 function collectUsedDlls(document) {
   return collectUsedImports(document).dlls;
 }
@@ -722,8 +764,10 @@ function isDllUsed(used, objectName) {
 }
 
 /**
+ * Check whether an include is present, with or without its `o` prefix.
  * @param {Set<string>} used
  * @param {string} includeName
+ * @returns {boolean}
  */
 function isIncludeUsed(used, includeName) {
   const n = includeName.toLowerCase();
@@ -905,7 +949,7 @@ function findCallSites(document, localFunctionNames) {
   const sites = [];
   /** @type {Set<string>} */
   const reported = new Set();
-  // identifier followed by '(' — Baan dotted names allowed
+  // identifier followed by '(' - Baan dotted names allowed
   const re = /(?<![.\w])([A-Za-z_][\w.]*)\s*\(/g;
 
   for (let i = 0; i < document.lineCount; i++) {

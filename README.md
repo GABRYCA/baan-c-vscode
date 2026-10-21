@@ -5,54 +5,186 @@ Complete language support for Baan C and Infor LN (3GL and 4GL) inside Visual St
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
 
 **Full documentation:** [docs/README.md](./docs/README.md)  
-As well as here: [Github Pages](https://gabryca.github.io/baan-c-vscode)  
-Which's essentially an hosted page of: [docs/index.html](./docs/index.html)
+**Hosted documentation:** [gabryca.github.io/baan-c-vscode](https://gabryca.github.io/baan-c-vscode)  
+**Generated site:** [docs/index.html](./docs/index.html)
 
 | Guide | Description |
 | --- | --- |
 | [Getting started](./docs/getting-started.md) | Install, open files, first steps |
-| [Features](./docs/features.md) | Highlighting, format, diagnostics, navigation, completions |
+| [Features](./docs/features.md) | Highlighting, formatting, diagnostics, navigation, completions |
 | [Configuration](./docs/configuration.md) | All `baanc.*` settings |
-| [Commands](./docs/commands.md) | Command Palette & templates |
+| [Commands](./docs/commands.md) | Command Palette and templates |
 | [Snippets](./docs/snippets.md) | Prefix catalog |
-| [Library memory](./docs/library-memory.md) | BECS-friendly memory & auto-import |
+| [Library memory](./docs/library-memory.md) | BECS-friendly memory and auto-import |
 | [Development](./docs/development.md) | Build, debug, package |
-| [Troubleshooting](./docs/troubleshooting.md) | FAQ & known limits |
+| [Troubleshooting](./docs/troubleshooting.md) | FAQ and known limits |
 
 ---
 
 ## Features
 
-- **Syntax Highlighting**: Comprehensive coloring for keywords, SQL embedded statements, 4GL sections, types, preprocessors, and more.
-- **Code Formatting**: Automatic document formatting (`Shift + Alt + F` or on-save). Perfectly indents conditional blocks, loops, embedded SQL branches (`selectdo`, `selectempty`), and multi-line arguments. Embedded SQL clauses (`select` / `from` / `where` / `and` / …) are aligned so operands share the same column.
-- **Block Diagnostics**: Real-time linting that catches structural errors like unmatched `endif`, `endwhile`, or `endselect` statements. **Quick Fixes** correct common idiom slips: `for … by` → `step` and stray `while … do` (Baan C has no `do` keyword).
-- **Naming Convention Hints**: Soft (Hint-level) suggestions based on Infor LN design principles — lowercase, dots as separators (`my.beautiful.function`), avoid single-letter / `temp` names. Quick Fix can rename across the file. Toggle with `baanc.diagnostics.namingConventions`.
-- **Built-in Completions**: 1,120+ API functions with snippet inserts and hover docs — `db.*`, `dal.*`, strings, dates, SQL, reports, XML/JSON, **HTTP client**, **cURL**, SOAP, digests, BLOBs, dialogs, RDI/dictionary, parallel processing, **eMessage Connector** (`cmf.*`), **Chart Manager** (`chm.*`), and more.
-- **Error Constants**: Completions and hovers for common ES/DB codes (`ELOCKED`, `EDUPL`, `ENOREC`, `EREFERENCE`, …).
-- **Signature Help**: Parameter hints while typing function calls (`Ctrl+Shift+Space`) for builtins and local functions.
-- **Hover Documentation**: Hover over keywords, API functions, error codes, and local functions for definitions and usage notes.
-- **Go to Definition**: Jump to functions, tables, domains, and typed variables declared in the current file (`F12`).
-- **Find All References**: Highlight and list every use of an identifier in the file (`Shift+F12`).
-- **Rename Symbol**: Rename identifiers across the current file (`F2`), with guards against renaming builtins/keywords.
-- **Document Highlights**: Occurrences of the symbol under the cursor are highlighted while editing.
-- **Code Folding**: Fold `if`/`while`/`for`/`select`/`function` blocks, preprocessor regions, and 4GL sections.
-- **Document Symbols (Outline)**: Navigate functions, domains, tables, and 4GL sections in the Outline view.
-- **Workspace Symbols**: Search functions, domains, tables, and 4GL sections across **all open Baan C files** with **Go to Symbol in Workspace** (`Ctrl+T`), in addition to the per-file Outline (`Ctrl+Shift+O`).
-- **Snippets**: Shortcuts like `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, `domain`, and more. Select snippets insert `table.*` (not bare `*`) with linked table name placeholders and column-aligned clauses.
-- **Insert Templates**: Command Palette / context menu — transaction+select and full select skeletons (same `table.*` + aligned clause style).
-- **Status Bar Quick Actions**: While a Baan C file is active, a **Baan C** item appears in the status bar — click it for a Quick Pick of the most used commands (Format Document, Run Diagnostics, insert templates, Manage Memorized Libraries, Open Documentation).
-- **Library Memory (BECS-friendly)**: When you open a library or include `.bc` file, the extension remembers its functions even after BECS closes and deletes the temp file. Those functions appear in completions in other scripts.
-- **IntelliJ-style Auto-Import (include vs pragma)**: Accepting a completion inserts the **correct** import form when missing:
-  - Include scripts (e.g. `itxadv0000`) → `#include "itxadv0000"`
-  - Compiled DLLs (e.g. `tccomdll0200`) → `#pragma used dll "otccomdll0200"`
-  Soft Information hints + Quick Fix cover calls that already exist without the import. You can toggle include/DLL kind in **Manage Memorized Libraries**. Optional builtin DLL mappings stay conservative (never aggressive guessing across LN installations).
-- **Manage Memorized Libraries**: Command Palette actions to inspect, switch import kind (`#include` ↔ `#pragma used dll`), remove individual libraries/functions, or clear all.
+- **Syntax highlighting**: keywords, embedded SQL, 4GL sections, types, preprocessors, strings, comments, and numeric literals.
+- **Code formatting**: document and range formatting (`Shift + Alt + F`), optional format on save. Indents control blocks, loops, functions, and multi-line arguments. Embedded SQL clauses (`select`, `from`, `where`, `and`, and others) are aligned so operands share a column.
+- **Block diagnostics**: real-time checks for unmatched `if`, `while`, `for`, `repeat`, `select`, `on case`, preprocessor regions, and function braces. Quick Fixes cover `for ... by` to `step` and stray `while ... do`.
+- **Naming hints**: Hint-level suggestions based on Infor LN design principles, with lowercase dotted names and no single-letter or `temp` identifiers. Quick Fix can rename across the file. Toggle with `baanc.diagnostics.namingConventions`.
+- **Built-in completions**: 1,125 API functions with snippet inserts and hover docs, including `db.*`, `dal.*`, strings, dates, SQL, reports, XML, JSON, HTTP, cURL, SOAP, digests, BLOBs, dialogs, RDI, parallel processing, eMessage Connector (`cmf.*`), Chart Manager (`chm.*`), and ARTM (`artm.*`).
+- **Error constants**: completions and hovers for common ES and DB codes such as `ELOCKED`, `EDUPL`, `ENOREC`, and `EREFERENCE`.
+- **Signature help**: parameter hints while typing calls (`Ctrl+Shift+Space`) for builtins and local functions.
+- **Hover documentation**: keywords, API functions, error codes, and local function definitions.
+- **Go to Definition**: functions, tables, domains, and typed variables declared in the current file (`F12`).
+- **Find All References**: every use of an identifier in the current file (`Shift+F12`).
+- **Rename Symbol**: rename identifiers across the current file (`F2`), with guards for builtins and keywords.
+- **Document highlights**: occurrences of the symbol under the cursor.
+- **Code folding**: `if`, `while`, `for`, `select`, `function` blocks, preprocessor regions, and 4GL sections.
+- **Document symbols**: functions, domains, tables, and 4GL sections in the Outline view.
+- **Workspace symbols**: search symbols across all open Baan C files with Go to Symbol in Workspace (`Ctrl+T`).
+- **Snippets**: shortcuts such as `if`, `ife`, `while`, `selectf`, `txselect`, `httpget`, `dalgs`, and `domain`.
+- **Insert templates**: transaction with select, and full select skeletons, from the Command Palette or editor context menu.
+- **Status bar quick actions**: a **Baan C** item appears while a Baan C file is active and opens a Quick Pick with the most used commands.
+- **Library memory**: opening a library or include `.bc` file records its exported functions, even after BECS closes and deletes the temporary file. The functions then appear in completions in other scripts.
+- **IntelliJ-style auto-import**: accepting a memorized completion inserts the correct import when it is missing.
+  - Include scripts such as `itxadv0000` use `#include "itxadv0000"`.
+  - Compiled DLLs such as `tccomdll0200` use `#pragma used dll "otccomdll0200"`.
+  Information hints and Quick Fixes cover calls that already exist without the import. The import kind can be overridden in **Manage Memorized Libraries**.
+- **Library manager**: inspect libraries, switch between include and DLL, remove individual libraries or functions, or clear all memory.
 
 ---
 
-## Extension Settings
+## Extension structure
 
-See **[docs/configuration.md](./docs/configuration.md)** for the full reference. Summary:
+```text
+baan-c-vscode/
+├── .vscode/
+│   ├── launch.json              Extension Development Host configs
+│   └── tasks.json               compile and watch tasks
+├── docs/
+│   ├── *.md                     source guides
+│   └── index.html               generated single-file documentation site
+├── icons/                       extension and language icons
+├── scripts/
+│   └── build-docs.js            Markdown to static HTML generator
+├── snippets/
+│   └── baanc.json               snippet catalog
+├── src/
+│   ├── extension.js             activation, providers, parser, formatter, diagnostics
+│   ├── builtins.js              builtin API catalog and lookup tables
+│   ├── libraryMemory.js         persistent library store, imports, manager UI
+│   ├── docsViewer.js            documentation webview host
+│   └── test/
+│       ├── libraryMemory.smoke.js
+│       ├── diagnostics.smoke.js
+│       └── run-all.js           npm test entry point
+├── syntaxes/
+│   └── baanc.tmLanguage.json    TextMate grammar
+├── dist/
+│   └── extension.js             generated bundle, loaded by VSCode
+├── esbuild.js                   bundle script
+├── language-configuration.json  comments, brackets, indentation, word pattern
+├── package.json                 manifest, contributions, scripts
+├── CHANGELOG.md
+└── README.md
+```
+
+### Runtime entry points
+
+| Item | Value |
+| --- | --- |
+| Extension entry (`main`) | `./dist/extension.js` |
+| Source entry | `src/extension.js` |
+| Activation event | `onLanguage:baanc` |
+| Supported extensions | `.bc`, `.cl`, `.bcl`, `.script` |
+| Language id | `baanc` |
+
+---
+
+## Architecture
+
+The extension runs entirely in the VSCode extension host. It does not start a language server, a worker process, or a background indexer. This keeps startup fast and makes the extension a single CommonJS bundle with no runtime dependencies.
+
+### Source modules
+
+| File | Responsibility |
+| --- | --- |
+| `src/extension.js` | `activate` and `deactivate`, provider registration, document parsing, formatting, diagnostics, code actions, and command handlers |
+| `src/builtins.js` | Builtin function metadata, error constants, lookup maps, and signature text |
+| `src/libraryMemory.js` | Persistent library store, import classification, import edits, builtin DLL resolution, and the library manager |
+| `src/docsViewer.js` | Webview panel that hosts the generated documentation site |
+| `scripts/build-docs.js` | Markdown renderer and static site generator for `docs/index.html` |
+
+### Provider map
+
+| Provider | Main behavior |
+| --- | --- |
+| Completion | Keywords, snippets, 4GL sections, SQL, builtins, error constants, document symbols, memorized libraries |
+| Hover | Keyword guides, builtin docs, error descriptions, local function headers, memorized imports |
+| Signature help | Builtin signatures and parameters parsed from local function headers |
+| Definition | Local functions, tables, domains, and typed variables |
+| References | Word-bounded identifier matches in the current file |
+| Rename | Reference edits with guards for keywords and builtins |
+| Document highlights | Identifier occurrences in the current file |
+| Folding | Control blocks, functions, preprocessor regions, 4GL sections |
+| Document symbols | Outline entries for functions, tables, domains, and 4GL sections |
+| Workspace symbols | The same symbol scan across all open Baan C documents |
+| Formatting | Full document and range edits |
+| Code actions | Import fixes, `for ... by` fix, `while ... do` fix, naming rename |
+
+### Parsing model
+
+Baan C mixes 3GL, 4GL sections, embedded SQL, and preprocessor directives. The extension uses a line-based, string-aware parser instead of a full grammar:
+
+- Every `"` toggles string state. Baan C has no backslash escapes and doubled quotes balance by parity.
+- `|` starts a line comment only outside strings.
+- Block comments are masked while preserving line numbers.
+- A stack tracks block openers and closers for diagnostics and folding.
+- Function headers are parsed with focused regular expressions, including multi-line headers.
+- Embedded SQL clauses are recognized by keyword and aligned without reformatting the rest of the line.
+
+This approach handles incomplete code while typing, which is the normal state of an editor buffer. It also avoids a parser dependency and keeps the bundle small. The tradeoff is that cross-file semantic analysis is intentionally limited.
+
+### Diagnostics flow
+
+1. Document changes are debounced.
+2. The block stack reports unmatched or mismatched closers.
+3. Naming checks emit Hint-level diagnostics with quick-fix codes.
+4. Import checks compare calls against memorized libraries and known builtin DLL mappings.
+5. Results replace the previous diagnostic set for that URI.
+
+### Library memory flow
+
+1. A Baan C document is opened or changed.
+2. After a 400 ms debounce, exported functions are extracted and stored in `ExtensionContext.globalState`.
+3. Libraries are pruned with a least-recently-used cap.
+4. Completions look up the function index and attach the correct import edit when needed.
+5. The import kind is chosen from the script name and content:
+   - Names containing `dll` map to `#pragma used dll`.
+   - Classic include names such as `itxadv0000` map to `#include`.
+   - Content with `function extern` maps to a DLL, otherwise to an include.
+6. A manual override in **Manage Memorized Libraries** is preserved.
+
+### Formatting flow
+
+The formatter walks the document line by line and maintains an indentation stack. It preserves blank lines and comments, aligns multi-line function parameters, aligns SQL clause operands, and returns `TextEdit` objects instead of rewriting the whole file. This keeps undo history and cursor behavior predictable.
+
+### Build flow
+
+`esbuild.js` bundles `src/extension.js` into `dist/extension.js`:
+
+| Option | Development | Production |
+| --- | --- | --- |
+| Format | CommonJS | CommonJS |
+| Platform | Node | Node |
+| Bundle | Yes | Yes |
+| Minify | No | Yes |
+| Source map | Yes | No |
+| External | `vscode` | `vscode` |
+
+The production bundle is created by `npm run package` or automatically by `vscode:prepublish` before packaging.
+
+---
+
+## Extension settings
+
+See [docs/configuration.md](./docs/configuration.md) for the full reference. Summary:
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
@@ -61,18 +193,18 @@ See **[docs/configuration.md](./docs/configuration.md)** for the full reference.
 | `baanc.diagnostics.enabled` | `true` | Block-matching diagnostics |
 | `baanc.diagnostics.strictComments` | `true` | Ignore comments when analyzing blocks |
 | `baanc.diagnostics.namingConventions` | `true` | Naming style hints |
-| `baanc.diagnostics.namingArgPrefixes` | `false` | `i.`/`o.`/`io.` arg hints |
+| `baanc.diagnostics.namingArgPrefixes` | `false` | `i.`, `o.`, and `io.` argument hints |
 | `baanc.completion.includeSql` | `true` | SQL keywords in completions |
-| `baanc.completion.includePreprocessor` | `true` | Preprocessor in completions |
+| `baanc.completion.includePreprocessor` | `true` | Preprocessor directives in completions |
 | `baanc.completion.include4gl` | `true` | 4GL section names |
-| `baanc.completion.includeBuiltins` | `true` | Built-in APIs |
+| `baanc.completion.includeBuiltins` | `true` | Builtin APIs |
 | `baanc.completion.includeErrors` | `true` | Error constants |
 | `baanc.libraryMemory.enabled` | `true` | Remember opened libraries |
 | `baanc.libraryMemory.maxLibraries` | `40` | LRU library cap |
 | `baanc.libraryMemory.maxFunctionsPerLibrary` | `200` | Per-library function cap |
-| `baanc.libraryMemory.autoImportOnCompletion` | `true` | Auto `#include` / `#pragma used dll` |
-| `baanc.libraryMemory.showImportHints` | `true` | Missing-import hints + Quick Fix |
-| `baanc.autoImport.builtinsOnCompletion` | `true` | Mapped-builtin pragma on accept |
+| `baanc.libraryMemory.autoImportOnCompletion` | `true` | Automatic `#include` or `#pragma used dll` |
+| `baanc.libraryMemory.showImportHints` | `true` | Missing-import hints and Quick Fix |
+| `baanc.autoImport.builtinsOnCompletion` | `true` | Mapped builtin pragma on accept |
 | `baanc.autoImport.builtinImportHints` | `true` | Soft hints for mapped builtins |
 
 ---
@@ -82,12 +214,14 @@ See **[docs/configuration.md](./docs/configuration.md)** for the full reference.
 | Command | Description |
 | --- | --- |
 | `Baan C: Format Document` | Format the active Baan C file |
-| `Baan C: Run Diagnostics` | Refresh block diagnostics and open the output channel |
-| `Baan C: Insert Select Template` | Insert a full `select` / `selectdo` / `selecterror` skeleton |
-| `Baan C: Insert Transaction + Select Template` | Insert `db.retry.point` + `for update` + commit/abort pattern |
-| `Baan C: Manage Memorized Libraries…` | Inspect, switch include/DLL kind, remove, or list functions |
-| `Baan C: Clear Memorized Libraries` | Wipe all remembered library/include exports |
-| `Baan C: Add Library Import (#include / #pragma used dll)` | Insert the right import for the symbol under the cursor (or choose style + name) |
+| `Baan C: Run Diagnostics` | Refresh diagnostics and open the output channel |
+| `Baan C: Insert Select Template` | Insert a full `select`, `selectdo`, and `selecterror` skeleton |
+| `Baan C: Insert Transaction + Select Template` | Insert `db.retry.point`, `for update`, and the commit or abort pattern |
+| `Baan C: Manage Memorized Libraries...` | Inspect, switch import kind, remove, or list functions |
+| `Baan C: Clear Memorized Libraries` | Remove all remembered library and include exports |
+| `Baan C: Add Library Import (#include / #pragma used dll)` | Insert the correct import for the symbol under the cursor |
+| `Baan C: Open Documentation` | Open the generated documentation site in a webview |
+| `Baan C: Show Quick Actions` | Open the status bar Quick Pick |
 
 Details: [docs/commands.md](./docs/commands.md).
 
@@ -105,69 +239,95 @@ Details: [docs/commands.md](./docs/commands.md).
 
 ```bash
 npm install
-npm run compile              # development bundle → dist/extension.js
+npm run compile              # development bundle with source map
 npm run watch                # rebuild on change
-npx @vscode/vsce package     # production build + .vsix
+npm run lint                 # ESLint over src and scripts
+npm test                     # library-memory and diagnostics smoke tests
+npx @vscode/vsce package     # production build and .vsix
 ```
 
-Then in VS Code: **Extensions: Install from VSIX…** and select the generated `.vsix`.
+Then in VSCode use **Extensions: Install from VSIX...** and select the generated `.vsix`.
 
 Full contributor guide: [docs/development.md](./docs/development.md).
 
 ---
 
-## Known Issues
+## Debugging the extension
 
-- Advanced macro definitions inside block diagnostics might occasionally confuse the linter if blocks are opened/closed in different files.
-- Find References / Rename operate on the **current file** only. **Workspace Symbols** (`Ctrl+T`) search across all *open* Baan files, but there is no persistent workspace index.
-- Library memory classifies sources as include vs DLL by name/content heuristics (`*dll*` → pragma; classic `i…` includes like `itxadv0000` → `#include`). Use **Manage Memorized Libraries** to override if a name is ambiguous. Unusual temp names may need a manual import.
-- Builtin auto-import only runs for APIs with an explicit optional DLL mapping (core bshell functions never force a pragma).
+The repository contains two launch configurations in `.vscode/launch.json`:
+
+| Configuration | Purpose |
+| --- | --- |
+| **Run Extension (isolated)** | Starts the Extension Development Host with `--disable-extensions`. Recommended for daily work |
+| **Run Extension (with installed extensions)** | Starts the host with your installed extensions enabled, for integration checks |
+
+Both configurations compile the extension first (`npm: compile`), load source maps for `dist/**/*.js`, and set `outFiles` so breakpoints in `src/*.js` bind correctly.
+
+### Why isolated mode is the default
+
+On Windows, the Extension Development Host can close immediately after startup with exit code `134` (`SIGABRT`). The host log shows:
+
+```text
+Extension host with pid <pid> exited with code: 134
+[UtilityProcess ... type: extensionHost ...]: crashed with code 134 and reason 'crashed'
+```
+
+This is an Electron and VSCode crash in the extension host process, not a normal window close. In this workspace it reproduced only with installed extensions enabled. A clean profile with `--disable-extensions` stayed open, loaded the development extension, and activated normally. GitHub Copilot Chat matches a known upstream crash signature in `microsoft/vscode#333717`, including an in-memory database fallback in its logs.
+
+Use **Run Extension (isolated)** if you hit this. To keep other extensions but exclude Copilot Chat, add this argument to the second configuration:
+
+```json
+"--disable-extension=github.copilot-chat"
+```
+
+Logs are written under `%APPDATA%\Code\logs\<timestamp>\main.log` and `...\window1\exthost\exthost.log`.
+
+---
+
+## Testing
+
+- `npm test` runs the smoke suite through `src/test/run-all.js`.
+  - `libraryMemory.smoke.js` covers library learning, include and DLL classification, object-name conversion, function header parsing, import detection, and string handling.
+  - `diagnostics.smoke.js` covers block accounting, including the `else if` form that needs an additional `endif`.
+- `npm run lint` runs ESLint 10 with the flat config.
+- `npm run package` creates the production bundle.
+- Manual checks use real Baan C sessions, DLL sources, and include files, including renamed and temporary BECS files.
+
+The smoke tests are intentionally dependency-free so they can run in CI or a fresh clone. The diagnostics test installs a small `vscode` mock and calls the exported `runDiagnostics` function with plain document objects.
+
+---
+
+## Known issues
+
+- Advanced macro definitions can confuse block diagnostics when blocks are opened and closed in different files.
+- Find References and Rename operate on the current file. Workspace Symbols (`Ctrl+T`) search all open Baan C files, but there is no persistent workspace index.
+- Library memory classifies sources as include or DLL by name and content heuristics. Use **Manage Memorized Libraries** to override ambiguous names.
+- Builtin auto-import only runs for APIs with an explicit optional DLL mapping. Core bshell functions never force a pragma.
+- On Windows, an installed extension can crash the Extension Development Host with code 134. Use the isolated launch configuration. See the debugging section above.
 
 More: [docs/troubleshooting.md](./docs/troubleshooting.md).
 
 ---
 
-## Release Notes
+## Release notes
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full history.
 
-## [1.0.9] - 07-08-2026
+### [1.1.0] - 21-10-2026
 
-- **Fixed string highlighting**: Baan C has no backslash escapes (embedded quotes are doubled `""`), so `\` is a plain character. It no longer eats the closing `"` and mis-colors the rest of the line, and a real `|` comment after a string is detected again. Diagnostics, formatting, signature-help, and library-memory parsing follow the same rule.
+- **Development tooling updated**: `@types/vscode` 1.140.0, `@types/node` 24.19.2, `esbuild` 0.28.2, and `eslint` 10.13.0. The Node types now match the Node 24 runtime used by current VSCode versions.
+- **Minimum VSCode version** raised to 1.140.0 to match the type definitions.
+- **Debugging made deterministic**: launch configurations now compile first, map `dist/**/*.js` for source-level breakpoints, and provide an isolated mode with `--disable-extensions`.
+- **Fixed `else if` block accounting**: the form needs an additional `endif` compared with `elif`, so nested `on case` code no longer reports a false unmatched `endif`. Verified against real Baan C DLL sources.
+- **Documented the exit code 134 crash** seen when an installed extension such as Copilot Chat activates in the Extension Development Host.
+- **JSDoc expanded** across the activation, provider, formatting, diagnostics, and library-memory modules, with parameter and return types for editor IntelliSense.
+- **README expanded** with the extension structure, provider map, parsing model, diagnostics flow, library-memory flow, formatting flow, build flow, and debugging notes.
 
-### [1.0.8] - 02-08-2026
+### [1.0.9] - 07-08-2026
 
-- **Workspace symbols**: search symbols across all open Baan files with Go to Symbol in Workspace (`Ctrl+T`).
-- **Status bar quick actions**: click the **Baan C** status bar item for a Quick Pick of the most used commands.
-- **Quick Fixes** for `for … by` → `step` and stray `while … do`.
-- **~140 more builtins** (1,125 total): eMessage Connector (`cmf.*`), Chart Manager (`chm.*`), ARTM (`artm.*`).
-- **Docs site generator hardened**: HTML escaping, table pipes inside code spans, CommonMark fences, unique anchors, deep-linked search results.
-- **Tooling**: ESLint modernized (`@stylistic/semi`, lint covers `scripts/`), `npm test` script, `npm audit` clean.
+- **Fixed string highlighting**: Baan C has no backslash escapes and uses doubled quotes. Strings, trailing `|` comments, diagnostics, formatting, signature help, and library-memory parsing now follow the same rule.
 
-### [1.0.7] - 23-07-2026
-
-- Added `Baan C: Open documentation` command to open the extension documentation.
-- Added `/docs` folder with .md documentation for commands, development, troubleshooting and more.
-- Added `/scripts/build-docs.js` script to generate the documentation as an `index.html` HTML file from `/docs/*.md`.
-- Added Github Action workflow to build the documentation and deploy it to GitHub Pages on every push to `master`.
-- Optimized build process to reduce the size of the extension package and improve performance.
-
-### [1.0.6] - 22-07-2026
-
-- Select snippets and insert templates use `table.*` with linked placeholders and aligned clauses.
-- Document formatter aligns embedded SQL clause keywords so operands share one column.
-
-### [1.0.5] - 21-07-2026
-
-- Library memory for BECS / temp `.bc` workflows; include vs DLL auto-import; manage/clear commands.
-
-### [1.0.4] - 18-07-2026
-
-- 980+ builtins, error constants, signature help, references/rename/highlights, folding, templates.
-
-### [1.0.3] – [1.0.1](./CHANGELOG.md)
-
-Earlier releases: naming hints, initial language support — see changelog.
+Earlier releases: see [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 

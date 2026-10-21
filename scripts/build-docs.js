@@ -79,7 +79,7 @@ function renderInline(text) {
     return stash(`<img src="${escapeHtml(url.trim())}" alt="${escapeHtml(alt)}" loading="lazy" />`);
   });
 
-  // Links [text](url) — rewrite sibling .md links to SPA routes
+  // Links [text](url) - rewrite sibling .md links to SPA routes
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
     let h = href.trim();
     const hashIdx = h.indexOf('#');
@@ -318,7 +318,7 @@ function mdToHtml(md) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Fenced code — CommonMark-style: 3+ backticks or tildes, optional info string
+    // Fenced code - CommonMark-style: 3+ backticks or tildes, optional info string
     const fence = line.match(/^(`{3,}|~{3,})[ \t]*(.*)$/);
     if (fence) {
       const ch = fence[1][0];
@@ -399,7 +399,7 @@ function mdToHtml(md) {
       const raw = h[2].trim();
       // strip trailing # anchors sometimes used in md
       const text = raw.replace(/\s+#+\s*$/, '');
-      // unique anchor id — duplicate headings get -2, -3, … suffixes
+      // unique anchor id - duplicate headings get -2, -3, … suffixes
       let id = slugify(text) || 'section';
       const idBase = id;
       let n = 2;
@@ -558,10 +558,10 @@ const html = `<!DOCTYPE html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark light" />
-  <meta name="description" content="Documentation for ${escapeHtml(displayName)} — language support for Baan C / Infor LN in Visual Studio Code." />
+  <meta name="description" content="Documentation for ${escapeHtml(displayName)} - language support for Baan C / Infor LN in Visual Studio Code." />
   <title>${escapeHtml(displayName)} Documentation</title>
   <style>
-/* ── Reset & tokens ─────────────────────────────────────────── */
+/* ── Reset and tokens ───────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
@@ -1308,7 +1308,7 @@ ${navHtml}
   var currentId = '';
   var activeHit = -1;
 
-  // Theme (never throw — a failure here must not block content rendering)
+  // Theme (never throw - a failure here must not block content rendering)
   function getPreferredTheme() {
     try {
       var stored = localStorage.getItem('baanc-docs-theme');
@@ -1407,7 +1407,7 @@ ${navHtml}
         location.hash = next;
       }
     } catch (e) {
-      // Webview may block history API — ignore; routeState is source of truth
+      // Webview may block history API - ignore; routeState is source of truth
     }
   }
 
@@ -1537,7 +1537,7 @@ ${navHtml}
     if (!article) {
       return;
     }
-    // Content first — never let post-render hooks wipe a successful paint
+    // Content first - never let post-render hooks wipe a successful paint
     article.innerHTML =
       '<div class="page-meta"><span class="page-badge">' + escapeHtml(page.group) + '</span></div>' +
       (page.html || '') +
@@ -1585,7 +1585,7 @@ ${navHtml}
   }
 
   /**
-   * Capture all internal navigation. Do not rely on hashchange — VS Code webviews
+   * Capture all internal navigation. Do not rely on hashchange - VS Code webviews
    * often swallow or ignore hash-only navigations on <a href="#/...">.
    */
   document.addEventListener('click', function (e) {
@@ -1612,7 +1612,7 @@ ${navHtml}
       return;
     }
 
-    // External http(s) — let webview / browser handle (or open)
+    // External http(s) - let webview / browser handle (or open)
     if (href.indexOf('http://') === 0 || href.indexOf('https://') === 0 || href.indexOf('mailto:') === 0) {
       return;
     }
@@ -1634,7 +1634,7 @@ ${navHtml}
       return;
     }
 
-    // Relative ./foo.md style (rewritten at build) — already data-route usually
+    // Relative ./foo.md style (rewritten at build) - already data-route usually
   }, true);
 
   // Browser-only fallback when user uses back/forward
@@ -1692,7 +1692,7 @@ ${navHtml}
       }
       // also match title
       if (page.title.toLowerCase().indexOf(q) >= 0 && !hits.some(function (h) { return h.id === page.id && h.line === page.title; })) {
-        hits.unshift({ id: page.id, title: page.title, line: page.title + ' — open page', anchor: '' });
+        hits.unshift({ id: page.id, title: page.title, line: page.title + ' - open page', anchor: '' });
       }
     });
     hits = hits.slice(0, 20);
@@ -1781,7 +1781,7 @@ ${navHtml}
     });
   }
 
-  // Boot — prefer explicit start route injected by webview host, else hash, else overview
+  // Boot - prefer explicit start route injected by webview host, else hash, else overview
   var bootRoute = (typeof window.__BAANC_DOCS_START__ === 'string' && window.__BAANC_DOCS_START__)
     ? window.__BAANC_DOCS_START__
     : '';

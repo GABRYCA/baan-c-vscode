@@ -1,4 +1,4 @@
-# Baan C VSCode — Documentation
+# Baan C VSCode - Documentation
 
 Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visual Studio Code.
 
@@ -9,11 +9,11 @@ Complete language support for **Baan C** and **Infor LN** (3GL and 4GL) in Visua
 | | |
 | --- | --- |
 | **Extension ID** | `AnonymousGCA.baan-c-vscode` |
-| **Version** | 1.0.9 |
+| **Version** | 1.1.0 |
 | **License** | [MIT](../LICENSE) |
 | **Marketplace** | [Baan C VSCode](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) |
 | **Repository** | [GABRYCA/baan-c-vscode](https://github.com/GABRYCA/baan-c-vscode) |
-| **Engine** | VS Code `^1.125.0` |
+| **Engine** | VS Code `^1.140.0` |
 
 ---
 
@@ -66,11 +66,11 @@ You can also set the language mode manually: **Command Palette → “Change Lan
 
 ## Quick links for users
 
-1. Install [Visual Studio Code](./getting-started.md#install-visual-studio-code) (path `C:\apps\VSCODE` for LN) and set **Development Parameters = VSCODE** in LN — see [Getting started](./getting-started.md).
+1. Install [Visual Studio Code](./getting-started.md#install-visual-studio-code) (path `C:\apps\VSCODE` for LN) and set **Development Parameters = VSCODE** in LN - see [Getting started](./getting-started.md).
 2. Install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode) or from a `.vsix`.
-3. Open a `.bc` file — highlighting, completions, and diagnostics start immediately.
+3. Open a `.bc` file - highlighting, completions, and diagnostics start immediately.
 4. Format with `Shift+Alt+F` (Windows/Linux) or `Shift+Option+F` (macOS).
-5. For BECS workflows, open library/include files once so **Library memory** can learn them — see [Library memory](./library-memory.md).
+5. For BECS workflows, open library/include files once so **Library memory** can learn them - see [Library memory](./library-memory.md).
 
 ---
 
@@ -89,4 +89,4 @@ Details: [Development](./development.md).
 
 ## License
 
-MIT — see [LICENSE](../LICENSE).
+MIT - see [LICENSE](../LICENSE).

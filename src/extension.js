@@ -1,3 +1,12 @@
+/**
+ * Baan C / Infor LN language support for Visual Studio Code.
+ *
+ * Registers language providers (completion, hover, definition, references,
+ * rename, symbols, folding, formatting, diagnostics, code actions) and the
+ * extension commands. Everything runs in the extension host; there is no
+ * separate language server process.
+ */
+
 const path = require('path');
 const vscode = require('vscode');
 const {
@@ -336,10 +345,12 @@ function activate(context) {
         const seen = new Set();
 
         /**
+         * Create a completion item and skip duplicates by label and detail.
          * @param {string} label
          * @param {vscode.CompletionItemKind} kind
          * @param {string} detail
          * @param {{ insertText?: string|vscode.SnippetString, range?: vscode.Range, filterText?: string, sortText?: string, documentation?: string, additionalTextEdits?: vscode.TextEdit[] }} [opts]
+         * @returns {vscode.CompletionItem | undefined}
          */
         const add = (label, kind, detail, opts = {}) => {
           const key = `${label}||${detail}`;
@@ -1192,8 +1203,9 @@ function activate(context) {
   );
   statusBarItem.name = 'Baan C';
   statusBarItem.text = '$(symbol-misc) Baan C';
-  statusBarItem.tooltip = 'Baan C / Infor LN — click for quick actions';
+  statusBarItem.tooltip = 'Baan C / Infor LN (click for quick actions)';
   statusBarItem.command = 'baanc.showQuickActions';
+  /** Show the status bar item only while a Baan C document is active. */
   const updateStatusBar = () => {
     const editor = vscode.window.activeTextEditor;
     if (editor && editor.document.languageId === 'baanc') {
@@ -1463,8 +1475,14 @@ function activate(context) {
   );
 }
 
+/** No explicit teardown: VS Code disposes every item registered in context.subscriptions. */
 function deactivate() {}
 
+/**
+ * Read the current `baanc.*` settings into a snapshot used by providers.
+ * The snapshot is refreshed when the configuration changes.
+ * @returns {object} Current extension configuration.
+ */
 function loadConfig() {
   const c = vscode.workspace.getConfiguration('baanc');
   return {
@@ -1636,6 +1654,7 @@ function computeFoldingRanges(document) {
   let inBlockComment = false;
 
   /**
+   * Add a fold range when it spans more than one line.
    * @param {number} start
    * @param {number} end
    * @param {vscode.FoldingRangeKind} [kind]
@@ -1762,6 +1781,7 @@ function computeFoldingRanges(document) {
 }
 
 /**
+ * Close the nearest open fold of the requested type.
  * @param {{ type: string, line: number }[]} stack
  * @param {vscode.FoldingRange[]} ranges
  * @param {number} endLine
@@ -2027,7 +2047,9 @@ function collectDocumentSymbols(document) {
 }
 
 /**
+ * Remove a trailing `|` line comment while ignoring pipes inside strings.
  * @param {string} line
+ * @returns {string}
  */
 function stripLineComment(line) {
   let inString = false;
@@ -2047,7 +2069,9 @@ function stripLineComment(line) {
 }
 
 /**
+ * Tell whether a line belongs to a `/* ... *\/` block comment.
  * @param {string} text
+ * @returns {boolean}
  */
 function isBlockCommentOnly(text) {
   const t = text.trim();
@@ -2055,20 +2079,25 @@ function isBlockCommentOnly(text) {
 }
 
 /**
+ * Replace block comments with spaces while keeping line numbers stable.
  * @param {string} fullText
+ * @returns {string}
  */
 function maskBlockComments(fullText) {
   return fullText.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
 }
 
 /**
+ * Return a line with the trailing comment removed and whitespace trimmed.
  * @param {string} line
+ * @returns {string}
  */
 function codeOf(line) {
   return stripLineComment(line).trim();
 }
 
 /**
+ * Count opening and closing parentheses outside strings and comments.
  * @param {string} line
  * @returns {{ open: number, close: number, delta: number }}
  */
@@ -2096,8 +2125,10 @@ function parenDelta(line) {
 }
 
 /**
+ * Column of the first function parameter, used to align continuation lines.
  * @param {string} raw
  * @param {number} fallback
+ * @returns {number}
  */
 function firstParamColumn(raw, fallback) {
   const openIdx = raw.indexOf('(');
@@ -2173,20 +2204,26 @@ function formatSqlClauseAligned(trimmed) {
 }
 
 /**
+ * Check whether a trimmed line opens a `selectdo` / `selectempty` branch.
  * @param {string} lower
+ * @returns {boolean}
  */
 function isSelectBranch(lower) {
   return /^(selectdo|selectempty|selecteos|selecterror)\b/.test(lower);
 }
 
 /**
+ * Check whether a trimmed line starts a function declaration.
  * @param {string} lower
+ * @returns {boolean}
  */
 function isFunctionHeaderStart(lower) {
   return /^function\b/.test(lower);
 }
 
 /**
+ * Re-indent control blocks, functions, and embedded SQL clauses.
+ * Returns minimal text edits so the document keeps its line endings.
  * @param {vscode.TextDocument} document
  * @param {number} indentSize
  * @returns {vscode.TextEdit[]}
@@ -2429,11 +2466,8 @@ function formatDocument(document, indentSize) {
 }
 
 /**
- * @param {vscode.TextDocument} document
- * @param {vscode.DiagnosticCollection} collection
- * @param {ReturnType<typeof loadConfig>} cfg
- */
-/**
+ * Refresh block, naming, and missing-import diagnostics for a document.
+ * Replaces the previous diagnostics for the same URI.
  * @param {vscode.TextDocument} document
  * @param {vscode.DiagnosticCollection} collection
  * @param {ReturnType<typeof loadConfig>} cfg
@@ -2523,6 +2557,14 @@ function runDiagnostics(document, collection, cfg, libraryMemory) {
       } else {
         stack.push({ type: 'if-pending', line: i, text: code });
       }
+    } else if (/^else\s+if\b/.test(lower)) {
+      // Baan C treats `else if ... then` as a nested if and requires an
+      // additional endif (unlike the newer single-keyword `elif`).
+      stack.push({
+        type: /\bthen\b/.test(lower) ? 'if' : 'if-pending',
+        line: i,
+        text: code
+      });
     } else if (/^while\b/.test(lower)) {
       stack.push({ type: 'while', line: i, text: code });
     } else if (/^for\b/.test(lower)) {
@@ -2630,7 +2672,7 @@ function runDiagnostics(document, collection, cfg, libraryMemory) {
         diag(
           document,
           i,
-          'Baan C functions are closed with "}" — there is no "endfunction" keyword',
+          'Baan C functions are closed with "}" - there is no "endfunction" keyword',
           vscode.DiagnosticSeverity.Warning
         )
       );
@@ -2719,7 +2761,7 @@ function runDiagnostics(document, collection, cfg, libraryMemory) {
 /**
  * Soft (Information) hints when a call matches a memorized library export
  * or a builtin with a known optional DLL, but the file lacks the pragma.
- * Not errors — LN installations differ and auto-import must stay non-aggressive.
+ * Not errors - LN installations differ and auto-import must stay non-aggressive.
  *
  * @param {vscode.TextDocument} document
  * @param {vscode.Diagnostic[]} diagnostics
@@ -2773,7 +2815,7 @@ function collectImportDiagnostics(document, diagnostics, cfg, libraryMemory) {
       }
     }
 
-    // Optional builtin DLL (only when explicitly mapped — never guess)
+    // Optional builtin DLL (only when explicitly mapped - never guess)
     if (cfg.autoImportBuiltinHints) {
       const builtin = BUILTIN_BY_NAME.get(site.name.toLowerCase());
       const dllInfo = resolveBuiltinDll(site.name, builtin);
@@ -2800,6 +2842,7 @@ function collectImportDiagnostics(document, diagnostics, cfg, libraryMemory) {
 }
 
 /**
+ * Match a closing keyword with the top of the block stack, or report it.
  * @param {BlockFrame[]} stack
  * @param {vscode.Diagnostic[]} diagnostics
  * @param {vscode.TextDocument} document
@@ -2835,8 +2878,10 @@ function matchClose(stack, diagnostics, document, line, expectedTypes, closerNam
 }
 
 /**
+ * Find the nearest stack frame that matches a predicate.
  * @param {BlockFrame[]} stack
  * @param {(t: string) => boolean} pred
+ * @returns {BlockFrame | null}
  */
 function findTop(stack, pred) {
   for (let i = stack.length - 1; i >= 0; i--) {
@@ -2848,11 +2893,13 @@ function findTop(stack, pred) {
 }
 
 /**
+ * Build a diagnostic that spans a whole line and carries the `baanc` source.
  * @param {vscode.TextDocument} document
  * @param {number} line
  * @param {string} message
  * @param {vscode.DiagnosticSeverity} severity
  * @param {string} [code] optional diagnostic code (used by quick fixes)
+ * @returns {vscode.Diagnostic}
  */
 function diag(document, line, message, severity, code) {
   const text = document.lineAt(Math.min(line, document.lineCount - 1)).text;
@@ -2866,8 +2913,10 @@ function diag(document, line, message, severity, code) {
 }
 
 /**
+ * Create a hover with Markdown code blocks enabled.
  * @param {string} md
  * @param {vscode.Range} range
+ * @returns {vscode.Hover}
  */
 function makeHover(md, range) {
   const m = new vscode.MarkdownString(md);
@@ -2876,16 +2925,20 @@ function makeHover(md, range) {
 }
 
 /**
+ * Escape a string for safe use inside a regular expression.
  * @param {string} s
+ * @returns {string}
  */
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
+ * Delay a call until the same debounced function has been idle for `ms`.
  * @template T
  * @param {(arg: T) => void} fn
  * @param {number} ms
+ * @returns {(arg: T) => void}
  */
 function debounce(fn, ms) {
   let t = null;
@@ -2902,7 +2955,7 @@ function debounce(fn, ms) {
 const TEMP_NAME_RE = /^(temp|tmp|tmp\d+|temp\d+|dummy)$/i;
 const TYPE_IN_NAME_RE =
   /^(string|long|double|boolean|table|domain)\./i;
-/** 4GL sections / reserved labels — never rename-check */
+/** 4GL sections / reserved labels - never rename-check */
 const RESERVED_NAME_RE =
   /^(declaration|before|after|on|when|field|form|group|choice|zoom|main|functions|init|read|check|ref|domain|selection|default|case)$/i;
 
@@ -3004,7 +3057,7 @@ function shouldSkipNaming(name) {
   if (RESERVED_NAME_RE.test(name.split('.')[0])) {
     // only skip pure section keywords; allow before.program as declaration label etc.
     if (!name.includes('.') || /^(before|after|on|when|field|form|group|choice|zoom|main)\./i.test(name)) {
-      // 4GL style section names — skip if looks like section (ends handled elsewhere)
+      // 4GL style section names - skip if looks like section (ends handled elsewhere)
       if (
         /^(before|after|on|when|field|form|group|choice|zoom\.from|main\.table\.io|functions|declaration)(\.|$)/i.test(
           name
@@ -3018,6 +3071,7 @@ function shouldSkipNaming(name) {
 }
 
 /**
+ * Find word-bounded occurrences of an identifier outside strings.
  * @param {vscode.TextDocument} document
  * @param {string} name
  * @returns {vscode.Range[]}
@@ -3063,6 +3117,7 @@ function collectNamingDiagnostics(document, diagnostics, cfg) {
   const seen = new Set();
 
   /**
+   * Check one identifier against the Baan naming rules and emit a hint.
    * @param {string} name
    * @param {number} line
    * @param {number} col
@@ -3109,7 +3164,7 @@ function collectNamingDiagnostics(document, diagnostics, cfg) {
       pushNamingDiag(
         diagnostics,
         range,
-        `Naming: avoid single-letter names like '${name}' — use an expressive name (e.g. work.center)`,
+        `Naming: avoid single-letter names like '${name}' - use an expressive name (e.g. work.center)`,
         NAMING_CODE.singleLetter
       );
       return;
@@ -3120,7 +3175,7 @@ function collectNamingDiagnostics(document, diagnostics, cfg) {
       pushNamingDiag(
         diagnostics,
         range,
-        `Naming: avoid temporary names like '${name}' — use an expressive name`,
+        `Naming: avoid temporary names like '${name}' - use an expressive name`,
         NAMING_CODE.temp
       );
       return;
@@ -3198,6 +3253,7 @@ function collectNamingDiagnostics(document, diagnostics, cfg) {
 }
 
 /**
+ * Walk a comma-separated argument list and report its identifiers.
  * @param {string} argsText
  * @param {(name: string, isRef: boolean) => void} cb
  */
@@ -3228,6 +3284,7 @@ function parseFunctionArgs(argsText, cb) {
 }
 
 /**
+ * Append a Hint-level naming diagnostic with a quick-fix code.
  * @param {vscode.Diagnostic[]} diagnostics
  * @param {vscode.Range} range
  * @param {string} message
@@ -3247,5 +3304,7 @@ function pushNamingDiag(diagnostics, range, message, code) {
 module.exports = {
   activate,
   deactivate,
-  suggestBaanName
+  suggestBaanName,
+  // Exposed for the lightweight diagnostics smoke test.
+  runDiagnostics
 };

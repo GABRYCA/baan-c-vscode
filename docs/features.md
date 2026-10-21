@@ -14,19 +14,19 @@ Colored elements include:
 | --- | --- |
 | Comments | `\| line comment`, `/* block */` |
 | Preprocessor | `#include`, `#define`, `#pragma`, `#ifdef`, … |
-| Strings & numbers | `"…"`, numeric literals |
+| Strings and numbers | `"…"`, numeric literals |
 | Booleans | `true` / `false` style tokens where applicable |
 | Keywords | `if` / `then` / `endif`, `while`, `for`, `function`, SQL verbs, … |
 | Types | `long`, `double`, `string`, `boolean`, `table`, `domain` |
 | Storage | `extern`, `static`, `common` |
 | 4GL sections | `declaration:`, `before.program:`, `field.…`, `choice.…`, … |
-| Function definitions & calls | `function name(…)` and `name(…)` |
+| Function definitions and calls | `function name(…)` and `name(…)` |
 | Table fields | `table.field` patterns |
 | Operators | arithmetic, comparison, assignment |
 
 Primitive type keywords do not incorrectly paint the trailing segment of domain-like names (e.g. `txamg.type.long`). Markers such as `TODO` / `FIXME` in comments stay comment-colored.
 
-Baan C string literals have **no backslash escapes**: a `\` inside `"…"` is a plain character, and embedded quotes are written doubled (`""`). Highlighting (and every string-aware parser — diagnostics, formatting, signature help, library-memory import detection) follows that rule, so `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment that follows a string all tokenize correctly.
+Baan C string literals have **no backslash escapes**: a `\` inside `"…"` is a plain character, and embedded quotes are written doubled (`""`). Highlighting (and every string-aware parser - diagnostics, formatting, signature help, library-memory import detection) follows that rule, so `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment that follows a string all tokenize correctly.
 
 ---
 
@@ -108,7 +108,7 @@ Soft suggestions aligned with Infor LN style:
 These never report as Errors/Warnings by design.
 
 Optional argument-prefix hints (`i.` / `o.` / `io.` on function parameters):  
-`baanc.diagnostics.namingArgPrefixes` (default `false` — can be noisy).
+`baanc.diagnostics.namingArgPrefixes` (default `false` - can be noisy).
 
 ### Import hints (Information)
 
@@ -134,7 +134,7 @@ Completion items can include:
 | Local functions / tables | always | Parsed from the current document |
 | Memorized library exports | `baanc.libraryMemory.enabled` | Survives temp-file deletion |
 
-Accepting a memorized (or mapped builtin) completion can auto-insert the correct import when enabled — see [Library memory](./library-memory.md).
+Accepting a memorized (or mapped builtin) completion can auto-insert the correct import when enabled - see [Library memory](./library-memory.md).
 
 ---
 
@@ -180,7 +180,7 @@ Hover shows context for:
 
 ### Snippets
 
-User snippets in `snippets/baanc.json` — type a prefix and accept.  
+User snippets in `snippets/baanc.json` - type a prefix and accept.  
 Catalog: [Snippets](./snippets.md).
 
 Highlights:
@@ -203,7 +203,7 @@ Also available from the editor **context menu** on Baan files.
 
 ---
 
-## Library memory & auto-import
+## Library memory and auto-import
 
 Summarized here; full guide: [Library memory](./library-memory.md).
 
@@ -215,7 +215,7 @@ Summarized here; full guide: [Library memory](./library-memory.md).
 4. Soft hints + Quick Fix cover calls that already exist without an import.
 5. Manage via **Baan C: Manage Memorized Libraries…** (inspect, switch kind, remove, clear).
 
-Builtin auto-import only applies when an API has an **explicit** optional DLL mapping — never guesses package DLLs across LN installations.
+Builtin auto-import only applies when an API has an **explicit** optional DLL mapping - never guesses package DLLs across LN installations.
 
 ---
 

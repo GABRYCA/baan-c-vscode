@@ -4,11 +4,28 @@ All notable changes to the "baan-c-support" extension will be documented in this
 
 Based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.1.0] - 21-10-2026
+
+### Changed
+
+- **Development tooling updated** to current versions: `@types/vscode` 1.140.0, `@types/node` 24.19.2, `esbuild` 0.28.2, and `eslint` 10.13.0. The Node types now match the Node 24 runtime used by current VSCode versions.
+- **Minimum VSCode version** raised to 1.140.0 to match `@types/vscode`.
+- **Debugging made deterministic**: `.vscode/launch.json` now compiles before launch, maps `dist/**/*.js` for source-level breakpoints, and provides an isolated configuration with `--disable-extensions`.
+- **Task configuration simplified**: removed obsolete TypeScript watch tasks and kept `npm: compile` and `npm: watch`.
+- **README expanded** with the extension structure, provider map, parsing model, diagnostics flow, library-memory flow, formatting flow, build flow, and debugging notes.
+- **JSDoc expanded** across the activation, provider, formatting, diagnostics, and library-memory modules, including parameter and return types.
+- **Smoke tests expanded**: a diagnostics test now runs alongside the library-memory test, and `npm test` runs both through `src/test/run-all.js`.
+
+### Fixed
+
+- **`else if` block accounting**: Baan C treats `else if ... then` as a nested if that needs its own `endif`. Diagnostics no longer report a false `Unmatched "endif"` when a nested `on case` uses this form. Verified against real Baan C DLL sources.
+- Documented the Extension Development Host exit code 134 crash observed on Windows when an installed extension such as GitHub Copilot Chat activates. The isolated launch configuration keeps the development host stable.
+
 ## [1.0.9] - 07-08-2026
 
 ### Fixed
 
-- **String highlighting no longer treats `\` as an escape.** Baan C string literals have **no** backslash escapes — a `\` is a plain character, and embedded quotes are written doubled (`""`). Previously the grammar ate the backslash *and* the next character, so when a `\` sat before the closing `"` it swallowed the closing quote, the string never terminated, and everything after it was mis-colored (and a real `|` comment that followed a string was no longer detected). Now `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment after a string all color correctly.
+- **String highlighting no longer treats `\` as an escape.** Baan C string literals have **no** backslash escapes: a `\` is a plain character, and embedded quotes are written doubled (`""`). Previously the grammar ate the backslash *and* the next character, so when a `\` sat before the closing `"` it swallowed the closing quote, the string never terminated, and everything after it was mis-colored (and a real `|` comment that followed a string was no longer detected). Now `"C:\temp\file.txt"`, `"He said ""Hi"" to me"`, and a `|` comment after a string all color correctly.
 - **String-aware parsing aligned to the same rule.** Diagnostics/formatting (`stripLineComment`, `parenDelta`, `findCallAtPosition`), library-memory import detection (`stripPipeComment`), and the smoke test now treat every `"` as a string toggle (doubled quotes balance by parity) instead of heuristically skipping `\"`.
 
 ### Changed
@@ -24,13 +41,13 @@ Based on [Keep a Changelog](http://keepachangelog.com/).
 - **Quick Fixes** for two common language-idiom warnings:
   - `for … by` → **Replace 'by' with 'step'** (`for` loops use `step`)
   - `while … do` → **Remove 'do'** (Baan C `while` has no `do` keyword)
-- **~140 more built-in API completions** from the official Baan C docs: the full **eMessage Connector** family (`cmf.*`, ~100 functions), **Chart Manager** (`chm.*`, ~35 functions) and **ARTM** (`artm.*`) — total is now 1,125 builtins.
+- **~140 more built-in API completions** from the official Baan C docs: the full **eMessage Connector** family (`cmf.*`, ~100 functions), **Chart Manager** (`chm.*`, ~35 functions) and **ARTM** (`artm.*`), for a total of 1,125 builtins.
 
 ### Changed
 
 - **Docs site generator** (`scripts/build-docs.js`) hardened:
-  - Prose is now HTML-escaped (raw `<`, `>`, `&` can no longer leak through).
-  - Table cells respect code spans and escaped pipes (`\|`) — fixes a broken row in the Configuration guide.
+  - Prose is now HTML-escaped (raw angle brackets and the ampersand character can no longer leak through).
+  - Table cells respect code spans and escaped pipes (`\|`), fixing a broken row in the Configuration guide.
   - CommonMark-style code fences: 3+ backticks **or** tildes, info strings with spaces, and correct closing rules (same character, at least as long).
   - Duplicate headings get unique anchor ids (`usage`, `usage-2`, …).
   - Search results now deep-link to the nearest section anchor, and tables/blockquotes are searchable.
@@ -84,7 +101,7 @@ Based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- Large expansion of built-in API completions (HTTP client, cURL, SOAP, digests, BLOBs, programmable dialogs/charts, RDI/dictionary, parallel processing, keyfields, selection helpers, images, composite sessions, random, varargs, and more) — 980+ functions.
+- Large expansion of built-in API completions (HTTP client, cURL, SOAP, digests, BLOBs, programmable dialogs/charts, RDI/dictionary, parallel processing, keyfields, selection helpers, images, composite sessions, random, varargs, and more), for 980+ functions.
 - Database / ES error constant completions and hovers (`ELOCKED`, `EDUPL`, `ENOREC`, `EREFERENCE`, …) via `baanc.completion.includeErrors`.
 - Signature help (parameter hints) for built-ins and local functions.
 - Find All References, Rename Symbol, and Document Highlights for identifiers in the current file.

@@ -1,6 +1,6 @@
 # Library memory
 
-Library memory is designed for **BECS** and other workflows where library or include sources open as temporary `.bc` files and then disappear. The extension **learns** exported functions while the file is open and keeps them for completions, hovers, signature help, and auto-import—even after the temp file is deleted.
+Library memory is designed for **BECS** and other workflows where library or include sources open as temporary `.bc` files and then disappear. The extension **learns** exported functions while the file is open and keeps them for completions, hovers, signature help, and auto-import - even after the temp file is deleted.
 
 ---
 
@@ -190,7 +190,7 @@ Full descriptions: [Configuration](./configuration.md).
 ## Limitations
 
 - Memory is **not** a full project indexer; it only knows libraries you actually opened (or previously learned).
-- Classification heuristics can mis-tag unusual names — use the manager to override.
+- Classification heuristics can mis-tag unusual names - use the manager to override.
 - Cross-file **rename** / **find all references** still operate on the current file only.
 - Untitled buffers without a usable name are not learned.
 - Empty or incomplete temp buffers will not overwrite a good prior extract.

@@ -23,6 +23,12 @@ const esbuildProblemMatcherPlugin = {
 	},
 };
 
+/**
+ * Bundle `src/extension.js` into `dist/extension.js`.
+ * `--production` minifies and disables source maps. `--watch` keeps the
+ * esbuild context alive and rebuilds after every change.
+ * @returns {Promise<void>}
+ */
 async function main() {
 	const ctx = await esbuild.context({
 		entryPoints: [

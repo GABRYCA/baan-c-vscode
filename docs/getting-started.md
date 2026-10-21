@@ -8,7 +8,7 @@ This guide covers installing **Visual Studio Code**, connecting it to **Infor LN
 
 Before you use the extension, make sure you have:
 
-- **Visual Studio Code** 1.125.0 or newer (see [Install Visual Studio Code](#install-visual-studio-code) below)
+- **Visual Studio Code** 1.140.0 or newer (see [Install Visual Studio Code](#install-visual-studio-code) below)
 - **Infor LN** user defaults with **Development Parameters** set to **VSCODE** (see [Set VS Code as the default editor in LN](#set-vs-code-as-the-default-editor-in-ln))
 - No Infor LN runtime is required for *editor* features alone (highlighting, format, completions, etc.)
 - Optional: access to library/include `.bc` sources if you want [Library memory](./library-memory.md) to learn project APIs
@@ -97,7 +97,7 @@ https://marketplace.visualstudio.com/items?itemName=AnonymousGCA.baan-c-vscode
 
 Useful for private builds or offline machines.
 
-1. Obtain a `.vsix` file (from a release, or by packaging — see [Development](./development.md)).
+1. Obtain a `.vsix` file (from a release, or by packaging - see [Development](./development.md)).
 2. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`).
 3. Run **Extensions: Install from VSIX…**
 4. Select the `.vsix` and confirm **Install**.
@@ -111,7 +111,7 @@ Useful for private builds or offline machines.
 2. The status bar language mode should show **Baan C**.
 3. If it does not, run **Change Language Mode** and pick **Baan C**.
 
-The extension activates on `onLanguage:baanc` — features load when a Baan document is open.
+The extension activates on `onLanguage:baanc` - features load when a Baan document is open.
 
 ---
 
@@ -164,7 +164,7 @@ From the Command Palette or the editor context menu (right-click in a Baan file)
 - **Baan C: Insert Select Template**
 - **Baan C: Insert Transaction + Select Template**
 
-Snippets such as `selectf` and `txselect` do the same from the keyboard — see [Snippets](./snippets.md).
+Snippets such as `selectf` and `txselect` do the same from the keyboard - see [Snippets](./snippets.md).
 
 ### 5. Fix structure and naming
 
@@ -205,7 +205,7 @@ When the language is `baanc`, the extension sets sensible defaults (overridable 
 
 ## Next steps
 
-- [Features](./features.md) — complete capability list  
-- [Configuration](./configuration.md) — tune completions, diagnostics, memory  
-- [Commands](./commands.md) — palette and context menu actions  
-- [Library memory](./library-memory.md) — BECS / multi-script workflows  
+- [Features](./features.md) - complete capability list  
+- [Configuration](./configuration.md) - tune completions, diagnostics, memory  
+- [Commands](./commands.md) - palette and context menu actions  
+- [Library memory](./library-memory.md) - BECS / multi-script workflows  

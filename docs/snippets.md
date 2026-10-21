@@ -48,7 +48,7 @@ Tab stops (`$1`, `$2`, …) move with `Tab`. Linked placeholders update together
 
 ---
 
-## Embedded SQL & transactions
+## Embedded SQL and transactions
 
 Select snippets use **`table.*`** (not bare `*`) with linked table placeholders and column-aligned clauses.
 
@@ -123,7 +123,7 @@ Typing after a trailing dot (e.g. `before.`) continues to match dotted 4GL compl
 
 ---
 
-## APIs & patterns
+## APIs and patterns
 
 | Prefix | Name | Inserts |
 | --- | --- | --- |
@@ -136,7 +136,7 @@ Typing after a trailing dot (e.g. `before.`) continues to match dotted 4GL compl
 
 ## Tips
 
-1. **Snippets vs completions** — Snippets appear alongside keyword/builtin completions. Use the description/detail column to pick the right item.
-2. **SQL alignment** — After inserting a select snippet, run **Format Document** if you have mixed hand-edited clauses; the formatter re-aligns SQL keywords.
-3. **Disable a category of keyword completions** — Snippets remain available even if you turn off builtin/SQL completion settings; only dynamic completion sources are gated (see [Configuration](./configuration.md)).
-4. **Discover all snippets** — Command Palette → **Snippets: Insert Snippet** while a Baan file is focused.
+1. **Snippets vs completions** - Snippets appear alongside keyword/builtin completions. Use the description/detail column to pick the right item.
+2. **SQL alignment** - After inserting a select snippet, run **Format Document** if you have mixed hand-edited clauses; the formatter re-aligns SQL keywords.
+3. **Disable a category of keyword completions** - Snippets remain available even if you turn off builtin/SQL completion settings; only dynamic completion sources are gated (see [Configuration](./configuration.md)).
+4. **Discover all snippets** - Command Palette → **Snippets: Insert Snippet** while a Baan file is focused.

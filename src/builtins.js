@@ -6,7 +6,7 @@
  * @typedef {{ name: string, detail: string, doc?: string, insert?: string, dll?: string }} BuiltinFn
  *
  * Optional `dll`: object name for `#pragma used dll "…"`. Only set when the API
- * is known to live in an optional package library — never for core bshell APIs.
+ * is known to live in an optional package library - never for core bshell APIs.
  */
 
 /** @type {BuiltinFn[]} */
@@ -505,7 +505,7 @@ const BUILTIN_FUNCTIONS = [
   { name: 'get_function', detail: 'long · get DLL function', insert: 'get_function(${1:dll.id}, ${2:func.name})$0' },
   { name: 'exec_function', detail: 'long · exec function ptr', insert: 'exec_function(${1:func.id})$0' },
   { name: 'exec_dll_function', detail: 'long · exec DLL function', insert: 'exec_dll_function(${1:dll}, ${2:func})$0' },
-  { name: 'parse_and_exec_function', detail: 'long · parse & exec function', insert: 'parse_and_exec_function(${1:expr})$0' },
+  { name: 'parse_and_exec_function', detail: 'long · parse and exec function', insert: 'parse_and_exec_function(${1:expr})$0' },
 
   // ── Search / sort ───────────────────────────────────────────────────
   { name: 'qss.search', detail: 'long · quick set search', insert: 'qss.search(${1:key}, ${2:array}, ${3:nelems}, ${4:width})$0' },
@@ -1134,7 +1134,7 @@ const BUILTIN_FUNCTIONS = [
   { name: 'bc', detail: 'string · barcode encode', insert: 'bc(${1:type}, ${2:data})$0' },
   { name: 'bc.decode', detail: 'string · barcode decode', insert: 'bc.decode(${1:type}, ${2:data})$0' },
 
-  // ── eMessage Connector (cmf.*) — from the Infor LN programming guide ─
+  // ── eMessage Connector (cmf.*) - from the Infor LN programming guide ─
   { name: 'cmf.create', detail: 'long · create eMessage message', insert: 'cmf.create()' },
   { name: 'cmf.destroy', detail: 'long · destroy eMessage message', insert: 'cmf.destroy(${1:mid})$0' },
   { name: 'cmf.send', detail: 'long · send eMessage via service', insert: 'cmf.send(${1:mid}, ${2:service})$0' },
@@ -1245,7 +1245,7 @@ const BUILTIN_FUNCTIONS = [
   { name: 'artm.end.transaction', detail: 'long · end ARTM transaction', insert: 'artm.end.transaction(${1:artm.transaction.id}, ${2:tran.status}, ${3:metric.type}, ${4:metric.value})$0' },
   { name: 'artm.redefine.transaction.class', detail: 'long · redefine ARTM transaction class', insert: 'artm.redefine.transaction.class(${1:artm.transaction.id}, ${2:tran.status}, ${3:metric.type}, ${4:metric.value})$0' },
 
-  // ── Chart manager (chm.*) — deprecated, Baan Windows only ───────────
+  // ── Chart manager (chm.*) - deprecated, Baan Windows only ───────────
   { name: 'chm.new', detail: 'long · create new chart', insert: 'chm.new(${1:chart_name}, ${2:chart_type})$0' },
   { name: 'chm.open', detail: 'long · open chart', insert: 'chm.open(${1:chart_name})$0' },
   { name: 'chm.draw', detail: 'long · draw chart', insert: 'chm.draw(${1:cat_from_value})$0' },
@@ -1293,51 +1293,51 @@ const BUILTIN_FUNCTIONS = [
 
 /** @type {ErrorConstant[]} */
 const ERROR_CONSTANTS = [
-  { name: 'e', code: 0, detail: 'success (no error)', doc: 'Error code **0** — success / no error.' },
-  { name: 'EDUPL', code: 100, detail: 'duplicate key', doc: '**100 EDUPL** — Duplicate key value on insert/update.' },
-  { name: 'ENOTOPEN', code: 101, detail: 'table not open', doc: '**101 ENOTOPEN** — Table is not open.' },
-  { name: 'EBADARG', code: 102, detail: 'bad argument', doc: '**102 EBADARG** — Invalid function argument.' },
-  { name: 'EBADKEY', code: 103, detail: 'bad key', doc: '**103 EBADKEY** — Invalid key number or key value.' },
-  { name: 'ENOTEXCL', code: 106, detail: 'not exclusive', doc: '**106 ENOTEXCL** — Operation requires exclusive lock.' },
-  { name: 'ELOCKED', code: 107, detail: 'record locked', doc: '**107 ELOCKED** — Record is locked by another process. Use `db.retry.point()` / retry.' },
-  { name: 'EKEXISTS', code: 108, detail: 'key exists', doc: '**108 EKEXISTS** — Key already exists.' },
-  { name: 'EPRIMKEY', code: 109, detail: 'primary key error', doc: '**109 EPRIMKEY** — Primary key violation.' },
-  { name: 'EENDFILE', code: 110, detail: 'end of file', doc: '**110 EENDFILE** — End of file / no more records (navigation).' },
-  { name: 'ENOREC', code: 111, detail: 'no record found', doc: '**111 ENOREC** — No matching record found.' },
-  { name: 'ENOCURR', code: 112, detail: 'no current record', doc: '**112 ENOCURR** — No current record positioned.' },
-  { name: 'EFLOCKED', code: 113, detail: 'file/table locked', doc: '**113 EFLOCKED** — File or table is locked.' },
-  { name: 'EFNAME', code: 114, detail: 'bad file name', doc: '**114 EFNAME** — Invalid file or table name.' },
-  { name: 'EROWCHANGED', code: 201, detail: 'row changed', doc: '**201 EROWCHANGED** — Row changed since it was read (optimistic lock).' },
-  { name: 'ETRANSACTIONON', code: 203, detail: 'transaction already on', doc: '**203 ETRANSACTIONON** — A transaction is already active.' },
-  { name: 'EISREADONLY', code: 204, detail: 'readonly transaction', doc: '**204 EISREADONLY** — Operation not allowed in a read-only transaction.' },
-  { name: 'ENOTINRANGE', code: 205, detail: 'value out of range', doc: '**205 ENOTINRANGE** — Value is outside the allowed domain range.' },
-  { name: 'ENOTLOCKED', code: 206, detail: 'not locked', doc: '**206 ENOTLOCKED** — Record is not locked (update/delete requires lock).' },
-  { name: 'EAUDIT', code: 207, detail: 'audit error', doc: '**207 EAUDIT** — Audit trail error.' },
-  { name: 'EPERMISSION', code: 208, detail: 'permission denied', doc: '**208 EPERMISSION** — Insufficient permissions.' },
-  { name: 'EMIRROR', code: 209, detail: 'mirror error', doc: '**209 EMIRROR** — Database mirror error.' },
-  { name: 'EMLOCKED', code: 210, detail: 'multi-row locked', doc: '**210 EMLOCKED** — Multi-row lock conflict.' },
-  { name: 'ETRANSACTIONOPEN', code: 213, detail: 'transaction still open', doc: '**213 ETRANSACTIONOPEN** — Transaction still open when it should be closed.' },
-  { name: 'EUNALLOWEDCOMPNR', code: 214, detail: 'company not allowed', doc: '**214 EUNALLOWEDCOMPNR** — Company number not allowed for this table.' },
-  { name: 'EREFERENCE', code: 600, detail: 'reference error', doc: '**600 EREFERENCE** — Referential integrity error.' },
-  { name: 'EREFLOCKED', code: 601, detail: 'referenced row locked', doc: '**601 EREFLOCKED** — Referenced row is locked.' },
-  { name: 'EUNDEFREF', code: 602, detail: 'undefined reference', doc: '**602 EUNDEFREF** — Reference points to a non-existing row.' },
-  { name: 'EREFUPDATE', code: 604, detail: 'reference update error', doc: '**604 EREFUPDATE** — Cannot update because of references.' },
-  { name: 'EREFEXISTS', code: 605, detail: 'reference still exists', doc: '**605 EREFEXISTS** — Cannot delete: dependent references exist.' },
-  { name: 'EREFNOTEXISTS', code: 606, detail: 'reference does not exist', doc: '**606 EREFNOTEXISTS** — Required reference does not exist.' },
-  { name: 'ENOREFTBL', code: 607, detail: 'no reference table', doc: '**607 ENOREFTBL** — Reference table not found.' },
-  { name: 'ESQLQUERY', code: 301, detail: 'SQL query error', doc: '**301 ESQLQUERY** — SQL query execution error.' },
-  { name: 'ESQLSYNTAX', code: 302, detail: 'SQL syntax error', doc: '**302 ESQLSYNTAX** — SQL syntax error.' },
-  { name: 'ESQLREFER', code: 303, detail: 'SQL reference error', doc: '**303 ESQLREFER** — SQL referential error.' },
-  { name: 'ESQLUNDEFINED', code: 304, detail: 'SQL undefined object', doc: '**304 ESQLUNDEFINED** — Undefined table/column in SQL.' },
-  { name: 'ESQLDIVBYZERO', code: 306, detail: 'SQL division by zero', doc: '**306 ESQLDIVBYZERO** — Division by zero in SQL expression.' },
-  { name: 'EMEMORY', code: 501, detail: 'out of memory', doc: '**501 EMEMORY** — Out of memory.' },
-  { name: 'ENOTABLE', code: 506, detail: 'table does not exist', doc: '**506 ENOTABLE** — Table does not exist in the data dictionary.' },
-  { name: 'ETABLEEXIST', code: 507, detail: 'table already exists', doc: '**507 ETABLEEXIST** — Table already exists.' },
-  { name: 'EBDBNOTON', code: 508, detail: 'database not on', doc: '**508 EBDBNOTON** — Database layer is not started.' },
-  { name: 'EDBNOTON', code: 510, detail: 'DB not connected', doc: '**510 EDBNOTON** — Database is not connected / not on.' },
-  { name: 'ESECURITY', code: 514, detail: 'security error', doc: '**514 ESECURITY** — Security / authorization error.' },
-  { name: 'ENOSESSION', code: 518, detail: 'session not found', doc: '**518 ENOSESSION** — Session not found.' },
-  { name: 'ENOCOMPNR', code: 519, detail: 'no company number', doc: '**519 ENOCOMPNR** — No company number set.' }
+  { name: 'e', code: 0, detail: 'success (no error)', doc: 'Error code **0** - success / no error.' },
+  { name: 'EDUPL', code: 100, detail: 'duplicate key', doc: '**100 EDUPL** - Duplicate key value on insert/update.' },
+  { name: 'ENOTOPEN', code: 101, detail: 'table not open', doc: '**101 ENOTOPEN** - Table is not open.' },
+  { name: 'EBADARG', code: 102, detail: 'bad argument', doc: '**102 EBADARG** - Invalid function argument.' },
+  { name: 'EBADKEY', code: 103, detail: 'bad key', doc: '**103 EBADKEY** - Invalid key number or key value.' },
+  { name: 'ENOTEXCL', code: 106, detail: 'not exclusive', doc: '**106 ENOTEXCL** - Operation requires exclusive lock.' },
+  { name: 'ELOCKED', code: 107, detail: 'record locked', doc: '**107 ELOCKED** - Record is locked by another process. Use `db.retry.point()` / retry.' },
+  { name: 'EKEXISTS', code: 108, detail: 'key exists', doc: '**108 EKEXISTS** - Key already exists.' },
+  { name: 'EPRIMKEY', code: 109, detail: 'primary key error', doc: '**109 EPRIMKEY** - Primary key violation.' },
+  { name: 'EENDFILE', code: 110, detail: 'end of file', doc: '**110 EENDFILE** - End of file / no more records (navigation).' },
+  { name: 'ENOREC', code: 111, detail: 'no record found', doc: '**111 ENOREC** - No matching record found.' },
+  { name: 'ENOCURR', code: 112, detail: 'no current record', doc: '**112 ENOCURR** - No current record positioned.' },
+  { name: 'EFLOCKED', code: 113, detail: 'file/table locked', doc: '**113 EFLOCKED** - File or table is locked.' },
+  { name: 'EFNAME', code: 114, detail: 'bad file name', doc: '**114 EFNAME** - Invalid file or table name.' },
+  { name: 'EROWCHANGED', code: 201, detail: 'row changed', doc: '**201 EROWCHANGED** - Row changed since it was read (optimistic lock).' },
+  { name: 'ETRANSACTIONON', code: 203, detail: 'transaction already on', doc: '**203 ETRANSACTIONON** - A transaction is already active.' },
+  { name: 'EISREADONLY', code: 204, detail: 'readonly transaction', doc: '**204 EISREADONLY** - Operation not allowed in a read-only transaction.' },
+  { name: 'ENOTINRANGE', code: 205, detail: 'value out of range', doc: '**205 ENOTINRANGE** - Value is outside the allowed domain range.' },
+  { name: 'ENOTLOCKED', code: 206, detail: 'not locked', doc: '**206 ENOTLOCKED** - Record is not locked (update/delete requires lock).' },
+  { name: 'EAUDIT', code: 207, detail: 'audit error', doc: '**207 EAUDIT** - Audit trail error.' },
+  { name: 'EPERMISSION', code: 208, detail: 'permission denied', doc: '**208 EPERMISSION** - Insufficient permissions.' },
+  { name: 'EMIRROR', code: 209, detail: 'mirror error', doc: '**209 EMIRROR** - Database mirror error.' },
+  { name: 'EMLOCKED', code: 210, detail: 'multi-row locked', doc: '**210 EMLOCKED** - Multi-row lock conflict.' },
+  { name: 'ETRANSACTIONOPEN', code: 213, detail: 'transaction still open', doc: '**213 ETRANSACTIONOPEN** - Transaction still open when it should be closed.' },
+  { name: 'EUNALLOWEDCOMPNR', code: 214, detail: 'company not allowed', doc: '**214 EUNALLOWEDCOMPNR** - Company number not allowed for this table.' },
+  { name: 'EREFERENCE', code: 600, detail: 'reference error', doc: '**600 EREFERENCE** - Referential integrity error.' },
+  { name: 'EREFLOCKED', code: 601, detail: 'referenced row locked', doc: '**601 EREFLOCKED** - Referenced row is locked.' },
+  { name: 'EUNDEFREF', code: 602, detail: 'undefined reference', doc: '**602 EUNDEFREF** - Reference points to a non-existing row.' },
+  { name: 'EREFUPDATE', code: 604, detail: 'reference update error', doc: '**604 EREFUPDATE** - Cannot update because of references.' },
+  { name: 'EREFEXISTS', code: 605, detail: 'reference still exists', doc: '**605 EREFEXISTS** - Cannot delete: dependent references exist.' },
+  { name: 'EREFNOTEXISTS', code: 606, detail: 'reference does not exist', doc: '**606 EREFNOTEXISTS** - Required reference does not exist.' },
+  { name: 'ENOREFTBL', code: 607, detail: 'no reference table', doc: '**607 ENOREFTBL** - Reference table not found.' },
+  { name: 'ESQLQUERY', code: 301, detail: 'SQL query error', doc: '**301 ESQLQUERY** - SQL query execution error.' },
+  { name: 'ESQLSYNTAX', code: 302, detail: 'SQL syntax error', doc: '**302 ESQLSYNTAX** - SQL syntax error.' },
+  { name: 'ESQLREFER', code: 303, detail: 'SQL reference error', doc: '**303 ESQLREFER** - SQL referential error.' },
+  { name: 'ESQLUNDEFINED', code: 304, detail: 'SQL undefined object', doc: '**304 ESQLUNDEFINED** - Undefined table/column in SQL.' },
+  { name: 'ESQLDIVBYZERO', code: 306, detail: 'SQL division by zero', doc: '**306 ESQLDIVBYZERO** - Division by zero in SQL expression.' },
+  { name: 'EMEMORY', code: 501, detail: 'out of memory', doc: '**501 EMEMORY** - Out of memory.' },
+  { name: 'ENOTABLE', code: 506, detail: 'table does not exist', doc: '**506 ENOTABLE** - Table does not exist in the data dictionary.' },
+  { name: 'ETABLEEXIST', code: 507, detail: 'table already exists', doc: '**507 ETABLEEXIST** - Table already exists.' },
+  { name: 'EBDBNOTON', code: 508, detail: 'database not on', doc: '**508 EBDBNOTON** - Database layer is not started.' },
+  { name: 'EDBNOTON', code: 510, detail: 'DB not connected', doc: '**510 EDBNOTON** - Database is not connected / not on.' },
+  { name: 'ESECURITY', code: 514, detail: 'security error', doc: '**514 ESECURITY** - Security / authorization error.' },
+  { name: 'ENOSESSION', code: 518, detail: 'session not found', doc: '**518 ENOSESSION** - Session not found.' },
+  { name: 'ENOCOMPNR', code: 519, detail: 'no company number', doc: '**519 ENOCOMPNR** - No company number set.' }
 ];
 
 /** @type {Map<string, ErrorConstant>} */

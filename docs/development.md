@@ -10,7 +10,7 @@ Guide for building, debugging, packaging, and navigating the **Baan C VSCode** c
 | --- | --- |
 | **Node.js** | LTS recommended (for `npm` / `npx`) |
 | **npm** | Ships with Node |
-| **VS Code** | `^1.125.0` for Extension Development Host |
+| **VS Code** | `^1.140.0` for Extension Development Host |
 | **@vscode/vsce** | Only needed to package `.vsix` (`npx` is enough) |
 
 ---
@@ -28,25 +28,32 @@ npm install
 ## Project layout
 
 ```text
-baan-c-support/          # repository root (name may vary locally)
-├── package.json         # extension manifest, contributes, scripts
-├── esbuild.js           # bundles src → dist/extension.js
+baan-c-vscode/
+├── .vscode/
+│   ├── launch.json          # isolated and full extension host configs
+│   └── tasks.json           # compile and watch tasks
+├── package.json             # extension manifest, contributes, scripts
+├── esbuild.js               # bundles src to dist/extension.js
 ├── language-configuration.json
 ├── syntaxes/
 │   └── baanc.tmLanguage.json
 ├── snippets/
 │   └── baanc.json
-├── icons/               # marketplace + language icons
+├── icons/                   # marketplace + language icons
 ├── src/
-│   ├── extension.js     # activation, providers, formatter, diagnostics
-│   ├── builtins.js      # ~980+ API + error constants
-│   ├── libraryMemory.js # learn / store / auto-import / manager UI
-│   └── test/            # tests / smoke helpers
+│   ├── extension.js         # activation, providers, formatter, diagnostics
+│   ├── builtins.js          # 1,125 API functions + error constants
+│   ├── libraryMemory.js     # learn / store / auto-import / manager UI
+│   ├── docsViewer.js        # documentation webview host
+│   └── test/
+│       ├── libraryMemory.smoke.js
+│       ├── diagnostics.smoke.js
+│       └── run-all.js       # npm test entry point
 ├── dist/
-│   └── extension.js     # bundled entry (runtime main)
-├── docs/                # markdown sources + generated index.html site
+│   └── extension.js         # bundled entry (runtime main)
+├── docs/                    # markdown sources + generated index.html site
 ├── scripts/
-│   └── build-docs.js    # builds docs/index.html from docs/*.md
+│   └── build-docs.js        # builds docs/index.html from docs/*.md
 ├── CHANGELOG.md
 ├── README.md
 └── LICENSE
@@ -95,7 +102,7 @@ Defined in `package.json`:
 | `docs:build` | `node scripts/build-docs.js` | Rebuild single-file docs site (`docs/index.html`) |
 | `vscode:prepublish` | production esbuild + docs build | Runs automatically before `vsce package` / publish |
 | `lint` | `eslint src scripts` | Lint source and build scripts |
-| `test` | `node src/test/libraryMemory.smoke.js` | Smoke test for library memory |
+| `test` | `node src/test/run-all.js` | Smoke suite for library memory and diagnostics |
 
 ### esbuild options
 
@@ -116,23 +123,34 @@ Defined in `package.json`:
 ## Debug in Extension Development Host
 
 1. Open the repository folder in VS Code.
-2. Run `npm run compile` (or `npm run watch` in a terminal).
-3. Press **F5** or run the **Run Extension** launch configuration (`.vscode/launch.json`).
-4. A new **Extension Development Host** window opens with the extension loaded from the workspace.
-5. Open a `.bc` file and exercise features.
-6. Set breakpoints in `src/*.js` (sourcemaps map into the bundle in non-production builds).
-7. Reload the Extension Development Host (`Ctrl+R` / `Cmd+R`) after rebuilds if needed.
+2. Open **Run and Debug** (`Ctrl+Shift+D`).
+3. Choose **Run Extension (isolated)** and press **F5**.
+4. The `npm: compile` task runs first and produces `dist/extension.js`.
+5. A new **Extension Development Host** window opens with only the development extension enabled.
+6. Open a `.bc` file and exercise features.
+7. Set breakpoints in `src/*.js`. Source maps from the development bundle map them to the running extension.
+8. Reload the Extension Development Host (`Ctrl+R` / `Cmd+R`) after a rebuild.
 
-Launch config (simplified):
+Launch configurations:
+
+| Name | Behavior |
+| --- | --- |
+| **Run Extension (isolated)** | Adds `--disable-extensions`, recommended for daily work |
+| **Run Extension (with installed extensions)** | Keeps installed extensions enabled, useful for integration checks |
+
+Both configurations use `outFiles: ["${workspaceFolder}/dist/**/*.js"]`, `sourceMaps: true`, and `preLaunchTask: "npm: compile"`.
+
+### Exit code 134 on Windows
+
+If the Extension Development Host closes immediately with exit code `134` (`SIGABRT`), an installed extension is the most likely cause. A clean host with `--disable-extensions` stays open. GitHub Copilot Chat matches a known upstream crash signature in `microsoft/vscode#333717`.
+
+Use **Run Extension (isolated)**, or add this to the second configuration:
 
 ```json
-{
-  "name": "Run Extension",
-  "type": "extensionHost",
-  "request": "launch",
-  "args": ["--extensionDevelopmentPath=${workspaceFolder}"]
-}
+"--disable-extension=github.copilot-chat"
 ```
+
+Check `%APPDATA%\Code\logs\<timestamp>\main.log` and `...\window1\exthost\exthost.log` for the extension that was activating when the host exited.
 
 ---
 
@@ -144,7 +162,7 @@ npm test
 ```
 
 ESLint config: `eslint.config.mjs` (flat config, ESLint 10). Scope: `src/` and `scripts/`.  
-`npm test` runs the lightweight library-memory smoke test under `src/test/`.
+`npm test` runs the lightweight smoke suite under `src/test/`: library-memory extraction, import classification, and block diagnostics.
 
 ---
 
@@ -159,7 +177,7 @@ This will:
 
 1. Run `vscode:prepublish` → production esbuild
 2. Package files according to `.vscodeignore`
-3. Emit something like `baan-c-vscode-1.0.6.vsix` in the project root
+3. Emit something like `baan-c-vscode-1.1.0.vsix` in the project root
 
 Install locally:
 
@@ -201,7 +219,7 @@ Always update [CHANGELOG.md](../CHANGELOG.md) before a release.
 
 ### New builtin completions
 
-Edit `src/builtins.js` — append to `BUILTIN_FUNCTIONS`:
+Edit `src/builtins.js` - append to `BUILTIN_FUNCTIONS`:
 
 ```js
 {
@@ -209,13 +227,13 @@ Edit `src/builtins.js` — append to `BUILTIN_FUNCTIONS`:
   detail: 'long · short summary',
   doc: '```baanc\nlong my.api.call(...)\n```\nDescription.',
   insert: 'my.api.call(${1:arg})$0'
-  // optional: dll: 'osome.object'  // only if truly required & known
+  // optional: dll: 'osome.object'  // only if truly required and known
 }
 ```
 
 ### New snippets
 
-Edit `snippets/baanc.json` — VS Code snippet schema (`prefix`, `body`, `description`).
+Edit `snippets/baanc.json` - VS Code snippet schema (`prefix`, `body`, `description`).
 
 ### New settings / commands
 
@@ -238,7 +256,7 @@ All learning, import edits, and manager UI live in `src/libraryMemory.js`. Keep 
 
 ## Versioning
 
-Current version is read from `package.json` (`version` field). Documentation hub (`docs/README.md`) should stay aligned after releases.
+Current version is read from `package.json` (`version` field). Documentation hub (`docs/README.md`), the README release notes, and `CHANGELOG.md` should stay aligned after releases.
 
 Suggested release checklist:
 
@@ -254,7 +272,7 @@ Suggested release checklist:
 
 ## Tests
 
-Lightweight helpers live under `src/test/` (e.g. smoke for library memory). Expand coverage as features grow; there is no heavy CI suite required for basic packaging.
+Lightweight helpers live under `src/test/`. The library-memory smoke test covers library learning, include and DLL classification, object-name conversion, function header parsing, import detection, and Baan C string handling. The diagnostics smoke test covers block accounting, including the `else if` form that needs an additional `endif`, using a small `vscode` mock. Expand coverage as features grow; there is no heavy CI suite required for basic packaging.
 
 ---
 

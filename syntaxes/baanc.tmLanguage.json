@@ -28,7 +28,7 @@
           "end": "\\*/",
           "patterns": [
             {
-              "comment": "Soft annotation only — stay comment-colored (not keyword/red)",
+              "comment": "Soft annotation only - stay comment-colored (not keyword/red)",
               "name": "comment.todo.baanc",
               "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
             }
@@ -40,7 +40,7 @@
           "end": "$",
           "patterns": [
             {
-              "comment": "Soft annotation only — stay comment-colored (not keyword/red)",
+              "comment": "Soft annotation only - stay comment-colored (not keyword/red)",
               "name": "comment.todo.baanc",
               "match": "\\b(TODO|FIXME|NOTE|XXX|HACK)\\b"
             }
@@ -286,7 +286,7 @@
           "match": "\\b(t[a-z]{2,6}\\d{3}[a-z0-9]*)\\b"
         },
         {
-          "comment": "Full dotted identifiers (domains, functions, table.fields) as one unit — multi-segment",
+          "comment": "Full dotted identifiers (domains, functions, table.fields) as one unit - multi-segment",
           "name": "variable.other.member.baanc",
           "match": "\\b([A-Za-z_][\\w]*(?:\\.[A-Za-z_][\\w]*)+)\\b(?!\\s*\\()",
           "captures": {

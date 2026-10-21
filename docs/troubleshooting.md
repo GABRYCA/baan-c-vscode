@@ -10,12 +10,12 @@ Common issues, known limitations, and how to recover.
 
 **Checks:**
 
-1. File extension is `.bc`, `.cl`, `.bcl`, or `.script` — or language mode is manually set to **Baan C**.
-2. VS Code version ≥ **1.125.0**.
+1. File extension is `.bc`, `.cl`, `.bcl`, or `.script` - or language mode is manually set to **Baan C**.
+2. VS Code version ≥ **1.140.0**.
 3. Extension is enabled (Extensions view → Baan C VSCode → not disabled for this workspace).
 4. Reload window: Command Palette → **Developer: Reload Window**.
 
-Activation event is `onLanguage:baanc` only — the extension does not load until a Baan document is involved.
+Activation event is `onLanguage:baanc` only - the extension does not load until a Baan document is involved.
 
 ---
 
@@ -23,7 +23,7 @@ Activation event is `onLanguage:baanc` only — the extension does not load unti
 
 **Checks:**
 
-1. VS Code is installed where LN expects it — typically `C:\apps\VSCODE\Code.exe` (see [Getting started](./getting-started.md#install-visual-studio-code)).
+1. VS Code is installed where LN expects it - typically `C:\apps\VSCODE\Code.exe` (see [Getting started](./getting-started.md#install-visual-studio-code)).
 2. Your LN user has **Defaults → Development Parameters = VSCODE** (see [Set VS Code as the default editor in LN](./getting-started.md#set-vs-code-as-the-default-editor-in-ln)).
 3. If **VSCODE** is missing from the zoom list, create the development-parameter entry, save it, then select it on your user and save again.
 4. Log out/in of LNUI (or restart the session) after changing Development Parameters.
@@ -144,7 +144,7 @@ Also:
 3. **Manage Memorized Libraries…** to inspect what is stored.
 4. **Clear Memorized Libraries** if the store is polluted, then re-open sources.
 
-Memory is global to the VS Code profile — not per workspace folder.
+Memory is global to the VS Code profile - not per workspace folder.
 
 ---
 
@@ -168,6 +168,26 @@ Then reload the Extension Development Host window. Ensure you are not packaging/
 
 ---
 
+## Extension Development Host closes immediately (exit code 134)
+
+**Symptoms:** pressing `F5` opens the Extension Development Host, then the window disappears after about a second. `%APPDATA%\Code\logs\<timestamp>\main.log` contains:
+
+```text
+Extension host with pid <pid> exited with code: 134
+[UtilityProcess ... type: extensionHost ...]: crashed with code 134 and reason 'crashed'
+```
+
+Code `134` is `SIGABRT`, so this is an extension host crash, not a normal window close.
+
+1. Run the **Run Extension (isolated)** launch configuration. It passes `--disable-extensions` and loads only the development extension.
+2. If the isolated host stays open, an installed extension is involved. Re-enable extensions in groups, or add `"--disable-extension=github.copilot-chat"` to the second launch configuration.
+3. Update VS Code and the suspect extension. GitHub Copilot Chat has a known crash signature in `microsoft/vscode#333717`.
+4. Check `...\window1\exthost\exthost.log` and the renderer log for the extension that was activating when the host exited.
+
+The included `npm: compile` task runs before both launch configurations, so a missing `dist/extension.js` is no longer a cause.
+
+---
+
 ## Packaging / install from VSIX fails
 
 1. `npm install` then `npx @vscode/vsce package` from the repo root.
@@ -184,7 +204,7 @@ Then reload the Extension Development Host window. Ensure you are not packaging/
 | References/rename are single-file | Workspace Symbols (`Ctrl+T`) search all *open* Baan files, but there is no persistent workspace index |
 | Macro-heavy multi-file blocks | Structural diagnostics may mis-fire |
 | Import kind heuristics | Override in Manage Memorized Libraries |
-| Builtin DLL map sparse | By design — no aggressive guessing |
+| Builtin DLL map sparse | By design - no aggressive guessing |
 | No external LSP | All logic runs in the extension host |
 | BECS temp names | Unusual names may need manual import / kind fix |
 
